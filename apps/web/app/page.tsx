@@ -1,13 +1,12 @@
 import { Button } from "@workspace/ui/components/button";
-import { prisma } from "@workspace/db";
 
-export default async function Page() {
-  try {
-    const data = await prisma.user.findMany();
-    console.log("data", data);
-  } catch (error) {
-    console.error("Failed to fetch users", error);
-  }
+export default function Page() {
+  // try {
+  //   const data = await prisma.user.findMany();
+  //   console.log("data", data);
+  // } catch (error) {
+  //   console.error("Failed to fetch users", error);
+  // }
 
   return (
     <div className="flex min-h-svh p-6">
