@@ -41,7 +41,10 @@ app.get("/api/echo", (req, res) => {
   res
     .status(402)
     // .set("X-Payment-Requirements", JSON.stringify(requirements))
-      .set("X-Payment-Requirements", Buffer.from(JSON.stringify(requirements)).toString("base64"))
+    .set(
+      "X-Payment-Requirements",
+      Buffer.from(JSON.stringify(requirements)).toString("base64")
+    )
 
     .json(requirements);
 });
