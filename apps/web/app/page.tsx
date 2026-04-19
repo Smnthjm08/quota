@@ -1,12 +1,12 @@
-import { Button } from "@workspace/ui/components/button"
-import { prisma } from "@workspace/db"
+import { Button } from "@workspace/ui/components/button";
+import { prisma } from "@workspace/db";
 
 export default async function Page() {
   try {
-    const data = await prisma.user.findMany()
-    console.log("data", data)
+    const data = await prisma.user.findMany();
+    console.log("data", data);
   } catch (error) {
-    console.error("Failed to fetch users", error)
+    console.error("Failed to fetch users", error);
   }
 
   return (
@@ -23,5 +23,5 @@ export default async function Page() {
         </div>
       </div>
     </div>
-  )
+  );
 }
