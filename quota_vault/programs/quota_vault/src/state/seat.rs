@@ -2,14 +2,14 @@ use anchor_lang::prelude::*;
 
 #[account]
 pub struct SeatAccount {
-    pub vault: Pubkey,  // which vault this belongs to
-    pub holder: Pubkey, // who is using this seat
+    pub vault: Pubkey,
+    pub seat_id: u64,
+    pub limit: u64,
+    pub consumed: u64,
     pub bump: u8,
-    pub monthly_limit: u32,    // max allowed usage
-    pub used_this_period: u32, // current usage
-    pub period_start: i64,     // reset tracking
+    pub active: bool,
 }
 
 impl SeatAccount {
-    pub const SPACE: usize = 8 + 32 + 32 + 4 + 4 + 8 + 1;
+    pub const SPACE: usize = 8 + 32 + 8 + 8 + 8 + 1 + 1;
 }

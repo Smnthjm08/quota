@@ -3,13 +3,11 @@ use anchor_lang::prelude::*;
 #[account]
 pub struct VaultAccount {
     pub owner: Pubkey,
+    pub total_deposited: u64,   // total USDC funded
+    pub total_allocated: u64,   // sum of all seat limits
     pub bump: u8,
-    // pub authority: Pubkey,
-    // pub used_balance: u64,
-    // pub updated_at: u64,
-    // pub created_at: u64,
 }
 
 impl VaultAccount{
-    pub const SPACE: usize = 8 + 32 + 1;
+    pub const SPACE: usize = 8 + 32 + 8 + 8 + 1;
 }

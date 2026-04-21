@@ -20,11 +20,13 @@ pub struct InitializeVault<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn handler(ctx: Context<InitializeVault>) -> Result<()> {
+pub fn vault_handler(ctx: Context<InitializeVault>) -> Result<()> {
     let vault = &mut ctx.accounts.vault;
 
     vault.owner = ctx.accounts.owner.key();
     vault.bump = ctx.bumps.vault;
+    vault.total_deposited = 0;
+    vault.total_allocated = 0;
 
     Ok(())
 }
