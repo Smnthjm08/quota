@@ -12,27 +12,52 @@ datasource db {
   provider = "postgresql"
 }
 
-enum HttpMethod {
-  GET
-  POST
-  PUT
-  DELETE
+model User {
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  emailVerified Boolean
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  sessions Session[]
+  accounts Account[]
+
+  @@map("user")
 }
 
-model RouteConfig {
-  id          Int      @id @default(autoincrement())
-  path        String
-  method      String   @default("*")
-  priceUsdc   Decimal  @db.Decimal(18, 6)
-  // meter id changed from int to strings as Dodo meter IDs are string
-  meterId     String
-  credits     Int      @default(1)
-  freeQuota   Int      @default(0)
-  description String?
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime
+  updatedAt DateTime
 
-  @@unique([method, path])
-  @@map("route_configs")
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("account")
 }
