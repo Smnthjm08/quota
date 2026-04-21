@@ -11,13 +11,19 @@ declare_id!("HZ9sQe6snr7g1FrnKftH6xijKWCx3JdJF9XRy1JQuHGC");
 
 #[program]
 pub mod quota_vault {
+
     use super::*;
 
-    pub fn initialize_vault(ctx: Context<InitializeVault>) -> Result<()> {
-        instructions::vault_handler(ctx)
+    pub fn initialize_vault(ctx: Context<InitializeVault>, api_signer: Pubkey, plan: u8) -> Result<()> {
+        instructions::vault_handler(ctx, api_signer, plan)
     }
 
-    pub fn create_seat(ctx: Context<CreateSeat>, seat_id: u64) -> Result<()>{
-        instructions::seat_handler(ctx, seat_id)
+    pub fn create_seat(ctx: Context<CreateSeat>, holder: Pubkey, seat_id: u64,) -> Result<()>{
+        instructions::seat_handler(ctx, holder , seat_id)
+    }
+
+    pub fn deposit_handler(ctx: Context<Deposit>, amount: u64) -> Result<()>{
+        instructions::deposit_to_vault_handler(ctx, amount)
+
     }
 }
