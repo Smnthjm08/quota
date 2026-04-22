@@ -5,7 +5,7 @@ pub struct SeatAccount {
     pub vault: Pubkey,
     pub holder: Pubkey,
     pub consumed: u64,
-    pub limit: u64,
+    pub monthly_limit: u64,
     pub seat_id: u64,
     pub seat_type: u8, // 0 - human, 1 - agent, 2 - service
     pub period_start: i64,

@@ -40,7 +40,7 @@ pub fn seat_handler(
     seat.active = true;
 
     seat.consumed = 0;
-    seat.limit = 0;
+    seat.monthly_limit = 0;
     seat.seat_id = seat_id;
     seat.seat_type = seat_type;
 
