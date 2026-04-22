@@ -1,11 +1,12 @@
 use anchor_lang::prelude::*;
 
 use crate::constants::SEAT_SEED;
+use crate::error::QuotaError;
 use crate::state::seat::SeatAccount;
 use crate::state::vault::VaultAccount;
 
 #[derive(Accounts)]
-#[instruction(holder: Pubkey, seat_id: u64, seat_type: u8)]
+#[instruction(holder: Pubkey, seat_id: u64, seat_type: u8, monthly_limit: u64)]
 pub struct CreateSeat<'info> {
     #[account(
         init,
@@ -32,15 +33,24 @@ pub fn seat_handler(
     holder: Pubkey,
     seat_id: u64,
     seat_type: u8,
+    monthly_limit: u64,
 ) -> Result<()> {
+    require!(seat_type <= 2, QuotaError::InvalidSeatType);
+
+    let vault = &mut ctx.accounts.vault;
     let seat = &mut ctx.accounts.seat;
+
+    vault.total_allocated = vault
+        .total_allocated
+        .checked_add(monthly_limit)
+        .ok_or(QuotaError::MathOverflow)?;
 
     seat.vault = ctx.accounts.vault.key();
     seat.holder = holder;
     seat.active = true;
 
     seat.consumed = 0;
-    seat.monthly_limit = 0;
+    seat.monthly_limit = monthly_limit;
     seat.seat_id = seat_id;
     seat.seat_type = seat_type;
 

@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 
 use crate::{
-    constants::{SEAT_SEED, VAULT_SEED},
+    constants::{PERIOD_DURATION, SEAT_SEED, VAULT_SEED},
     error::QuotaError,
     state::{seat::SeatAccount, vault::VaultAccount},
 };
@@ -9,7 +9,7 @@ use crate::{
 #[derive(Accounts)]
 pub struct Consume<'info> {
     #[account(
-        constraint = authority.key() == vault.api_signer
+        constraint = authority.key() == vault.api_signer @ QuotaError::UnauthorizedSigner
     )]
     pub authority: Signer<'info>,
 
@@ -22,6 +22,7 @@ pub struct Consume<'info> {
 
     #[account(
         mut,
+        has_one = vault,
         seeds = [
             SEAT_SEED,
             vault.key().as_ref(),
@@ -33,6 +34,8 @@ pub struct Consume<'info> {
 }
 
 pub fn consume_handler(ctx: Context<Consume>, credits: u64) -> Result<()> {
+    require!(credits > 0, QuotaError::InvalidCredits);
+
     let vault = &mut ctx.accounts.vault;
     let seat = &mut ctx.accounts.seat;
 
@@ -42,7 +45,7 @@ pub fn consume_handler(ctx: Context<Consume>, credits: u64) -> Result<()> {
 
     let now = Clock::get()?.unix_timestamp;
 
-    if now - seat.period_start > 2_592_000 {
+    if now - seat.period_start >= PERIOD_DURATION {
         seat.consumed = 0;
         seat.period_start = now;
     }

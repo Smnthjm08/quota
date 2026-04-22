@@ -17,6 +17,21 @@ pub enum QuotaError {
     #[msg("New limit cannot be below already consumed usage")]
     InvalidLimit,
 
+    #[msg("Exceeds per call limit")]
+    ExceedsPerCallLimit,
+
+    #[msg("Daily limit exceeded")]
+    DailyLimitExceeded,
+
+    #[msg("Invalid Deposit Amount")]
+    InvalidDepositAmount,
+
+    #[msg("Invalid Seat Type")]
+    InvalidSeatType,
+
+    #[msg("Invalid Credits")]
+    InvalidCredits,
+
     #[msg("Math overflow")]
     MathOverflow,
 }

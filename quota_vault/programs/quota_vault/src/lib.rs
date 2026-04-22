@@ -27,8 +27,9 @@ pub mod quota_vault {
         holder: Pubkey,
         seat_id: u64,
         seat_type: u8,
+        monthly_limit: u64,
     ) -> Result<()> {
-        instructions::seat_handler(ctx, holder, seat_id, seat_type)
+        instructions::seat_handler(ctx, holder, seat_id, seat_type, monthly_limit)
     }
 
     pub fn deposit_handler(ctx: Context<Deposit>, amount: u64) -> Result<()> {

@@ -22,6 +22,7 @@ pub struct ToggleSeat<'info> {
 
     #[account(
         mut,
+        has_one = vault,
         seeds = [
             SEAT_SEED,
             vault.key().as_ref(),
@@ -33,6 +34,8 @@ pub struct ToggleSeat<'info> {
 }
 
 pub fn toggle_seat(ctx: Context<ToggleSeat>) -> Result<()> {
+    require!(ctx.accounts.vault.active, QuotaError::VaultInactive);
+
     let seat = &mut ctx.accounts.seat;
 
     seat.active = !seat.active;

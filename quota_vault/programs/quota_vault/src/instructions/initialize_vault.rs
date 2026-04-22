@@ -31,5 +31,7 @@ pub fn vault_handler(ctx: Context<InitializeVault>, api_signer: Pubkey, plan: u8
     vault.plan = plan;
     vault.api_signer = api_signer;
 
+    vault.created_at = Clock::get()?.unix_timestamp;
+
     Ok(())
 }

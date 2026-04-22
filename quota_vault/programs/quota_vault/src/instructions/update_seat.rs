@@ -22,6 +22,7 @@ pub struct UpdateSeat<'info> {
 
     #[account(
         mut,
+        has_one = vault,
         seeds = [
             SEAT_SEED,
             vault.key().as_ref(),
@@ -34,6 +35,8 @@ pub struct UpdateSeat<'info> {
 
 pub fn update_seat(ctx: Context<UpdateSeat>, new_limit: u64) -> Result<()> {
     let seat = &mut ctx.accounts.seat;
+
+    require!(new_limit > 0, QuotaError::InvalidLimit);
 
     require!(new_limit >= seat.consumed, QuotaError::InvalidLimit);
 
