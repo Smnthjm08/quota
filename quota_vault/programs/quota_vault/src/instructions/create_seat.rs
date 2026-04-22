@@ -5,7 +5,7 @@ use crate::state::seat::SeatAccount;
 use crate::state::vault::VaultAccount;
 
 #[derive(Accounts)]
-#[instruction(seat_id: u64)]
+#[instruction(holder: Pubkey, seat_id: u64, seat_type: u8)]
 pub struct CreateSeat<'info> {
     #[account(
         init,
@@ -27,7 +27,12 @@ pub struct CreateSeat<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn seat_handler(ctx: Context<CreateSeat>, holder: Pubkey, seat_id: u64) -> Result<()> {
+pub fn seat_handler(
+    ctx: Context<CreateSeat>,
+    holder: Pubkey,
+    seat_id: u64,
+    seat_type: u8,
+) -> Result<()> {
     let seat = &mut ctx.accounts.seat;
 
     seat.vault = ctx.accounts.vault.key();
@@ -37,6 +42,7 @@ pub fn seat_handler(ctx: Context<CreateSeat>, holder: Pubkey, seat_id: u64) -> R
     seat.consumed = 0;
     seat.limit = 0;
     seat.seat_id = seat_id;
+    seat.seat_type = seat_type;
 
     seat.period_start = Clock::get()?.unix_timestamp;
 

@@ -14,16 +14,33 @@ pub mod quota_vault {
 
     use super::*;
 
-    pub fn initialize_vault(ctx: Context<InitializeVault>, api_signer: Pubkey, plan: u8) -> Result<()> {
+    pub fn initialize_vault(
+        ctx: Context<InitializeVault>,
+        api_signer: Pubkey,
+        plan: u8,
+    ) -> Result<()> {
         instructions::vault_handler(ctx, api_signer, plan)
     }
 
-    pub fn create_seat(ctx: Context<CreateSeat>, holder: Pubkey, seat_id: u64,) -> Result<()>{
-        instructions::seat_handler(ctx, holder , seat_id)
+    pub fn create_seat(
+        ctx: Context<CreateSeat>,
+        holder: Pubkey,
+        seat_id: u64,
+        seat_type: u8,
+    ) -> Result<()> {
+        instructions::seat_handler(ctx, holder, seat_id, seat_type)
     }
 
-    pub fn deposit_handler(ctx: Context<Deposit>, amount: u64) -> Result<()>{
+    pub fn deposit_handler(ctx: Context<Deposit>, amount: u64) -> Result<()> {
         instructions::deposit_to_vault_handler(ctx, amount)
+    }
 
+    pub fn consume_handler(
+        ctx: Context<CreateSeat>,
+        holder: Pubkey,
+        seat_id: u64,
+        seat_type: u8,
+    ) -> Result<()> {
+        instructions::seat_handler(ctx, holder, seat_id, seat_type)
     }
 }
