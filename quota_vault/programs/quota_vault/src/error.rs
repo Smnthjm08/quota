@@ -34,4 +34,13 @@ pub enum QuotaError {
 
     #[msg("Math overflow")]
     MathOverflow,
+
+    #[msg["Insufficient Funds"]]
+    InsufficientFunds,
+
+    #[msg("Vault still contains funds")]
+    VaultNotEmpty,
+
+    #[msg("Vault is still active")]
+    VaultStillActive,
 }

@@ -37,14 +37,22 @@ pub mod quota_vault {
     }
 
     pub fn consume(ctx: Context<Consume>, credits: u64) -> Result<()> {
-        instructions::consume::consume_handler(ctx, credits)
+        instructions::consume_handler(ctx, credits)
     }
 
     pub fn toggle_seat_handler(ctx: Context<ToggleSeat>) -> Result<()> {
-        instructions::toggle_seat::toggle_seat(ctx)
+        instructions::toggle_seat(ctx)
     }
 
     pub fn update_seat_handler(ctx: Context<UpdateSeat>, new_limit: u64) -> Result<()> {
         instructions::update_seat(ctx, new_limit)
+    }
+
+    pub fn withdraw_from_vault(ctx: Context<WithdrawFromVault>, amount: u64) -> Result<()> {
+        instructions::withdraw_from_vault(ctx, amount)
+    }
+
+    pub fn close_vault(ctx: Context<CloseVault>) -> Result<()> {
+        instructions::close_vault(ctx)
     }
 }
