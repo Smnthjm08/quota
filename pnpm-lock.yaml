@@ -29,6 +29,9 @@ importers:
 
   apps/api:
     dependencies:
+      dotenv:
+        specifier: ^17.4.2
+        version: 17.4.2
       express:
         specifier: ^5.2.1
         version: 5.2.1
@@ -36,6 +39,12 @@ importers:
       '@types/express':
         specifier: ^5.0.6
         version: 5.0.6
+      '@workspace/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      '@workspace/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@workspace/eslint-config':
         specifier: workspace:^
         version: link:../../packages/eslint-config
