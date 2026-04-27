@@ -36,7 +36,7 @@ export const auth = betterAuth({
           resetLink: url,
           userEmail: user.email,
           userName: user.name,
-          appName: process.env.APP_NAME || "Quota",
+          appName: "Quota",
           expirationMinutes: "60",
         },
       });

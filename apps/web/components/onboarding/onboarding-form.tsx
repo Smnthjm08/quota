@@ -11,13 +11,13 @@ import {
   RadioGroup,
   RadioGroupItem,
 } from "@workspace/ui/components/radio-group";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@workspace/ui/components/select";
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+//   SelectValue,
+// } from "@workspace/ui/components/select";
 import { Separator } from "@workspace/ui/components/separator";
 import { useState } from "react";
 
@@ -59,48 +59,6 @@ export default function OnboardingForm() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-6">
             <div className="col-span-full sm:col-span-3">
               <Field className="gap-2">
-                <FieldLabel htmlFor="first-name">
-                  First name<span className="text-red-500">*</span>
-                </FieldLabel>
-                <Input
-                  type="text"
-                  id="first-name"
-                  name="first-name"
-                  autoComplete="given-name"
-                  required
-                  placeholder="Emma"
-                />
-              </Field>
-            </div>
-            <div className="col-span-full sm:col-span-3">
-              <Field className="gap-2">
-                <FieldLabel htmlFor="last-name">Last name</FieldLabel>
-                <Input
-                  type="text"
-                  id="last-name"
-                  name="last-name"
-                  autoComplete="family-name"
-                  placeholder="Crown"
-                />
-              </Field>
-            </div>
-            <div className="col-span-full">
-              <Field className="gap-2">
-                <FieldLabel htmlFor="email">
-                  Work email<span className="text-red-500">*</span>
-                </FieldLabel>
-                <Input
-                  type="email"
-                  id="email"
-                  name="email"
-                  autoComplete="email"
-                  required
-                  placeholder="emma@company.com"
-                />
-              </Field>
-            </div>
-            <div className="col-span-full sm:col-span-3">
-              <Field className="gap-2">
                 <FieldLabel htmlFor="company">Company</FieldLabel>
                 <Input
                   type="text"
@@ -111,7 +69,7 @@ export default function OnboardingForm() {
                 />
               </Field>
             </div>
-            <div className="col-span-full sm:col-span-3">
+            {/* <div className="col-span-full sm:col-span-3">
               <Field className="gap-2">
                 <FieldLabel htmlFor="size">Company size (employees)</FieldLabel>
                 <Select defaultValue="">
@@ -126,7 +84,7 @@ export default function OnboardingForm() {
                   </SelectContent>
                 </Select>
               </Field>
-            </div>
+            </div> */}
             <Separator className="col-span-full my-4" />
             <div className="col-span-full">
               <FieldLabel className="mb-4 block font-semibold text-foreground">

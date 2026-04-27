@@ -77,8 +77,9 @@ model Verification {
 }
 
 model Company {
-  id   String @id @default(cuid())
-  name String
+  id      String  @id @default(cuid())
+  name    String
+  website String?
 
   ownerId String @unique
   owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
