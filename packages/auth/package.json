@@ -12,7 +12,8 @@
   "type": "module",
   "devDependencies": {
     "@workspace/eslint-config": "workspace:*",
-    "@workspace/typescript-config": "workspace:*"
+    "@workspace/typescript-config": "workspace:*",
+    "@workspace/db": "workspace:*"
   },
   "dependencies": {
     "@dodopayments/better-auth": "^1.6.2",

@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@workspace/ui/components/button";
 import {
   Card,
@@ -16,8 +18,74 @@ import {
 import { Input } from "@workspace/ui/components/input";
 import Logo from "../logo";
 import Link from "next/link";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { authClient } from "@workspace/auth/client";
 
 const SignUpForm = () => {
+  const router = useRouter();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeSocialProvider, setActiveSocialProvider] = useState<"google" | "github" | null>(
+    null,
+  );
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const handleSocialSignIn = async (provider: "google" | "github") => {
+    setErrorMessage(null);
+
+    await authClient.signIn.social(
+      {
+        provider,
+        callbackURL: "/dashboard",
+      },
+      {
+        onRequest: () => {
+          setActiveSocialProvider(provider);
+        },
+        onSuccess: () => {
+          setActiveSocialProvider(null);
+        },
+        onError: (ctx) => {
+          setActiveSocialProvider(null);
+          setErrorMessage(ctx.error.message || "Unable to continue with social sign up.");
+        },
+      },
+    );
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setErrorMessage(null);
+
+    await authClient.signUp.email(
+      {
+        email,
+        password,
+        name,
+        image: undefined,
+        callbackURL: "/dashboard",
+      },
+      {
+        onRequest: () => {
+          setIsSubmitting(true);
+        },
+        onSuccess: () => {
+          setIsSubmitting(false);
+          router.push("/dashboard");
+          router.refresh();
+        },
+        onError: (ctx) => {
+          setIsSubmitting(false);
+          setErrorMessage(ctx.error.message || "Unable to create account. Please try again.");
+        },
+      },
+    );
+  };
+
   return (
     <section className="relative flex min-h-screen items-center justify-center bg-foreground dark:bg-background">
       <div className="pointer-events-none absolute inset-0 right-0 hidden overflow-hidden md:block">
@@ -35,7 +103,7 @@ const SignUpForm = () => {
             </div>
             <div className="flex flex-col gap-1">
               <CardTitle className="text-2xl font-medium text-card-foreground">
-                Signup to Shadcn Space
+                Signup to Quota
               </CardTitle>
               <CardDescription className="text-sm font-normal text-muted-foreground">
                 Signup to your account now
@@ -43,37 +111,46 @@ const SignUpForm = () => {
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <form>
+            <form onSubmit={handleSubmit}>
               <FieldGroup className="gap-6">
                 <Field className="grid gap-3 md:grid-cols-2 md:gap-6">
                   <Button
                     variant="outline"
                     type="button"
+                    onClick={() => handleSocialSignIn("google")}
+                    disabled={isSubmitting || activeSocialProvider !== null}
                     className="text-medium h-9 cursor-pointer gap-2 rounded-lg text-sm text-card-foreground shadow-xs dark:bg-background"
                   >
-                    <img
+                    <Image
                       src="https://images.shadcnspace.com/assets/svgs/icon-google.svg"
                       alt="google icon"
-                      className="h-4 w-4"
+                      width={16}
+                      height={16}
                     />
-                    Sign up with Google
+                    {activeSocialProvider === "google" ? "Redirecting..." : "Sign up with Google"}
                   </Button>
                   <Button
                     variant="outline"
                     type="button"
+                    onClick={() => handleSocialSignIn("github")}
+                    disabled={isSubmitting || activeSocialProvider !== null}
                     className="text-medium h-9 cursor-pointer gap-2 rounded-lg text-sm text-card-foreground shadow-xs dark:bg-background"
                   >
-                    <img
+                    <Image
                       src="https://images.shadcnspace.com/assets/svgs/icon-github.svg"
                       alt="github icon"
-                      className="h-4 w-4 dark:hidden"
+                      width={16}
+                      height={16}
+                      className="dark:hidden"
                     />
-                    <img
+                    <Image
                       src="https://images.shadcnspace.com/assets/svgs/icon-github-white.svg"
                       alt="github icon"
-                      className="hidden h-4 w-4 dark:block"
+                      width={16}
+                      height={16}
+                      className="hidden dark:block"
                     />
-                    Sign up with Github
+                    {activeSocialProvider === "github" ? "Redirecting..." : "Sign up with Github"}
                   </Button>
                 </Field>
                 <FieldSeparator className="bg-transparent text-sm text-muted-foreground *:data-[slot=field-separator-content]:bg-card">
@@ -89,8 +166,11 @@ const SignUpForm = () => {
                       Name*
                     </FieldLabel>
                     <Input
-                      id="text"
+                      id="name"
                       type="text"
+                      autoComplete="name"
+                      value={name}
+                      onChange={(event) => setName(event.target.value)}
                       placeholder="enter your name"
                       required
                       className="h-9 rounded-md dark:bg-background"
@@ -106,6 +186,9 @@ const SignUpForm = () => {
                     <Input
                       id="email"
                       type="email"
+                      autoComplete="email"
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
                       placeholder="example@shadcnspace.com"
                       required
                       className="h-9 rounded-md dark:bg-background"
@@ -122,6 +205,10 @@ const SignUpForm = () => {
                     <Input
                       id="password"
                       type="password"
+                      autoComplete="new-password"
+                      minLength={8}
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
                       placeholder="Enter your password"
                       required
                       className="h-9 rounded-md dark:bg-background"
@@ -133,17 +220,24 @@ const SignUpForm = () => {
                   <Button
                     type="submit"
                     size={"lg"}
+                    disabled={isSubmitting}
                     className="h-10 cursor-pointer rounded-lg hover:bg-primary/80"
                   >
-                    Sign up
+                    {isSubmitting ? "Creating account..." : "Sign up"}
                   </Button>
+                  {errorMessage ? (
+                    <FieldDescription className="text-center text-sm font-normal text-destructive">
+                      {errorMessage}
+                    </FieldDescription>
+                  ) : null}
                   <FieldDescription className="text-center text-sm font-normal text-muted-foreground">
                     Already have an account?{" "}
                     <Link
                       href="/login"
                       className="font-medium text-card-foreground no-underline!"
                     >
-Login                    </Link>
+                      Login{" "}
+                    </Link>
                   </FieldDescription>
                 </Field>
               </FieldGroup>

@@ -1,41 +1,36 @@
 import { betterAuth } from "better-auth";
-import {
-  dodopayments,
-  checkout,
-  portal,
-  webhooks,
-} from "@dodopayments/better-auth";
-import DodoPayments from "dodopayments";
+import { prismaAdapter } from "better-auth/adapters/prisma";
+import { prisma } from "@workspace/db";
 
-export const dodoPayments = new DodoPayments({
-  bearerToken: process.env.DODO_PAYMENTS_API_KEY!,
-  environment: "test_mode"
-});
+const socialProviders = {
+  ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
+    ? {
+        github: {
+          clientId: process.env.GITHUB_CLIENT_ID,
+          clientSecret: process.env.GITHUB_CLIENT_SECRET,
+        },
+      }
+    : {}),
+  ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+    ? {
+        google: {
+          clientId: process.env.GOOGLE_CLIENT_ID,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        },
+      }
+    : {}),
+};
 
 export const auth = betterAuth({
-  plugins: [
-    dodopayments({
-      client: dodoPayments,
-      createCustomerOnSignUp: true,
-      use: [
-        checkout({
-          products: [
-            {
-              productId: "pdt_xxxxxxxxxxxxxxxxxxxxx",
-              slug: "premium-plan",
-            },
-          ],
-          successUrl: "/dashboard/success",
-          authenticatedUsersOnly: true,
-        }),
-        portal(),
-        webhooks({
-          webhookKey: process.env.DODO_PAYMENTS_WEBHOOK_SECRET!,
-          onPayload: async (payload:any) => {
-            console.log("Received webhook:", payload.event_type);
-          },
-        }),
-      ],
-    }),
-  ],
+  database: prismaAdapter(prisma, {
+    provider: "postgresql", // or "mysql", "postgresql", ...etc
+  }),
+  emailAndPassword: {
+    enabled: true,
+    sendResetPassword: async ({ user, url }) => {
+      // Replace this with your email provider integration (Resend, Postmark, SES, etc.).
+      console.info(`Password reset requested for ${user.email}: ${url}`);
+    },
+  },
+  socialProviders,
 });

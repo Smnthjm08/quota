@@ -3,8 +3,6 @@
   "globalEnv": [
     "DATABASE_URL",
     "API_PORT",
-    "DODO_PAYMENTS_API_KEY",
-    "DODO_PAYMENTS_WEBHOOK_SECRET",
     "BETTER_AUTH_SECRET",
     "BETTER_AUTH_URL"
   ],

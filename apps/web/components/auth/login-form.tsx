@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@workspace/ui/components/button";
 import {
   Card,
@@ -17,8 +19,73 @@ import { Input } from "@workspace/ui/components/input";
 import { Checkbox } from "@workspace/ui/components/checkbox";
 import Logo from "../logo";
 import Link from "next/link";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { authClient } from "@workspace/auth/client";
 
 const LoginForm = () => {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeSocialProvider, setActiveSocialProvider] = useState<"google" | "github" | null>(
+    null,
+  );
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const handleSocialSignIn = async (provider: "google" | "github") => {
+    setErrorMessage(null);
+
+    await authClient.signIn.social(
+      {
+        provider,
+        callbackURL: "/dashboard",
+      },
+      {
+        onRequest: () => {
+          setActiveSocialProvider(provider);
+        },
+        onSuccess: () => {
+          setActiveSocialProvider(null);
+        },
+        onError: (ctx) => {
+          setActiveSocialProvider(null);
+          setErrorMessage(ctx.error.message || "Unable to continue with social login.");
+        },
+      },
+    );
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setErrorMessage(null);
+
+    await authClient.signIn.email(
+      {
+        email,
+        password,
+        callbackURL: "/dashboard",
+        rememberMe,
+      },
+      {
+        onRequest: () => {
+          setIsSubmitting(true);
+        },
+        onSuccess: () => {
+          setIsSubmitting(false);
+          router.push("/dashboard");
+          router.refresh();
+        },
+        onError: (ctx) => {
+          setIsSubmitting(false);
+          setErrorMessage(ctx.error.message || "Unable to sign in. Please try again.");
+        },
+      },
+    );
+  };
+
   return (
     <section className="relative flex min-h-screen items-center justify-center bg-foreground dark:bg-background">
       <div className="pointer-events-none absolute inset-0 right-0 hidden overflow-hidden md:block">
@@ -36,7 +103,7 @@ const LoginForm = () => {
             </div>
             <div className="flex flex-col gap-1">
               <CardTitle className="text-2xl font-medium text-card-foreground">
-                Welcome to Shadcn Space
+                Welcome to Quota
               </CardTitle>
               <CardDescription className="text-sm font-normal text-muted-foreground">
                 Login to your account now
@@ -44,41 +111,50 @@ const LoginForm = () => {
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <form>
+            <form onSubmit={handleSubmit}>
               <FieldGroup className="gap-6">
                 <Field className="grid gap-3 md:grid-cols-2 md:gap-6">
                   <Button
                     variant="outline"
                     type="button"
+                    onClick={() => handleSocialSignIn("google")}
+                    disabled={isSubmitting || activeSocialProvider !== null}
                     className="text-medium h-9 cursor-pointer gap-2 rounded-lg text-sm text-card-foreground dark:bg-background"
                   >
-                    <img
+                    <Image
                       src="https://images.shadcnspace.com/assets/svgs/icon-google.svg"
                       alt="google icon"
-                      className="h-4 w-4"
+                      width={16}
+                      height={16}
                     />
-                    Sign in with Google
+                    {activeSocialProvider === "google" ? "Redirecting..." : "Login with Google"}
                   </Button>
                   <Button
                     variant="outline"
                     type="button"
+                    onClick={() => handleSocialSignIn("github")}
+                    disabled={isSubmitting || activeSocialProvider !== null}
                     className="text-medium h-9 cursor-pointer gap-2 rounded-lg text-sm text-card-foreground dark:bg-background"
                   >
-                    <img
+                    <Image
                       src="https://images.shadcnspace.com/assets/svgs/icon-github.svg"
                       alt="github icon"
-                      className="h-4 w-4 dark:hidden"
+                      className="dark:hidden"
+                      width={16}
+                      height={16}
                     />
-                    <img
+                    <Image
                       src="https://images.shadcnspace.com/assets/svgs/icon-github-white.svg"
                       alt="github icon"
-                      className="hidden h-4 w-4 dark:block"
+                      className="hidden dark:block"
+                      width={16}
+                      height={16}
                     />
-                    Sign in with Github
+                    {activeSocialProvider === "github" ? "Redirecting..." : "Login with Github"}
                   </Button>
                 </Field>
                 <FieldSeparator className="bg-transparent text-sm text-muted-foreground *:data-[slot=field-separator-content]:bg-card">
-                  <span className="px-4">or sign in with</span>
+                  <span className="px-4">or Login with</span>
                 </FieldSeparator>
 
                 <div className="flex flex-col gap-4">
@@ -92,6 +168,9 @@ const LoginForm = () => {
                     <Input
                       id="email"
                       type="email"
+                      autoComplete="email"
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
                       placeholder="example@shadcnspace.com"
                       required
                       className="h-9 rounded-md dark:bg-background"
@@ -108,6 +187,9 @@ const LoginForm = () => {
                     <Input
                       id="password"
                       type="password"
+                      autoComplete="current-password"
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
                       placeholder="Enter your password"
                       required
                       className="h-9 rounded-md dark:bg-background"
@@ -118,12 +200,13 @@ const LoginForm = () => {
                 <Field orientation="horizontal" className="justify-between">
                   <div className="flex items-center gap-3">
                     <Checkbox
-                      id="terms"
-                      defaultChecked
+                      id="remember-me"
+                      checked={rememberMe}
+                      onCheckedChange={(checked) => setRememberMe(Boolean(checked))}
                       className="cursor-pointer"
                     />
                     <FieldLabel
-                      htmlFor="terms"
+                      htmlFor="remember-me"
                       className="cursor-pointer text-sm font-normal text-primary"
                     >
                       Remember this device
@@ -141,10 +224,16 @@ const LoginForm = () => {
                   <Button
                     type="submit"
                     size={"lg"}
+                    disabled={isSubmitting}
                     className="h-10 cursor-pointer rounded-lg"
                   >
-                    Sign in
+                    {isSubmitting ? "Signing in..." : "Login"}
                   </Button>
+                  {errorMessage ? (
+                    <FieldDescription className="text-center text-sm font-normal text-destructive">
+                      {errorMessage}
+                    </FieldDescription>
+                  ) : null}
                   <FieldDescription className="text-center text-sm font-normal text-muted-foreground">
                     Don&apos;t have an account?{" "}
                     <Link
