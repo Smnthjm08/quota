@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@workspace/ui/components/button";
 import {
   Card,
@@ -6,11 +8,56 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card";
-import { Field, FieldGroup, FieldLabel } from "@workspace/ui/components/field";
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "@workspace/ui/components/field";
 import { Input } from "@workspace/ui/components/input";
 import Logo from "../logo";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { authClient } from "@workspace/auth/client";
 
-const ForgotPassword = () => {
+const ForgotPasswordForm = () => {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    await authClient.requestPasswordReset(
+      {
+        email,
+        redirectTo: `${window.location.origin}/reset-password`,
+      },
+      {
+        onRequest: () => {
+          setIsSubmitting(true);
+        },
+        onSuccess: () => {
+          setIsSubmitting(false);
+          setSuccessMessage(
+            "If this email exists, a reset link has been sent."
+          );
+        },
+        onError: (ctx: { error: { message?: string } }) => {
+          setIsSubmitting(false);
+          setErrorMessage(
+            ctx.error.message ||
+              "Unable to start password reset. Please try again."
+          );
+        },
+      }
+    );
+  };
+
   return (
     <section className="relative flex h-screen items-center justify-center bg-foreground py-8 sm:py-16 lg:py-20 dark:bg-background">
       <div className="pointer-events-none absolute inset-0 right-0 hidden overflow-hidden md:block">
@@ -36,7 +83,7 @@ const ForgotPassword = () => {
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <form>
+            <form onSubmit={handleSubmit}>
               <FieldGroup className="gap-6">
                 <div className="flex flex-col gap-4">
                   <Field className="gap-1.5">
@@ -49,6 +96,9 @@ const ForgotPassword = () => {
                     <Input
                       id="email"
                       type="email"
+                      autoComplete="email"
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
                       placeholder="example@shadcnspace.com"
                       required
                       className="h-9 dark:bg-background"
@@ -59,14 +109,26 @@ const ForgotPassword = () => {
                   <Button
                     type="submit"
                     size={"lg"}
+                    disabled={isSubmitting}
                     className="h-10 cursor-pointer rounded-xl"
                   >
-                    Forgot password
+                    {isSubmitting ? "Sending reset link..." : "Forgot password"}
                   </Button>
+                  {errorMessage ? (
+                    <FieldDescription className="text-center text-sm font-normal text-destructive">
+                      {errorMessage}
+                    </FieldDescription>
+                  ) : null}
+                  {successMessage ? (
+                    <FieldDescription className="text-center text-sm font-normal text-emerald-600 dark:text-emerald-400">
+                      {successMessage}
+                    </FieldDescription>
+                  ) : null}
                   <Button
-                    type="submit"
+                    type="button"
                     size={"lg"}
                     variant={"ghost"}
+                    onClick={() => router.push("/login")}
                     className="h-10 cursor-pointer rounded-xl hover:bg-primary/10"
                   >
                     Back to Login
@@ -81,4 +143,4 @@ const ForgotPassword = () => {
   );
 };
 
-export default ForgotPassword;
+export default ForgotPasswordForm;

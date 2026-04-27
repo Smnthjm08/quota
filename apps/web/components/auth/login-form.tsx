@@ -30,9 +30,9 @@ const LoginForm = () => {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeSocialProvider, setActiveSocialProvider] = useState<"google" | "github" | null>(
-    null,
-  );
+  const [activeSocialProvider, setActiveSocialProvider] = useState<
+    "google" | "github" | null
+  >(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSocialSignIn = async (provider: "google" | "github") => {
@@ -41,7 +41,7 @@ const LoginForm = () => {
     await authClient.signIn.social(
       {
         provider,
-        callbackURL: "/dashboard",
+        callbackURL: "/onboarding",
       },
       {
         onRequest: () => {
@@ -52,9 +52,11 @@ const LoginForm = () => {
         },
         onError: (ctx) => {
           setActiveSocialProvider(null);
-          setErrorMessage(ctx.error.message || "Unable to continue with social login.");
+          setErrorMessage(
+            ctx.error.message || "Unable to continue with social login."
+          );
         },
-      },
+      }
     );
   };
 
@@ -66,7 +68,7 @@ const LoginForm = () => {
       {
         email,
         password,
-        callbackURL: "/dashboard",
+        callbackURL: "/onboarding",
         rememberMe,
       },
       {
@@ -80,9 +82,11 @@ const LoginForm = () => {
         },
         onError: (ctx) => {
           setIsSubmitting(false);
-          setErrorMessage(ctx.error.message || "Unable to sign in. Please try again.");
+          setErrorMessage(
+            ctx.error.message || "Unable to sign in. Please try again."
+          );
         },
-      },
+      }
     );
   };
 
@@ -127,7 +131,9 @@ const LoginForm = () => {
                       width={16}
                       height={16}
                     />
-                    {activeSocialProvider === "google" ? "Redirecting..." : "Login with Google"}
+                    {activeSocialProvider === "google"
+                      ? "Redirecting..."
+                      : "Login with Google"}
                   </Button>
                   <Button
                     variant="outline"
@@ -150,7 +156,9 @@ const LoginForm = () => {
                       width={16}
                       height={16}
                     />
-                    {activeSocialProvider === "github" ? "Redirecting..." : "Login with Github"}
+                    {activeSocialProvider === "github"
+                      ? "Redirecting..."
+                      : "Login with Github"}
                   </Button>
                 </Field>
                 <FieldSeparator className="bg-transparent text-sm text-muted-foreground *:data-[slot=field-separator-content]:bg-card">
@@ -202,7 +210,9 @@ const LoginForm = () => {
                     <Checkbox
                       id="remember-me"
                       checked={rememberMe}
-                      onCheckedChange={(checked) => setRememberMe(Boolean(checked))}
+                      onCheckedChange={(checked) =>
+                        setRememberMe(Boolean(checked))
+                      }
                       className="cursor-pointer"
                     />
                     <FieldLabel

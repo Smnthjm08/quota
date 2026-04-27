@@ -29,9 +29,9 @@ const SignUpForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeSocialProvider, setActiveSocialProvider] = useState<"google" | "github" | null>(
-    null,
-  );
+  const [activeSocialProvider, setActiveSocialProvider] = useState<
+    "google" | "github" | null
+  >(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSocialSignIn = async (provider: "google" | "github") => {
@@ -40,7 +40,7 @@ const SignUpForm = () => {
     await authClient.signIn.social(
       {
         provider,
-        callbackURL: "/dashboard",
+        callbackURL: "/onboarding",
       },
       {
         onRequest: () => {
@@ -51,9 +51,11 @@ const SignUpForm = () => {
         },
         onError: (ctx) => {
           setActiveSocialProvider(null);
-          setErrorMessage(ctx.error.message || "Unable to continue with social sign up.");
+          setErrorMessage(
+            ctx.error.message || "Unable to continue with social sign up."
+          );
         },
-      },
+      }
     );
   };
 
@@ -67,7 +69,7 @@ const SignUpForm = () => {
         password,
         name,
         image: undefined,
-        callbackURL: "/dashboard",
+        callbackURL: "/onboarding",
       },
       {
         onRequest: () => {
@@ -80,9 +82,11 @@ const SignUpForm = () => {
         },
         onError: (ctx) => {
           setIsSubmitting(false);
-          setErrorMessage(ctx.error.message || "Unable to create account. Please try again.");
+          setErrorMessage(
+            ctx.error.message || "Unable to create account. Please try again."
+          );
         },
-      },
+      }
     );
   };
 
@@ -127,7 +131,9 @@ const SignUpForm = () => {
                       width={16}
                       height={16}
                     />
-                    {activeSocialProvider === "google" ? "Redirecting..." : "Sign up with Google"}
+                    {activeSocialProvider === "google"
+                      ? "Redirecting..."
+                      : "Sign up with Google"}
                   </Button>
                   <Button
                     variant="outline"
@@ -150,7 +156,9 @@ const SignUpForm = () => {
                       height={16}
                       className="hidden dark:block"
                     />
-                    {activeSocialProvider === "github" ? "Redirecting..." : "Sign up with Github"}
+                    {activeSocialProvider === "github"
+                      ? "Redirecting..."
+                      : "Sign up with Github"}
                   </Button>
                 </Field>
                 <FieldSeparator className="bg-transparent text-sm text-muted-foreground *:data-[slot=field-separator-content]:bg-card">
