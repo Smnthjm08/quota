@@ -1,17 +1,24 @@
 "use client";
 
-import { Button } from "@workspace/ui/components//button";
-import { Field, FieldDescription, FieldLabel } from "@workspace/ui/components//field";
+import { Button } from "@workspace/ui/components/button";
+import {
+  Field,
+  FieldDescription,
+  FieldLabel,
+} from "@workspace/ui/components/field";
 import { Input } from "@workspace/ui/components//input";
-import { RadioGroup, RadioGroupItem } from "@workspace/ui/components//radio-group";
+import {
+  RadioGroup,
+  RadioGroupItem,
+} from "@workspace/ui/components/radio-group";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@workspace/ui/components//select";
-import { Separator } from "@workspace/ui/components//separator";
+} from "@workspace/ui/components/select";
+import { Separator } from "@workspace/ui/components/separator";
 import { useState } from "react";
 
 const workspaces = [
@@ -41,10 +48,10 @@ export default function OnboardingForm() {
   return (
     <div className="flex items-center justify-center p-10">
       <div className="sm:mx-auto sm:max-w-2xl">
-        <h3 className="text-balance text-lg font-semibold text-foreground">
+        <h3 className="text-lg font-semibold text-balance text-foreground">
           Apply for early access
         </h3>
-        <p className="text-pretty mt-1 text-sm leading-6 text-muted-foreground">
+        <p className="mt-1 text-sm leading-6 text-pretty text-muted-foreground">
           Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam
           nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat.
         </p>
@@ -122,12 +129,12 @@ export default function OnboardingForm() {
             </div>
             <Separator className="col-span-full my-4" />
             <div className="col-span-full">
-              <FieldLabel className="font-semibold text-foreground block mb-4">
+              <FieldLabel className="mb-4 block font-semibold text-foreground">
                 Select a workspace package
               </FieldLabel>
 
               <RadioGroup
-                className="grid grid-cols-1 sm:grid-cols-3 gap-5"
+                className="grid grid-cols-1 gap-5 sm:grid-cols-3"
                 defaultValue={selectedWorkspace?.id.toString()}
                 onValueChange={(value) =>
                   setSelectedWorkspace(
@@ -140,7 +147,7 @@ export default function OnboardingForm() {
                 {workspaces.map((item) => (
                   <div
                     key={item.id.toString()}
-                    className="border-input has-data-[state=checked]:border-ring relative flex flex-col gap-2 rounded-md border p-4 shadow-xs outline-none"
+                    className="relative flex flex-col gap-2 rounded-md border border-input p-4 shadow-xs outline-none has-data-[state=checked]:border-ring"
                   >
                     <div className="flex justify-between">
                       <RadioGroupItem
@@ -156,8 +163,8 @@ export default function OnboardingForm() {
                         {item.title}
                       </FieldLabel>
                     </div>
-                    <div className="flex flex-col h-full justify-between">
-                      <p className="text-pretty mt-1 text-sm text-muted-foreground">
+                    <div className="flex h-full flex-col justify-between">
+                      <p className="mt-1 text-sm text-pretty text-muted-foreground">
                         {item.description}
                       </p>
                       <span className="mt-4 block text-sm font-medium text-foreground">

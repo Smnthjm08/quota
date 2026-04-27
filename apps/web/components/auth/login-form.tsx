@@ -1,98 +1,167 @@
 import { Button } from "@workspace/ui/components/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui/components/card";
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldSeparator,
+} from "@workspace/ui/components/field";
 import { Input } from "@workspace/ui/components/input";
-import { Label } from "@workspace/ui/components/label";
-import { Separator } from "@workspace/ui/components/separator";
-import { JSX, SVGProps } from "react";
+import { Checkbox } from "@workspace/ui/components/checkbox";
+import Logo from "../logo";
+import Link from "next/link";
 
-const GoogleIcon = (
-  props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>
-) => (
-  <svg fill="currentColor" viewBox="0 0 24 24" {...props}>
-    <path d="M3.06364 7.50914C4.70909 4.24092 8.09084 2 12 2C14.6954 2 16.959 2.99095 18.6909 4.60455L15.8227 7.47274C14.7864 6.48185 13.4681 5.97727 12 5.97727C9.39542 5.97727 7.19084 7.73637 6.40455 10.1C6.2045 10.7 6.09086 11.3409 6.09086 12C6.09086 12.6591 6.2045 13.3 6.40455 13.9C7.19084 16.2636 9.39542 18.0227 12 18.0227C13.3454 18.0227 14.4909 17.6682 15.3864 17.0682C16.4454 16.3591 17.15 15.3 17.3818 14.05H12V10.1818H21.4181C21.5364 10.8363 21.6 11.5182 21.6 12.2273C21.6 15.2727 20.5091 17.8363 18.6181 19.5773C16.9636 21.1046 14.7 22 12 22C8.09084 22 4.70909 19.7591 3.06364 16.4909C2.38638 15.1409 2 13.6136 2 12C2 10.3864 2.38638 8.85911 3.06364 7.50914Z" />
-  </svg>
-);
-
-export default function LoginForm() {
+const LoginForm = () => {
   return (
-    <div className="flex items-center justify-center min-h-dvh">
-      <div className="flex flex-1 flex-col justify-center px-4 py-10 lg:px-6">
-        <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-          <h2 className="text-balance text-center text-xl font-semibold text-foreground">
-            Log in or create account
-          </h2>
-          <form action="#" method="post" className="mt-6 space-y-4">
-            <div>
-              <Label
-                htmlFor="email-login-02"
-                className="text-sm font-medium text-foreground dark:text-foreground"
-              >
-                Email
-              </Label>
-              <Input
-                type="email"
-                id="email-login-02"
-                name="email-login-02"
-                autoComplete="email"
-                placeholder="ephraim@blocks.so"
-                className="mt-2"
-              />
-            </div>
-            <div>
-              <Label
-                htmlFor="password-login-02"
-                className="text-sm font-medium text-foreground dark:text-foreground"
-              >
-                Password
-              </Label>
-              <Input
-                type="password"
-                id="password-login-02"
-                name="password-login-02"
-                autoComplete="password"
-                placeholder="**************"
-                className="mt-2"
-              />
-            </div>
-            <Button type="submit" className="mt-4 w-full py-2 font-medium">
-              Sign in
-            </Button>
-          </form>
-
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <Separator className="w-full" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                or with
-              </span>
-            </div>
-          </div>
-
-          <Button
-            variant="outline"
-            className="flex w-full items-center justify-center space-x-2 py-2"
-            asChild
-          >
-            <a href="#">
-              <GoogleIcon className="size-5" aria-hidden={true} />
-              <span className="text-sm font-medium">Sign in with Google</span>
-            </a>
-          </Button>
-
-          <p className="text-pretty mt-4 text-xs text-muted-foreground dark:text-muted-foreground">
-            By signing in, you agree to our{" "}
-            <a href="#" className="underline underline-offset-4">
-              terms of service
-            </a>{" "}
-            and{" "}
-            <a href="#" className="underline underline-offset-4">
-              privacy policy
-            </a>
-            .
-          </p>
-        </div>
+    <section className="relative flex min-h-screen items-center justify-center bg-foreground dark:bg-background">
+      <div className="pointer-events-none absolute inset-0 right-0 hidden overflow-hidden md:block">
+        {/* Outer big circle */}
+        <div className="absolute top-0 left-1/1 h-650 w-650 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/10" />
+        {/* Inner circle */}
+        <div className="absolute top-0 left-1/1 h-175 w-175 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground dark:bg-background" />
       </div>
-    </div>
+
+      <div className="mx-auto w-full max-w-lg px-4 py-10 sm:px-0 md:py-20">
+        <Card className="relative max-w-lg gap-6 px-6 py-8 sm:p-12">
+          <CardHeader className="gap-6 p-0 text-center">
+            <div className="mx-auto">
+              <Logo />
+            </div>
+            <div className="flex flex-col gap-1">
+              <CardTitle className="text-2xl font-medium text-card-foreground">
+                Welcome to Shadcn Space
+              </CardTitle>
+              <CardDescription className="text-sm font-normal text-muted-foreground">
+                Login to your account now
+              </CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <form>
+              <FieldGroup className="gap-6">
+                <Field className="grid gap-3 md:grid-cols-2 md:gap-6">
+                  <Button
+                    variant="outline"
+                    type="button"
+                    className="text-medium h-9 cursor-pointer gap-2 rounded-lg text-sm text-card-foreground dark:bg-background"
+                  >
+                    <img
+                      src="https://images.shadcnspace.com/assets/svgs/icon-google.svg"
+                      alt="google icon"
+                      className="h-4 w-4"
+                    />
+                    Sign in with Google
+                  </Button>
+                  <Button
+                    variant="outline"
+                    type="button"
+                    className="text-medium h-9 cursor-pointer gap-2 rounded-lg text-sm text-card-foreground dark:bg-background"
+                  >
+                    <img
+                      src="https://images.shadcnspace.com/assets/svgs/icon-github.svg"
+                      alt="github icon"
+                      className="h-4 w-4 dark:hidden"
+                    />
+                    <img
+                      src="https://images.shadcnspace.com/assets/svgs/icon-github-white.svg"
+                      alt="github icon"
+                      className="hidden h-4 w-4 dark:block"
+                    />
+                    Sign in with Github
+                  </Button>
+                </Field>
+                <FieldSeparator className="bg-transparent text-sm text-muted-foreground *:data-[slot=field-separator-content]:bg-card">
+                  <span className="px-4">or sign in with</span>
+                </FieldSeparator>
+
+                <div className="flex flex-col gap-4">
+                  <Field className="gap-1.5">
+                    <FieldLabel
+                      htmlFor="email"
+                      className="text-sm font-normal text-muted-foreground"
+                    >
+                      Email*
+                    </FieldLabel>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="example@shadcnspace.com"
+                      required
+                      className="h-9 rounded-md dark:bg-background"
+                    />
+                  </Field>
+                  <Field className="gap-1.5">
+                    <FieldLabel
+                      htmlFor="password"
+                      className="text-sm font-normal text-muted-foreground"
+                    >
+                      Password*
+                    </FieldLabel>
+
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="Enter your password"
+                      required
+                      className="h-9 rounded-md dark:bg-background"
+                    />
+                  </Field>
+                </div>
+
+                <Field orientation="horizontal" className="justify-between">
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      id="terms"
+                      defaultChecked
+                      className="cursor-pointer"
+                    />
+                    <FieldLabel
+                      htmlFor="terms"
+                      className="cursor-pointer text-sm font-normal text-primary"
+                    >
+                      Remember this device
+                    </FieldLabel>
+                  </div>
+                  <Link
+                    href="/forgot-password"
+                    className="text-end text-sm font-medium text-card-foreground"
+                  >
+                    Forgot password?
+                  </Link>
+                </Field>
+
+                <Field className="gap-4">
+                  <Button
+                    type="submit"
+                    size={"lg"}
+                    className="h-10 cursor-pointer rounded-lg"
+                  >
+                    Sign in
+                  </Button>
+                  <FieldDescription className="text-center text-sm font-normal text-muted-foreground">
+                    Don&apos;t have an account?{" "}
+                    <Link
+                      href="/signup"
+                      className="font-medium text-card-foreground no-underline!"
+                    >
+                      Create an account
+                    </Link>
+                  </FieldDescription>
+                </Field>
+              </FieldGroup>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </section>
   );
-}
+};
+
+export default LoginForm;
