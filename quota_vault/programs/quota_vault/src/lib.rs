@@ -5,9 +5,9 @@ pub mod error;
 pub mod instructions;
 pub mod state;
 
-pub use instructions::*;
+use instructions::*;
 
-declare_id!("HZ9sQe6snr7g1FrnKftH6xijKWCx3JdJF9XRy1JQuHGC");
+declare_id!("8ZZtvrepsqb1vHvigFJGJZMf8vPVCBRhPQeVui7FtxnM");
 
 #[program]
 pub mod quota_vault {

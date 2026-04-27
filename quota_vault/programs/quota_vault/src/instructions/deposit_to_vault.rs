@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{transfer, Token, TokenAccount, Transfer};
+// use anchor_spl::token::{transfer, Token, TokenAccount, Transfer};
+use anchor_spl::token_interface::{transfer, TokenAccount, TokenInterface, Transfer};
 
 use crate::{constants::VAULT_SEED, error::QuotaError, state::vault::VaultAccount};
 
@@ -22,12 +23,15 @@ pub struct Deposit<'info> {
     constraint = from_token_account.owner == owner.key(),
     constraint = from_token_account.mint == vault_token_account.mint
     )]
-    pub from_token_account: Account<'info, TokenAccount>,
+    // pub from_token_account: Account<'info, TokenAccount>,
+    pub from_token_account: InterfaceAccount<'info, TokenAccount>,
 
     #[account(mut, constraint = vault_token_account.owner == vault.key())]
-    pub vault_token_account: Account<'info, TokenAccount>,
+    // pub vault_token_account: Account<'info, TokenAccount>,
+    pub vault_token_account: InterfaceAccount<'info, TokenAccount>,
 
-    pub token_program: Program<'info, Token>,
+    // pub token_program: Program<'info, Token>,
+    pub token_program: Interface<'info, TokenInterface>,
 }
 
 pub fn deposit_to_vault_handler(ctx: Context<Deposit>, amount: u64) -> Result<()> {
