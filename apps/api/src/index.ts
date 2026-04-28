@@ -1,12 +1,11 @@
 import express from "express";
 import dotenv from "dotenv";
-import DodoPayments from 'dodopayments';
+import DodoPayments from "dodopayments";
 import { fileURLToPath } from "node:url";
 import helmet from "helmet";
 import cors from "cors";
-import {prisma} from "@workspace/db"
+import { prisma } from "@workspace/db";
 import authMiddleware from "./auth.middleware.ts";
-
 
 const envPath = fileURLToPath(new URL("../../../.env", import.meta.url));
 
@@ -21,7 +20,8 @@ if (!dodoApiKey) {
 }
 
 const rawMode = process.env.DODO_PAYMENTS_ENVIRONMENT;
-const mode: 'test_mode' | 'live_mode' = rawMode === 'live_mode' ? 'live_mode' : 'test_mode';
+const mode: "test_mode" | "live_mode" =
+  rawMode === "live_mode" ? "live_mode" : "test_mode";
 const masked = `${dodoApiKey.slice(0, 4)}...${dodoApiKey.slice(-4)}`;
 console.info(
   `DodoPayments init — environment=${mode}, token=${masked}, tokenLength=${dodoApiKey.length}`
@@ -33,13 +33,19 @@ export const dodoClient = new DodoPayments({
 });
 
 const app: express.Express = express();
+const allowedOrigins = (process.env.CORS_ORIGIN ?? "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 // Basic middleware
 app.use(express.json());
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || true,
+    origin: allowedOrigins.length > 0 ? allowedOrigins : true,
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
@@ -51,22 +57,27 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
-
 app.post("/api/v1/onboarding/company", async (req, res) => {
   // Handle company onboarding logic here
   try {
     // const company = req.body;
-    const {name, size, website} = req.body;
-    console.log("Received company onboarding data:", {name, size, website});
+    const { name, size, website } = req.body;
+    console.log("Received company onboarding data:", { name, size, website });
     const company = await prisma.company.create({
       data: {
         name,
         // size,
         website,
-        ownerId: "clh8v1y9c0000l6m9g5zq2n1" // TODO: get user id from auth context
-      }
-    })
-    res.status(201).json({message: "Company registered successfully", data: company, error: null});
+        ownerId: "clh8v1y9c0000l6m9g5zq2n1", // TODO: get user id from auth context
+      },
+    });
+    res
+      .status(201)
+      .json({
+        message: "Company registered successfully",
+        data: company,
+        error: null,
+      });
   } catch (error) {
     console.log("Error during company onboarding:", error);
     res.status(500).json({ error: "Failed to onboard company" });
@@ -76,8 +87,6 @@ app.post("/api/v1/onboarding/company", async (req, res) => {
 app.post("/api/v1/onboarding/plan", async (req, res) => {
   // Handle plan onboarding logic here
 });
-
-
 
 app.get("/sub", async (req, res) => {
   try {
@@ -97,9 +106,7 @@ async function checkout() {
   }
 
   const session = await dodoClient.checkoutSessions.create({
-    product_cart: [
-      { product_id: productId, quantity: 1 },
-    ],
+    product_cart: [{ product_id: productId, quantity: 1 }],
     // Optional: configure trials for subscription products
     subscription_data: { trial_period_days: 0 },
     customer: {
@@ -120,7 +127,12 @@ app.listen(PORT, () => {
 });
 
 app.use(
-  (err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  (
+    err: any,
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction
+  ) => {
     console.error("Unhandled error:", err);
     res.status(500).json({ error: "Internal server error" });
   }

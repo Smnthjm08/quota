@@ -76,13 +76,36 @@ model Verification {
   @@map("verification")
 }
 
+enum CompanyStatus {
+  PENDING
+  ACTIVE
+  ON_HOLD
+  DISABLED
+}
+
+enum Plan {
+  STARTER
+  TEAM
+}
+
 model Company {
-  id      String  @id @default(cuid())
+  id String @id @default(cuid())
+
   name    String
+  size    String?
   website String?
+
+  status CompanyStatus @default(PENDING)
+  plan   Plan?
+
+  vaultPda          String? @unique
+  ownerWalletPubkey String?
 
   ownerId String @unique
   owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("company")
 }
