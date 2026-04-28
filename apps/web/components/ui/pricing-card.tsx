@@ -409,7 +409,7 @@ export function PricingCard({
                           : "bg-muted text-foreground border-border border",
                       )}
                     >
-                      {getPlanIcon(plan.id)}
+                      {getPlanIcon(plan.key ?? plan.id)}
                     </div>
                   </div>
 

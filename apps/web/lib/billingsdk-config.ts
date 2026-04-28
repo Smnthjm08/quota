@@ -1,5 +1,6 @@
 export interface Plan {
   id: string;
+  key?: string;
   title: string;
   description: string;
   highlight?: boolean;

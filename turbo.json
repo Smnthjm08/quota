@@ -49,6 +49,13 @@
         "^typecheck"
       ]
     },
+    "start": {
+      "cache": false,
+      "persistent": true,
+      "dependsOn": [
+        "^build"
+      ]
+    },
     "dev": {
       "cache": false,
       "persistent": true,

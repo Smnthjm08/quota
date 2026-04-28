@@ -8,6 +8,23 @@ export interface SessionUser {
   image?: string | null;
 }
 
+export interface SessionCompany {
+  id: string;
+  name: string;
+  size?: string | null;
+  website?: string | null;
+  status: "PENDING" | "ACTIVE" | "ON_HOLD" | "DISABLED";
+  planId?: number | null;
+  vaultPda?: string | null;
+  ownerWalletPubkey?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  plan?: {
+    id: number;
+    name: string;
+  } | null;
+}
+
 export interface SessionData {
   id: string;
   createdAt: Date;
@@ -22,4 +39,5 @@ export interface SessionData {
 export interface AuthSession {
   session: SessionData;
   user: SessionUser;
+  company: SessionCompany | null;
 }

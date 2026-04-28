@@ -90,7 +90,8 @@ function mapPlanRecordToPricingPlan(plan: PlanRecord): PricingPlan {
   const title = formatPlanTitle(plan.key);
 
   return {
-    id: plan.key,
+    id: String(plan.id),
+    key: plan.key,
     title,
     description: buildPlanDescription(plan),
     currency: getCurrencySymbol(plan.currency),
@@ -158,7 +159,7 @@ export function OnboardingPlanPricingCard() {
     return () => window.clearTimeout(timer);
   }, []);
 
-  const handlePlanSelect = async (planId: string) => {
+  const handlePlanSelect = async (planId: string | number) => {
     if (isSubmitting) {
       return;
     }
@@ -167,9 +168,13 @@ export function OnboardingPlanPricingCard() {
     setErrorMessage(null);
 
     try {
-      await axiosInstance.post("/api/v1/onboarding/plan", {
-        planId,
-      });
+      const body: { planId: string | number } = { planId };
+
+      if (typeof planId === "string" && /^\d+$/.test(planId)) {
+        body.planId = Number(planId);
+      }
+
+      await axiosInstance.post("/api/v1/onboarding/plan", body);
 
       router.push("/onboarding/wallet");
     } catch (error) {
@@ -299,7 +304,7 @@ export function OnboardingPlanPricingCard() {
         subtitle="Simple Pricing"
         onPlanSelect={handlePlanSelect}
         size="medium"
-        className="w-full"
+        className="w-full px-4"
         showBillingToggle={false}
         billingToggleLabels={{
           monthly: "Monthly",

@@ -1,5 +1,6 @@
-import { betterAuth } from "better-auth";
+import { betterAuth, type Auth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import { customSession } from "better-auth/plugins/custom-session";
 import { prisma } from "@workspace/db";
 import { sendEmail } from "./email.ts";
 
@@ -27,7 +28,7 @@ const socialProviders = {
     : {}),
 };
 
-export const auth = betterAuth({
+const authConfig: Parameters<typeof betterAuth>[0] = {
   database: prismaAdapter(prisma, {
     provider: "postgresql", // or "mysql", "postgresql", ...etc
   }),
@@ -48,6 +49,39 @@ export const auth = betterAuth({
       });
     },
   },
+  plugins: [
+    customSession(async ({ user, session }) => {
+      const company = await prisma.company.findUnique({
+        where: {
+          ownerId: user.id,
+        },
+        select: {
+          id: true,
+          name: true,
+          size: true,
+          website: true,
+          status: true,
+          planId: true,
+          vaultPda: true,
+          ownerWalletPubkey: true,
+          createdAt: true,
+          updatedAt: true,
+          plan: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      });
+
+      return {
+        session,
+        user,
+        company,
+      };
+    }),
+  ],
   advanced: cookieDomain
     ? {
         crossSubDomainCookies: {
@@ -57,4 +91,6 @@ export const auth = betterAuth({
       }
     : undefined,
   socialProviders,
-});
+} satisfies Parameters<typeof betterAuth>[0];
+
+export const auth: Auth<typeof authConfig> = betterAuth(authConfig);

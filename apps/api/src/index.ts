@@ -1,17 +1,17 @@
 import express from "express";
 import dotenv from "dotenv";
-import DodoPayments from "dodopayments";
 import { fileURLToPath } from "node:url";
 import helmet from "helmet";
 import cors from "cors";
 import { prisma } from "@workspace/db";
 import authMiddleware from "./auth.middleware.ts";
+import DodoPayments from "dodopayments";
 
 const envPath = fileURLToPath(new URL("../../../.env", import.meta.url));
 
 dotenv.config({ path: envPath, override: false });
 
-const dodoApiKey = process.env.DODO_PAYMENTS_API_KEY;
+export const dodoApiKey = process.env.DODO_PAYMENTS_API_KEY;
 
 if (!dodoApiKey) {
   throw new Error(
@@ -20,7 +20,8 @@ if (!dodoApiKey) {
 }
 
 const rawMode = process.env.DODO_PAYMENTS_ENVIRONMENT;
-const mode: "test_mode" | "live_mode" =
+
+export const mode: "test_mode" | "live_mode" =
   rawMode === "live_mode" ? "live_mode" : "test_mode";
 const masked = `${dodoApiKey.slice(0, 4)}...${dodoApiKey.slice(-4)}`;
 console.info(
@@ -85,51 +86,99 @@ app.post("/api/v1/onboarding/company", authMiddleware, async (req, res) => {
 });
 
 app.post("/api/v1/onboarding/plan", async (req, res) => {
-  // Handle plan onboarding logic here
+  try {
+    const { planId } = req.body;
+
+    const plan = await prisma.plan.findUnique({
+      where: {
+        id: planId,
+      },
+    });
+
+    if (!plan || !req?.company) {
+      return res.status(400).json({ message: "Plan does not exists" });
+    }
+
+    const checkout = dodoClient.checkoutSessions.create({
+      product_cart: [{ product_id: plan.dodoProductId, quantity: 1 }],
+      allowed_payment_method_types: [
+        "credit",
+        "debit",
+        "upi_collect",
+        "upi_intent",
+        "crypto_currency",
+      ],
+      metadata: { companyId: req?.company?.id, plan: plan.id.toLocaleString() },
+      return_url: "https://localhost:3000/onboarding/plan/success",
+    });
+
+    console.log("checkout", checkout);
+
+    res
+      .status(200)
+      .json({
+        message: "Payment Checkout Session Created",
+        data: checkout,
+        error: null,
+      });
+
+    // const subscription: SubscriptionCreateInput = prisma.subscription.create({
+    //   data: {
+    //     plan: {
+    //       connect: {
+    //         id: plan.id,
+    //       },
+    //     },
+    //     company: {
+    //       connect: {
+    //         id: req.company?.id,
+    //       },
+    //     },
+    //     status: "INCOMPLETE",
+    //   },
+    // });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to create Dodo checkout session" });
+  }
 });
 
-app.get("/api/v1/onboarding/plan", async (req, res)=>{
+app.get("/api/v1/onboarding/plan", async (req, res) => {
   try {
     const plans = await prisma.plan.findMany();
-    return res.status(200).json({message: "Pricing plans fetched successfully", data: plans, error: null})
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to create Dodo checkout session" });
-  }
-})
-
-app.get("/sub", async (req, res) => {
-  try {
-    const checkoutUrl = await checkout();
-    res.json({ checkoutUrl });
+    return res.status(200).json({
+      message: "Pricing plans fetched successfully",
+      data: plans,
+      error: null,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to create Dodo checkout session" });
   }
 });
 
-async function checkout() {
-  const productId = process.env.DODO_TEAM_PRODUCT_ID;
+// async function checkout() {
+//   const productId = process.env.DODO_TEAM_PRODUCT_ID;
 
-  if (!productId) {
-    throw new Error("Missing DODO_TEAM_PRODUCT_ID in environment");
-  }
+//   if (!productId) {
+//     throw new Error("Missing DODO_TEAM_PRODUCT_ID in environment");
+//   }
 
-  const session = await dodoClient.checkoutSessions.create({
-    product_cart: [{ product_id: productId, quantity: 1 }],
-    allowed_payment_method_types: ["crypto_currency"],
-    // Optional: configure trials for subscription products
-    subscription_data: { trial_period_days: 0 },
-    customer: {
-      email: "sub@example.com",
-      name: "Jane Doe",
-    },
-    return_url: "https://localhost:3000/success",
-  });
+//   const session = await dodoClient.checkoutSessions.create({
+//     product_cart: [{ product_id: productId, quantity: 1 }],
+//     allowed_payment_method_types: ["crypto_currency"],
+//     // Optional: configure trials for subscription products
+//     subscription_data: { trial_period_days: 0 },
+//     customer: {
+//       email: "sub@example.com",
+//       name: "Jane Doe",
+//     },
+//     return_url: "https://localhost:3000/success",
+//   });
 
-  console.log(session.checkout_url);
-  return session.checkout_url;
-}
+//   console.log(session.checkout_url);
+//   return session.checkout_url;
+// }
 
 const PORT = Number(process.env.API_PORT || process.env.PORT || 4000);
 

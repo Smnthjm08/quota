@@ -2,9 +2,20 @@ import { NextRequest } from "next/server";
 import { auth } from "@workspace/auth/auth";
 import { prisma } from "@workspace/db";
 
+type OnboardingSession = {
+  user: {
+    id: string;
+  };
+  company?: {
+    planId?: number | null;
+  } | null;
+} | null;
+
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: request.headers });
+    const session = (await auth.api.getSession({
+      headers: request.headers,
+    })) as OnboardingSession;
 
     if (!session?.user) {
       return new Response(JSON.stringify({ route: "/login" }), {
@@ -13,10 +24,10 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const company = await prisma.company.findUnique({
+    const company = session.company ?? (await prisma.company.findUnique({
       where: { ownerId: session.user.id },
-      select: { plan: true },
-    });
+      select: { planId: true },
+    }));
 
     if (!company) {
       return new Response(JSON.stringify({ route: "/onboarding/company" }), {
@@ -25,7 +36,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    if (!company.plan) {
+    if (!company.planId) {
       return new Response(JSON.stringify({ route: "/onboarding/plan" }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
