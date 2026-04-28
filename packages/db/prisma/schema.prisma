@@ -83,26 +83,74 @@ enum CompanyStatus {
   DISABLED
 }
 
-enum Plan {
-  STARTER
-  TEAM
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+  EXPIRED
+}
+
+model Plan {
+  id            Int    @id @default(autoincrement())
+  key           String @unique // "starter", "team"
+  name          String
+  priceCents    Int
+  currency      String @default("USD")
+  interval      String @default("month")
+  dodoProductId String @unique
+
+  companies Company[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subscriptions Subscription[]
+
+  @@map("plan")
+}
+
+model Subscription {
+  id        String  @id @default(uuid())
+  companyId String  @unique
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  planId Int
+  plan   Plan @relation(fields: [planId], references: [id])
+
+  dodoSubscriptionId String             @unique
+  dodoCustomerId     String?
+  status             SubscriptionStatus
+
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd  Boolean   @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("subscription")
 }
 
 model Company {
-  id String @id @default(cuid())
-
+  id      String  @id @default(cuid())
   name    String
   size    String?
   website String?
 
   status CompanyStatus @default(PENDING)
-  plan   Plan?
+
+  planId Int?
+  plan   Plan? @relation(fields: [planId], references: [id])
 
   vaultPda          String? @unique
   ownerWalletPubkey String?
 
   ownerId String @unique
   owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  subscription Subscription?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

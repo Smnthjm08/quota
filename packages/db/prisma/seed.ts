@@ -1,72 +1,57 @@
 import prisma from "../src/client.ts";
-import { HttpMethod } from "../src/generated/prisma/client.ts";
 
 async function main() {
-  await prisma.routeConfig.upsert({
-    where: {
-      method_path: {
-        method: HttpMethod.GET,
-        path: "/api/echo",
-      },
-    },
-    update: {},
-    create: {
-      path: "/api/echo",
-      method: HttpMethod.GET,
-      priceUsdc: "0.001",
-      meterId: 1,
-      credits: 1,
-      freeQuota: 0,
-      description: "Echo endpoint",
-      active: true,
-    },
-  });
-
-  await prisma.routeConfig.upsert({
-    where: {
-      method_path: {
-        method: HttpMethod.GET,
-        path: "/api/search",
-      },
-    },
-    update: {},
-    create: {
-      path: "/api/search",
-      method: HttpMethod.GET,
-      priceUsdc: "0.001",
-      meterId: 2,
-      credits: 1,
-      freeQuota: 0,
-      description: "Search endpoint",
-      active: true,
-    },
-  });
-
-  await prisma.routeConfig.upsert({
-    where: {
-      method_path: {
-        method: HttpMethod.POST,
-        path: "/api/generate",
-      },
-    },
-    update: {},
-    create: {
-      path: "/api/generate",
-      method: HttpMethod.POST,
-      priceUsdc: "0.01",
-      meterId: 3,
-      credits: 10,
-      freeQuota: 0,
-      description: "Generate endpoint",
-      active: true,
-    },
-  });
-
-  console.log("✅ Seeded route configs");
+  console.log("✅ Seeded plans configs");
 }
 
 main()
   .then(async () => {
+    await prisma.plan.upsert({
+      where: {
+        id: 1,
+      },
+      create: {
+        key: "starter",
+        name: "Starter Plan (5 Seats)",
+        priceCents: 2000,
+        dodoProductId: "pdt_0NdcQXppEKO8pjDZ4iVSn",
+        currency: "USD",
+        interval: "month",
+      },
+      update: {
+        key: "starter",
+        name: "Starter Plan (5 Seats)",
+        priceCents: 2000,
+        dodoProductId: "pdt_0NdcQXppEKO8pjDZ4iVSn",
+        currency: "USD",
+        interval: "month",
+      },
+    });
+
+    await prisma.plan.upsert({
+      where: {
+        id: 2,
+      },
+      create: {
+        id: 2,
+        key: "team",
+        name: "Team Plan (25 Seats)",
+        priceCents: 5000,
+        dodoProductId: "pdt_0NdcQqsBfx0PY1reFJYjl",
+        currency: "USD",
+        interval: "month",
+      },
+      update: {
+        id: 2,
+        key: "team",
+        name: "Team Plan (25 Seats)",
+        priceCents: 5000,
+        dodoProductId: "pdt_0NdcQqsBfx0PY1reFJYjl",
+        currency: "USD",
+        interval: "month",
+      },
+    });
+
     await prisma.$disconnect();
   })
   .catch(async (e) => {

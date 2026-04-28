@@ -68,10 +68,9 @@ app.post("/api/v1/onboarding/company", authMiddleware, async (req, res) => {
         website,
         owner: {
           connect: {
-            id: req?.user?.id
-          }
-        }
-        
+            id: req?.user?.id,
+          },
+        },
       },
     });
     res.status(201).json({
@@ -88,6 +87,16 @@ app.post("/api/v1/onboarding/company", authMiddleware, async (req, res) => {
 app.post("/api/v1/onboarding/plan", async (req, res) => {
   // Handle plan onboarding logic here
 });
+
+app.get("/api/v1/onboarding/plan", async (req, res)=>{
+  try {
+    const plans = await prisma.plan.findMany();
+    return res.status(200).json({message: "Pricing plans fetched successfully", data: plans, error: null})
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to create Dodo checkout session" });
+  }
+})
 
 app.get("/sub", async (req, res) => {
   try {
@@ -108,6 +117,7 @@ async function checkout() {
 
   const session = await dodoClient.checkoutSessions.create({
     product_cart: [{ product_id: productId, quantity: 1 }],
+    allowed_payment_method_types: ["crypto_currency"],
     // Optional: configure trials for subscription products
     subscription_data: { trial_period_days: 0 },
     customer: {
