@@ -1,4 +1,5 @@
 import { Button } from "@workspace/ui/components/button";
+import { AuthActions } from "@/components/auth/auth-actions";
 
 export default function Page() {
   // try {
@@ -20,6 +21,8 @@ export default function Page() {
         <div className="font-mono text-xs text-muted-foreground">
           (Press <kbd>d</kbd> to toggle dark mode)
         </div>
+
+        <AuthActions />
       </div>
     </div>
   );

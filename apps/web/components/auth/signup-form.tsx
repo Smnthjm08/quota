@@ -22,6 +22,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { authClient } from "@workspace/auth/client";
+import { authNavigateEndpoint } from "@/constants/naviagte";
 
 const SignUpForm = () => {
   const router = useRouter();
@@ -40,7 +41,7 @@ const SignUpForm = () => {
     await authClient.signIn.social(
       {
         provider,
-        callbackURL: "/onboarding",
+        callbackURL: authNavigateEndpoint,
       },
       {
         onRequest: () => {
@@ -69,7 +70,7 @@ const SignUpForm = () => {
         password,
         name,
         image: undefined,
-        callbackURL: "/onboarding",
+        callbackURL: authNavigateEndpoint,
       },
       {
         onRequest: () => {
@@ -77,7 +78,7 @@ const SignUpForm = () => {
         },
         onSuccess: () => {
           setIsSubmitting(false);
-          router.push("/dashboard");
+          router.push(authNavigateEndpoint);
           router.refresh();
         },
         onError: (ctx) => {

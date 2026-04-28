@@ -2,6 +2,9 @@
   "extends": "@workspace/typescript-config/base.json",
   "compilerOptions": {
     // "lib": ["ES2015"],
+    // added these for the import part
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
     "outDir": "./dist",
     "rootDir": "./src",
     "strictNullChecks": true

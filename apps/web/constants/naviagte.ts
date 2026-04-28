@@ -1,0 +1,1 @@
+export const authNavigateEndpoint = "/onboarding/company"
