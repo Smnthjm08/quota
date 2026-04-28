@@ -1,7 +1,17 @@
 import express from "express";
 import dotenv from "dotenv";
+// import { dodoClient } from "./dodo/dodo-client.";
+import DodoPayments from 'dodopayments';
+
+
 
 dotenv.config({ path: "../../.env", override: false });
+
+
+export const dodoClient = new DodoPayments({
+  bearerToken: process.env.DODO_PAYMENTS_API_KEY,
+  environment: 'test_mode', // defaults to 'live_mode'
+});
 
 const app = express();
 
@@ -12,6 +22,27 @@ app.get("/", (req, res) => {
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
+
+app.get("/sub", async (req, res) => {
+  await checkout();
+});
+
+async function checkout() {
+  const session = await dodoClient.checkoutSessions.create({
+    product_cart: [
+      { product_id: process.env.DODO_STARTER_PRODUCT_ID!, quantity: 1 },
+    ],
+    // Optional: configure trials for subscription products
+    subscription_data: { trial_period_days: 0 },
+    customer: {
+      email: "subscriber@example.com",
+      name: "Jane Doe",
+    },
+    return_url: "https://example.com/success",
+  });
+
+  console.log(session.checkout_url);
+}
 
 app.get("/api/echo", (req, res) => {
   const requirements = {
