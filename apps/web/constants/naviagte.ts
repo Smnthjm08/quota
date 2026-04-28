@@ -1,1 +1,1 @@
-export const authNavigateEndpoint = "/onboarding/company";
+export const authNavigateEndpoint = "/onboarding";

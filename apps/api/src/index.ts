@@ -57,27 +57,28 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
-app.post("/api/v1/onboarding/company", async (req, res) => {
-  // Handle company onboarding logic here
+app.post("/api/v1/onboarding/company", authMiddleware, async (req, res) => {
   try {
-    // const company = req.body;
-    const { name, size, website } = req.body;
+    const { name, size, website, address, state, city, pin_code } = req.body;
     console.log("Received company onboarding data:", { name, size, website });
     const company = await prisma.company.create({
       data: {
         name,
-        // size,
+        size,
         website,
-        ownerId: "clh8v1y9c0000l6m9g5zq2n1", // TODO: get user id from auth context
+        owner: {
+          connect: {
+            id: req?.user?.id
+          }
+        }
+        
       },
     });
-    res
-      .status(201)
-      .json({
-        message: "Company registered successfully",
-        data: company,
-        error: null,
-      });
+    res.status(201).json({
+      message: "Company registered successfully",
+      data: company,
+      error: null,
+    });
   } catch (error) {
     console.log("Error during company onboarding:", error);
     res.status(500).json({ error: "Failed to onboard company" });

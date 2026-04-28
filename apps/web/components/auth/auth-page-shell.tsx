@@ -1,6 +1,12 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui/components/card";
 import Logo from "../logo";
 
 type AuthPageShellProps = Readonly<{
@@ -9,7 +15,11 @@ type AuthPageShellProps = Readonly<{
   children: React.ReactNode;
 }>;
 
-export function AuthPageShell({ title, description, children }: AuthPageShellProps) {
+export function AuthPageShell({
+  title,
+  description,
+  children,
+}: AuthPageShellProps) {
   return (
     <section className="relative flex min-h-screen items-center justify-center bg-foreground dark:bg-background">
       <div className="pointer-events-none absolute inset-0 right-0 hidden overflow-hidden md:block">

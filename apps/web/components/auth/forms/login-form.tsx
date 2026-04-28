@@ -92,147 +92,148 @@ const LoginForm = () => {
   };
 
   return (
-    <AuthPageShell title="Welcome to Quota" description="Login to your account now">
+    <AuthPageShell
+      title="Welcome to Quota"
+      description="Login to your account now"
+    >
       <form onSubmit={handleSubmit}>
-              <FieldGroup className="gap-6">
-                <Field className="grid gap-3 md:grid-cols-2 md:gap-6">
-                  <Button
-                    variant="outline"
-                    type="button"
-                    onClick={() => handleSocialSignIn("google")}
-                    disabled={isSubmitting || activeSocialProvider !== null}
-                    className="text-medium h-9 cursor-pointer gap-2 rounded-lg text-sm text-card-foreground dark:bg-background"
-                  >
-                    <Image
-                      src="https://images.shadcnspace.com/assets/svgs/icon-google.svg"
-                      alt="google icon"
-                      width={16}
-                      height={16}
-                    />
-                    {activeSocialProvider === "google"
-                      ? "Redirecting..."
-                      : "Login with Google"}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    type="button"
-                    onClick={() => handleSocialSignIn("github")}
-                    disabled={isSubmitting || activeSocialProvider !== null}
-                    className="text-medium h-9 cursor-pointer gap-2 rounded-lg text-sm text-card-foreground dark:bg-background"
-                  >
-                    <Image
-                      src="https://images.shadcnspace.com/assets/svgs/icon-github.svg"
-                      alt="github icon"
-                      className="dark:hidden"
-                      width={16}
-                      height={16}
-                    />
-                    <Image
-                      src="https://images.shadcnspace.com/assets/svgs/icon-github-white.svg"
-                      alt="github icon"
-                      className="hidden dark:block"
-                      width={16}
-                      height={16}
-                    />
-                    {activeSocialProvider === "github"
-                      ? "Redirecting..."
-                      : "Login with Github"}
-                  </Button>
-                </Field>
-                <FieldSeparator className="bg-transparent text-sm text-muted-foreground *:data-[slot=field-separator-content]:bg-card">
-                  <span className="px-4">or Login with</span>
-                </FieldSeparator>
+        <FieldGroup className="gap-6">
+          <Field className="grid gap-3 md:grid-cols-2 md:gap-6">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => handleSocialSignIn("google")}
+              disabled={isSubmitting || activeSocialProvider !== null}
+              className="text-medium h-9 cursor-pointer gap-2 rounded-lg text-sm text-card-foreground dark:bg-background"
+            >
+              <Image
+                src="https://images.shadcnspace.com/assets/svgs/icon-google.svg"
+                alt="google icon"
+                width={16}
+                height={16}
+              />
+              {activeSocialProvider === "google"
+                ? "Redirecting..."
+                : "Login with Google"}
+            </Button>
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => handleSocialSignIn("github")}
+              disabled={isSubmitting || activeSocialProvider !== null}
+              className="text-medium h-9 cursor-pointer gap-2 rounded-lg text-sm text-card-foreground dark:bg-background"
+            >
+              <Image
+                src="https://images.shadcnspace.com/assets/svgs/icon-github.svg"
+                alt="github icon"
+                className="dark:hidden"
+                width={16}
+                height={16}
+              />
+              <Image
+                src="https://images.shadcnspace.com/assets/svgs/icon-github-white.svg"
+                alt="github icon"
+                className="hidden dark:block"
+                width={16}
+                height={16}
+              />
+              {activeSocialProvider === "github"
+                ? "Redirecting..."
+                : "Login with Github"}
+            </Button>
+          </Field>
+          <FieldSeparator className="bg-transparent text-sm text-muted-foreground *:data-[slot=field-separator-content]:bg-card">
+            <span className="px-4">or Login with</span>
+          </FieldSeparator>
 
-                <div className="flex flex-col gap-4">
-                  <Field className="gap-1.5">
-                    <FieldLabel
-                      htmlFor="email"
-                      className="text-sm font-normal text-muted-foreground"
-                    >
-                      Email*
-                    </FieldLabel>
-                    <Input
-                      id="email"
-                      type="email"
-                      autoComplete="email"
-                      value={email}
-                      onChange={(event) => setEmail(event.target.value)}
-                      placeholder="example@shadcnspace.com"
-                      required
-                      className="h-9 rounded-md dark:bg-background"
-                    />
-                  </Field>
-                  <Field className="gap-1.5">
-                    <FieldLabel
-                      htmlFor="password"
-                      className="text-sm font-normal text-muted-foreground"
-                    >
-                      Password*
-                    </FieldLabel>
+          <div className="flex flex-col gap-4">
+            <Field className="gap-1.5">
+              <FieldLabel
+                htmlFor="email"
+                className="text-sm font-normal text-muted-foreground"
+              >
+                Email*
+              </FieldLabel>
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="example@shadcnspace.com"
+                required
+                className="h-9 rounded-md dark:bg-background"
+              />
+            </Field>
+            <Field className="gap-1.5">
+              <FieldLabel
+                htmlFor="password"
+                className="text-sm font-normal text-muted-foreground"
+              >
+                Password*
+              </FieldLabel>
 
-                    <Input
-                      id="password"
-                      type="password"
-                      autoComplete="current-password"
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                      placeholder="Enter your password"
-                      required
-                      className="h-9 rounded-md dark:bg-background"
-                    />
-                  </Field>
-                </div>
+              <Input
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="Enter your password"
+                required
+                className="h-9 rounded-md dark:bg-background"
+              />
+            </Field>
+          </div>
 
-                <Field orientation="horizontal" className="justify-between">
-                  <div className="flex items-center gap-3">
-                    <Checkbox
-                      id="remember-me"
-                      checked={rememberMe}
-                      onCheckedChange={(checked) =>
-                        setRememberMe(Boolean(checked))
-                      }
-                      className="cursor-pointer"
-                    />
-                    <FieldLabel
-                      htmlFor="remember-me"
-                      className="cursor-pointer text-sm font-normal text-primary"
-                    >
-                      Remember this device
-                    </FieldLabel>
-                  </div>
-                  <Link
-                    href="/forgot-password"
-                    className="text-end text-sm font-medium text-card-foreground"
-                  >
-                    Forgot password?
-                  </Link>
-                </Field>
+          <Field orientation="horizontal" className="justify-between">
+            <div className="flex items-center gap-3">
+              <Checkbox
+                id="remember-me"
+                checked={rememberMe}
+                onCheckedChange={(checked) => setRememberMe(Boolean(checked))}
+                className="cursor-pointer"
+              />
+              <FieldLabel
+                htmlFor="remember-me"
+                className="cursor-pointer text-sm font-normal text-primary"
+              >
+                Remember this device
+              </FieldLabel>
+            </div>
+            <Link
+              href="/forgot-password"
+              className="text-end text-sm font-medium text-card-foreground"
+            >
+              Forgot password?
+            </Link>
+          </Field>
 
-                <Field className="gap-4">
-                  <Button
-                    type="submit"
-                    size={"lg"}
-                    disabled={isSubmitting}
-                    className="h-10 cursor-pointer rounded-lg"
-                  >
-                    {isSubmitting ? "Signing in..." : "Login"}
-                  </Button>
-                  {errorMessage ? (
-                    <FieldDescription className="text-center text-sm font-normal text-destructive">
-                      {errorMessage}
-                    </FieldDescription>
-                  ) : null}
-                  <FieldDescription className="text-center text-sm font-normal text-muted-foreground">
-                    Don&apos;t have an account?{" "}
-                    <Link
-                      href="/signup"
-                      className="font-medium text-card-foreground no-underline!"
-                    >
-                      Create an account
-                    </Link>
-                  </FieldDescription>
-                </Field>
-              </FieldGroup>
+          <Field className="gap-4">
+            <Button
+              type="submit"
+              size={"lg"}
+              disabled={isSubmitting}
+              className="h-10 cursor-pointer rounded-lg"
+            >
+              {isSubmitting ? "Signing in..." : "Login"}
+            </Button>
+            {errorMessage ? (
+              <FieldDescription className="text-center text-sm font-normal text-destructive">
+                {errorMessage}
+              </FieldDescription>
+            ) : null}
+            <FieldDescription className="text-center text-sm font-normal text-muted-foreground">
+              Don&apos;t have an account?{" "}
+              <Link
+                href="/signup"
+                className="font-medium text-card-foreground no-underline!"
+              >
+                Create an account
+              </Link>
+            </FieldDescription>
+          </Field>
+        </FieldGroup>
       </form>
     </AuthPageShell>
   );
