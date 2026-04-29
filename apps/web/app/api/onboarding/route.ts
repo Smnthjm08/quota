@@ -24,10 +24,12 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const company = session.company ?? (await prisma.company.findUnique({
-      where: { ownerId: session.user.id },
-      select: { planId: true },
-    }));
+    const company =
+      session.company ??
+      (await prisma.company.findUnique({
+        where: { ownerId: session.user.id },
+        select: { planId: true },
+      }));
 
     if (!company) {
       return new Response(JSON.stringify({ route: "/onboarding/company" }), {

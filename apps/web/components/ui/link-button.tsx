@@ -20,7 +20,7 @@ const LinkButton = React.forwardRef<HTMLAnchorElement, LinkButtonProps>(
         </Button>
       </Link>
     );
-  },
+  }
 );
 
 export default LinkButton;

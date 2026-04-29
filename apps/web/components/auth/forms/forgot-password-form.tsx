@@ -21,7 +21,6 @@ import { authClient } from "@workspace/auth/client";
 import LinkButton from "../../ui/link-button";
 
 const ForgotPasswordForm = () => {
-  
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -124,7 +123,12 @@ const ForgotPasswordForm = () => {
                       {successMessage}
                     </FieldDescription>
                   ) : null}
-                  <LinkButton href="/login" className="h-10 rounded-xl" size={"lg"} variant={"ghost"}>
+                  <LinkButton
+                    href="/login"
+                    className="h-10 rounded-xl"
+                    size={"lg"}
+                    variant={"ghost"}
+                  >
                     Back to Login
                   </LinkButton>
                 </Field>

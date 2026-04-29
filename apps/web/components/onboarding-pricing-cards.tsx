@@ -198,9 +198,13 @@ function extractCheckoutUrl(payload: unknown): string | null {
   };
 
   const checkoutUrl =
-    response.data?.checkout_url ?? response.data?.checkoutUrl ?? response.data?.url;
+    response.data?.checkout_url ??
+    response.data?.checkoutUrl ??
+    response.data?.url;
 
-  return typeof checkoutUrl === "string" && checkoutUrl.length > 0 ? checkoutUrl : null;
+  return typeof checkoutUrl === "string" && checkoutUrl.length > 0
+    ? checkoutUrl
+    : null;
 }
 
 export function OnboardingPlanPricingCard() {
@@ -215,14 +219,17 @@ export function OnboardingPlanPricingCard() {
 
     try {
       const response = await axiosInstance.get<PlanResponse | PlanRecord[]>(
-        "/api/v1/onboarding/plan",
+        "/api/v1/onboarding/plan"
       );
       const rawPlans = extractPlanRecords(response.data);
 
       setPlans(rawPlans.map(mapPlanRecordToPricingPlan));
     } catch (error) {
       setErrorMessage(
-        getErrorMessage(error, "We could not load the available plans right now."),
+        getErrorMessage(
+          error,
+          "We could not load the available plans right now."
+        )
       );
     } finally {
       setIsLoading(false);
@@ -254,7 +261,7 @@ export function OnboardingPlanPricingCard() {
 
       const response = await axiosInstance.post<PlanSelectionResponse>(
         "/api/v1/onboarding/plan",
-        body,
+        body
       );
 
       const checkoutUrl = extractCheckoutUrl(response.data);
@@ -267,7 +274,7 @@ export function OnboardingPlanPricingCard() {
       router.push("/onboarding/wallet");
     } catch (error) {
       setErrorMessage(
-        getErrorMessage(error, "We could not save that plan. Please try again."),
+        getErrorMessage(error, "We could not save that plan. Please try again.")
       );
       setIsSubmitting(false);
     }
@@ -278,24 +285,27 @@ export function OnboardingPlanPricingCard() {
       <section className="bg-background py-20">
         <div className="container mx-auto max-w-7xl px-4">
           <div className="mb-12 space-y-3 text-center">
-            <div className="bg-muted mx-auto h-4 w-28 rounded-full animate-pulse" />
-            <div className="bg-muted mx-auto h-10 w-80 rounded-xl animate-pulse" />
-            <div className="bg-muted mx-auto h-5 w-full max-w-2xl rounded-full animate-pulse" />
+            <div className="mx-auto h-4 w-28 animate-pulse rounded-full bg-muted" />
+            <div className="mx-auto h-10 w-80 animate-pulse rounded-xl bg-muted" />
+            <div className="mx-auto h-5 w-full max-w-2xl animate-pulse rounded-full bg-muted" />
           </div>
 
           <div className="grid gap-6 md:grid-cols-2">
             {Array.from({ length: 2 }).map((_, index) => (
               <div
                 key={index}
-                className="bg-card border-border/60 h-104 rounded-2xl border p-6 shadow-sm animate-pulse"
+                className="h-104 animate-pulse rounded-2xl border border-border/60 bg-card p-6 shadow-sm"
               >
-                <div className="bg-muted mb-5 h-6 w-24 rounded-full" />
-                <div className="bg-muted mb-3 h-8 w-32 rounded-lg" />
-                <div className="bg-muted mb-6 h-4 w-3/4 rounded-full" />
-                <div className="bg-muted mb-4 h-12 w-full rounded-xl" />
+                <div className="mb-5 h-6 w-24 rounded-full bg-muted" />
+                <div className="mb-3 h-8 w-32 rounded-lg bg-muted" />
+                <div className="mb-6 h-4 w-3/4 rounded-full bg-muted" />
+                <div className="mb-4 h-12 w-full rounded-xl bg-muted" />
                 <div className="space-y-3">
                   {Array.from({ length: 4 }).map((__, featureIndex) => (
-                    <div key={featureIndex} className="bg-muted h-4 w-full rounded-full" />
+                    <div
+                      key={featureIndex}
+                      className="h-4 w-full rounded-full bg-muted"
+                    />
                   ))}
                 </div>
               </div>
@@ -310,8 +320,8 @@ export function OnboardingPlanPricingCard() {
     return (
       <section className="bg-background py-20">
         <div className="container mx-auto max-w-3xl px-4 text-center">
-          <div className="bg-card border-border/60 rounded-2xl border p-8 shadow-sm">
-            <p className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
+          <div className="rounded-2xl border border-border/60 bg-card p-8 shadow-sm">
+            <p className="text-sm font-medium tracking-wide text-muted-foreground uppercase">
               Pricing unavailable
             </p>
             <h2 className="mt-3 text-3xl font-semibold text-foreground">
@@ -338,8 +348,8 @@ export function OnboardingPlanPricingCard() {
     return (
       <section className="bg-background py-20">
         <div className="container mx-auto max-w-3xl px-4 text-center">
-          <div className="bg-card border-border/60 rounded-2xl border p-8 shadow-sm">
-            <p className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
+          <div className="rounded-2xl border border-border/60 bg-card p-8 shadow-sm">
+            <p className="text-sm font-medium tracking-wide text-muted-foreground uppercase">
               No plans found
             </p>
             <h2 className="mt-3 text-3xl font-semibold text-foreground">
@@ -370,7 +380,7 @@ export function OnboardingPlanPricingCard() {
       {errorMessage ? (
         <div className="container mx-auto max-w-7xl px-4 pt-6">
           <div
-            className="border-destructive/20 bg-destructive/10 text-destructive rounded-xl border px-4 py-3 text-sm"
+            className="rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
             role="alert"
           >
             {errorMessage}
@@ -380,7 +390,9 @@ export function OnboardingPlanPricingCard() {
 
       <div className="container mx-auto max-w-7xl px-4 pt-6 text-center">
         {isSubmitting ? (
-          <p className="text-sm text-muted-foreground">Saving your selected plan...</p>
+          <p className="text-sm text-muted-foreground">
+            Saving your selected plan...
+          </p>
         ) : null}
       </div>
 

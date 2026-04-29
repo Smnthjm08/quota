@@ -25,7 +25,9 @@ const allowedOrigins = (process.env.CORS_ORIGIN ?? "")
   .filter(Boolean);
 
 const frontendUrl =
-  process.env.NEXT_PUBLIC_WEB_URL ?? process.env.APP_URL ?? "http://localhost:3000";
+  process.env.NEXT_PUBLIC_WEB_URL ??
+  process.env.APP_URL ??
+  "http://localhost:3000";
 
 app.post(
   "/api/v1/webhooks/dodo",
@@ -103,82 +105,85 @@ app.post("/api/v1/onboarding/company", authMiddleware, async (req, res) => {
   }
 });
 
-app.post("/api/v1/onboarding/plan", authMiddleware, companyMiddleware, async (req, res) => {
-  try {
-    const planId = Number(req.body?.planId);
+app.post(
+  "/api/v1/onboarding/plan",
+  authMiddleware,
+  companyMiddleware,
+  async (req, res) => {
+    try {
+      const planId = Number(req.body?.planId);
 
-    if (!Number.isInteger(planId)) {
-      return res.status(400).json({ message: "A valid planId is required" });
-    }
+      if (!Number.isInteger(planId)) {
+        return res.status(400).json({ message: "A valid planId is required" });
+      }
 
-    const plan = await prisma.plan.findUnique({
-      where: {
-        id: planId,
-      },
-    });
+      const plan = await prisma.plan.findUnique({
+        where: {
+          id: planId,
+        },
+      });
 
-    if (!plan) {
-      return res.status(400).json({ message: "Plan does not exist" });
-    }
+      if (!plan) {
+        return res.status(400).json({ message: "Plan does not exist" });
+      }
 
-    if (!req.company) {
-      return res.status(400).json({ message: "Company not found for user" });
-    }
+      if (!req.company) {
+        return res.status(400).json({ message: "Company not found for user" });
+      }
 
-    const user = req.user;
+      const user = req.user;
 
-    if (!user?.id || !user.email || !user.name) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
+      if (!user?.id || !user.email || !user.name) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
 
-    const trialPeriodDays = Number(process.env.DODO_TRIAL_PERIOD_DAYS ?? 0);
+      const trialPeriodDays = Number(process.env.DODO_TRIAL_PERIOD_DAYS ?? 0);
 
-    const checkout = await dodoClient.checkoutSessions.create({
-      product_cart: [{ product_id: plan.dodoProductId, quantity: 1 }],
-      ...(trialPeriodDays > 0
-        ? { subscription_data: { trial_period_days: trialPeriodDays } }
-        : {}),
-      customer: {
-        email: user.email,
-        name: user.name,
-      },
-      metadata: {
-        companyId: req.company.id,
-        ownerId: user.id,
-        planId: String(plan.id),
-        planKey: plan.key,
-      },
-      return_url: `${frontendUrl}/onboarding/plan/success`,
-    });
+      const checkout = await dodoClient.checkoutSessions.create({
+        product_cart: [{ product_id: plan.dodoProductId, quantity: 1 }],
+        ...(trialPeriodDays > 0
+          ? { subscription_data: { trial_period_days: trialPeriodDays } }
+          : {}),
+        customer: {
+          email: user.email,
+          name: user.name,
+        },
+        metadata: {
+          companyId: req.company.id,
+          ownerId: user.id,
+          planId: String(plan.id),
+          planKey: plan.key,
+        },
+        return_url: `${frontendUrl}/onboarding/plan/success`,
+      });
 
-    res
-      .status(200)
-      .json({
+      res.status(200).json({
         message: "Payment Checkout Session Created",
         data: checkout,
         error: null,
       });
 
-    // const subscription: SubscriptionCreateInput = prisma.subscription.create({
-    //   data: {
-    //     plan: {
-    //       connect: {
-    //         id: plan.id,
-    //       },
-    //     },
-    //     company: {
-    //       connect: {
-    //         id: req.company?.id,
-    //       },
-    //     },
-    //     status: "INCOMPLETE",
-    //   },
-    // });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to create Dodo checkout session" });
+      // const subscription: SubscriptionCreateInput = prisma.subscription.create({
+      //   data: {
+      //     plan: {
+      //       connect: {
+      //         id: plan.id,
+      //       },
+      //     },
+      //     company: {
+      //       connect: {
+      //         id: req.company?.id,
+      //       },
+      //     },
+      //     status: "INCOMPLETE",
+      //   },
+      // });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Failed to create Dodo checkout session" });
+    }
   }
-});
+);
 
 app.get("/api/v1/onboarding/plan", authMiddleware, async (req, res) => {
   try {

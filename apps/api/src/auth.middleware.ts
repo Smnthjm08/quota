@@ -1,6 +1,10 @@
 import { fromNodeHeaders } from "better-auth/node";
 import type { NextFunction, Request, Response } from "express";
-import { type AuthSession, type SessionCompany, type SessionUser } from "./session.types.ts";
+import {
+  type AuthSession,
+  type SessionCompany,
+  type SessionUser,
+} from "./session.types.ts";
 import { auth } from "@workspace/auth/auth";
 declare global {
   namespace Express {

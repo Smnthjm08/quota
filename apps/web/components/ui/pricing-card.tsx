@@ -8,10 +8,13 @@ import { type Plan } from "@/lib/billingsdk-config";
 import { cn } from "@workspace/ui/lib/utils";
 import { Button } from "@workspace/ui/components/button";
 import { Label } from "@workspace/ui/components/label";
-import { RadioGroup, RadioGroupItem } from "@workspace/ui/components/radio-group";
+import {
+  RadioGroup,
+  RadioGroupItem,
+} from "@workspace/ui/components/radio-group";
 import { Badge } from "@workspace/ui/components/badge";
 
-const sectionVariants = cva("py-32 relative overflow-hidden", {
+const sectionVariants = cva("relative overflow-hidden py-32", {
   variants: {
     size: {
       small: "py-12",
@@ -29,7 +32,7 @@ const sectionVariants = cva("py-32 relative overflow-hidden", {
   },
 });
 
-const titleVariants = cva("font-bold mb-4 text-foreground", {
+const titleVariants = cva("mb-4 font-bold text-foreground", {
   variants: {
     size: {
       small: "text-3xl lg:text-4xl",
@@ -39,7 +42,7 @@ const titleVariants = cva("font-bold mb-4 text-foreground", {
     theme: {
       minimal: "",
       classic:
-        "bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent pb-1",
+        "bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text pb-1 text-transparent",
     },
   },
   defaultVariants: {
@@ -49,7 +52,7 @@ const titleVariants = cva("font-bold mb-4 text-foreground", {
 });
 
 const descriptionVariants = cva(
-  "text-muted-foreground max-w-3xl mx-auto mb-2",
+  "mx-auto mb-2 max-w-3xl text-muted-foreground",
   {
     variants: {
       size: {
@@ -66,11 +69,11 @@ const descriptionVariants = cva(
       size: "medium",
       theme: "minimal",
     },
-  },
+  }
 );
 
 const cardVariants = cva(
-  "relative h-full transition-all duration-300 rounded-lg border bg-card text-card-foreground",
+  "relative h-full rounded-lg border bg-card text-card-foreground transition-all duration-300",
   {
     variants: {
       size: {
@@ -80,7 +83,7 @@ const cardVariants = cva(
       },
       theme: {
         minimal: "hover:bg-muted/30",
-        classic: "hover:shadow-xl backdrop-blur-sm bg-card/50 border-border/50",
+        classic: "border-border/50 bg-card/50 backdrop-blur-sm hover:shadow-xl",
       },
       highlight: {
         true: "",
@@ -92,12 +95,12 @@ const cardVariants = cva(
         theme: "classic",
         highlight: true,
         className:
-          "ring-2 ring-primary/20 border-primary/30 bg-gradient-to-b from-primary/5 to-transparent relative overflow-hidden shadow-xl",
+          "relative overflow-hidden border-primary/30 bg-gradient-to-b from-primary/5 to-transparent shadow-xl ring-2 ring-primary/20",
       },
       {
         theme: "minimal",
         highlight: true,
-        className: "bg-muted/50 border-primary/20",
+        className: "border-primary/20 bg-muted/50",
       },
     ],
     defaultVariants: {
@@ -105,7 +108,7 @@ const cardVariants = cva(
       theme: "minimal",
       highlight: false,
     },
-  },
+  }
 );
 
 const toggleVariants = cva(
@@ -115,13 +118,13 @@ const toggleVariants = cva(
       theme: {
         minimal: "bg-muted",
         classic:
-          "bg-muted/50 backdrop-blur-sm border border-border/50 shadow-lg",
+          "border border-border/50 bg-muted/50 shadow-lg backdrop-blur-sm",
       },
     },
     defaultVariants: {
       theme: "minimal",
     },
-  },
+  }
 );
 
 const priceTextVariants = cva("font-medium", {
@@ -134,7 +137,7 @@ const priceTextVariants = cva("font-medium", {
     theme: {
       minimal: "",
       classic:
-        "font-extrabold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent",
+        "bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text font-extrabold text-transparent",
     },
   },
   defaultVariants: {
@@ -149,18 +152,18 @@ const buttonVariants = cva(
     variants: {
       theme: {
         minimal:
-          "shadow hover:bg-primary/90 h-9 py-2 group bg-primary text-primary-foreground ring-primary before:from-primary-foreground/20 after:from-primary-foreground/10 relative isolate inline-flex w-full items-center justify-center overflow-hidden rounded-md px-3 text-left text-sm font-medium ring-1 before:pointer-events-none before:absolute before:inset-0 before:-z-10 before:rounded-md before:bg-gradient-to-b before:opacity-80 before:transition-opacity before:duration-300 before:ease-[cubic-bezier(0.4,0.36,0,1)] after:pointer-events-none after:absolute after:inset-0 after:-z-10 after:rounded-md after:bg-gradient-to-b after:to-transparent after:mix-blend-overlay",
+          "group relative isolate inline-flex h-9 w-full items-center justify-center overflow-hidden rounded-md bg-primary px-3 py-2 text-left text-sm font-medium text-primary-foreground shadow ring-1 ring-primary before:pointer-events-none before:absolute before:inset-0 before:-z-10 before:rounded-md before:bg-gradient-to-b before:from-primary-foreground/20 before:opacity-80 before:transition-opacity before:duration-300 before:ease-[cubic-bezier(0.4,0.36,0,1)] after:pointer-events-none after:absolute after:inset-0 after:-z-10 after:rounded-md after:bg-gradient-to-b after:from-primary-foreground/10 after:to-transparent after:mix-blend-overlay hover:bg-primary/90",
         classic:
-          "relative overflow-hidden bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-semibold py-3 px-6 rounded-lg hover:shadow-xl active:scale-95 border border-primary/20",
+          "relative overflow-hidden rounded-lg border border-primary/20 bg-gradient-to-r from-primary to-primary/80 px-6 py-3 font-semibold text-primary-foreground hover:shadow-xl active:scale-95",
       },
     },
     defaultVariants: {
       theme: "minimal",
     },
-  },
+  }
 );
 
-const featureIconVariants = cva("flex-none h-[1lh]", {
+const featureIconVariants = cva("h-[1lh] flex-none", {
   variants: {
     size: {
       small: "size-3",
@@ -178,9 +181,7 @@ const featureIconVariants = cva("flex-none h-[1lh]", {
   },
 });
 
-export interface PricingCardProps extends VariantProps<
-  typeof sectionVariants
-> {
+export interface PricingCardProps extends VariantProps<typeof sectionVariants> {
   plans: Plan[];
   title?: string;
   description?: string;
@@ -220,7 +221,7 @@ export function PricingCard({
 
   function calculateDiscount(
     monthlyPrice: string,
-    yearlyPrice: string,
+    yearlyPrice: string
   ): number {
     const monthly = parseFloat(monthlyPrice);
     const yearly = parseFloat(yearlyPrice);
@@ -242,8 +243,8 @@ export function PricingCard({
   const yearlyPriceDiscount = plans.length
     ? Math.max(
         ...plans.map((plan) =>
-          calculateDiscount(plan.monthlyPrice, plan.yearlyPrice),
-        ),
+          calculateDiscount(plan.monthlyPrice, plan.yearlyPrice)
+        )
       )
     : 0;
 
@@ -265,8 +266,8 @@ export function PricingCard({
       {theme === "classic" && (
         <>
           <div className="bg-grid-pattern absolute inset-0 opacity-5" />
-          <div className="bg-primary/5 absolute top-1/2 left-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl" />
-          <div className="bg-secondary/5 absolute top-1/4 right-1/4 h-64 w-64 rounded-full blur-2xl" />
+          <div className="absolute top-1/2 left-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/5 blur-3xl" />
+          <div className="absolute top-1/4 right-1/4 h-64 w-64 rounded-full bg-secondary/5 blur-2xl" />
         </>
       )}
 
@@ -274,7 +275,7 @@ export function PricingCard({
         {/* Header */}
         <div className="mb-12 text-center">
           {subtitle && (
-            <p className="text-primary mb-3 text-sm font-medium tracking-wide uppercase">
+            <p className="mb-3 text-sm font-medium tracking-wide text-primary uppercase">
               {subtitle}
             </p>
           )}
@@ -287,7 +288,7 @@ export function PricingCard({
             <div
               className={cn(
                 "mx-auto mt-8 flex justify-center",
-                toggleVariants({ theme }),
+                toggleVariants({ theme })
               )}
             >
               <RadioGroup
@@ -297,7 +298,7 @@ export function PricingCard({
                   setIsAnnually(value === "annually");
                 }}
               >
-                <div className='has-[button[data-state="checked"]]:bg-background h-full rounded-md transition-all'>
+                <div className='h-full rounded-md transition-all has-[button[data-state="checked"]]:bg-background'>
                   <RadioGroupItem
                     value="monthly"
                     id={`${uniqueId}-monthly`}
@@ -305,12 +306,12 @@ export function PricingCard({
                   />
                   <Label
                     htmlFor={`${uniqueId}-monthly`}
-                    className="text-muted-foreground peer-data-[state=checked]:text-primary hover:text-foreground flex h-full cursor-pointer items-center justify-center px-2 font-semibold transition-all md:px-7"
+                    className="flex h-full cursor-pointer items-center justify-center px-2 font-semibold text-muted-foreground transition-all peer-data-[state=checked]:text-primary hover:text-foreground md:px-7"
                   >
                     {billingToggleLabels.monthly}
                   </Label>
                 </div>
-                <div className='has-[button[data-state="checked"]]:bg-background h-full rounded-md transition-all'>
+                <div className='h-full rounded-md transition-all has-[button[data-state="checked"]]:bg-background'>
                   <RadioGroupItem
                     value="annually"
                     id={`${uniqueId}-annually`}
@@ -318,11 +319,11 @@ export function PricingCard({
                   />
                   <Label
                     htmlFor={`${uniqueId}-annually`}
-                    className="text-muted-foreground peer-data-[state=checked]:text-primary hover:text-foreground flex h-full cursor-pointer items-center justify-center gap-1 px-2 font-semibold transition-all md:px-7"
+                    className="flex h-full cursor-pointer items-center justify-center gap-1 px-2 font-semibold text-muted-foreground transition-all peer-data-[state=checked]:text-primary hover:text-foreground md:px-7"
                   >
                     {billingToggleLabels.yearly}
                     {yearlyPriceDiscount > 0 && (
-                      <span className="bg-primary/10 text-primary border-primary/20 ml-1 rounded border px-2 py-0.5 text-xs font-medium">
+                      <span className="ml-1 rounded border border-primary/20 bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                         Save {yearlyPriceDiscount}%
                       </span>
                     )}
@@ -341,7 +342,7 @@ export function PricingCard({
               "mx-auto max-w-4xl grid-cols-1 md:grid-cols-2",
             plans.length === 3 && "grid-cols-1 md:grid-cols-3",
             plans.length >= 4 &&
-              "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
+              "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
           )}
         >
           {plans.map((plan, index) => (
@@ -362,8 +363,8 @@ export function PricingCard({
                   className={cn(
                     "absolute -top-3 left-1/2 z-20 -translate-x-1/2 transform",
                     theme === "classic"
-                      ? "from-primary to-primary/80 text-primary-foreground border-primary/20 bg-linear-to-r shadow-lg"
-                      : "bg-primary text-primary-foreground",
+                      ? "border-primary/20 bg-linear-to-r from-primary to-primary/80 text-primary-foreground shadow-lg"
+                      : "bg-primary text-primary-foreground"
                   )}
                 >
                   {plan.badge}
@@ -372,12 +373,12 @@ export function PricingCard({
 
               {/* Classic theme highlight effect */}
               {theme === "classic" && plan.highlight && (
-                <div className="via-primary absolute -top-px left-1/2 h-px w-32 -translate-x-1/2 bg-linear-to-r from-transparent to-transparent" />
+                <div className="absolute -top-px left-1/2 h-px w-32 -translate-x-1/2 bg-linear-to-r from-transparent via-primary to-transparent" />
               )}
 
               <div
                 className={cn(
-                  cardVariants({ size, theme, highlight: plan.highlight }),
+                  cardVariants({ size, theme, highlight: plan.highlight })
                 )}
               >
                 <div className="flex h-full flex-col">
@@ -387,15 +388,15 @@ export function PricingCard({
                       <h3
                         className={cn(
                           "mb-1 text-xl font-bold",
-                          theme === "classic" ? "text-lg" : "",
+                          theme === "classic" ? "text-lg" : ""
                         )}
                       >
                         {plan.title}
                       </h3>
                       <p
                         className={cn(
-                          "text-muted-foreground text-sm",
-                          theme === "classic" && "text-foreground/80",
+                          "text-sm text-muted-foreground",
+                          theme === "classic" && "text-foreground/80"
                         )}
                       >
                         {plan.description}
@@ -405,8 +406,8 @@ export function PricingCard({
                       className={cn(
                         "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
                         theme === "classic"
-                          ? "bg-primary/10 text-primary border-primary/20 border"
-                          : "bg-muted text-foreground border-border border",
+                          ? "border border-primary/20 bg-primary/10 text-primary"
+                          : "border border-border bg-muted text-foreground"
                       )}
                     >
                       {getPlanIcon(plan.key ?? plan.id)}
@@ -434,24 +435,24 @@ export function PricingCard({
                                 )}
                               {plan.yearlyPrice}
                             </span>
-                            <span className="text-muted-foreground text-sm">
+                            <span className="text-sm text-muted-foreground">
                               /year
                             </span>
                             {calculateDiscount(
                               plan.monthlyPrice,
-                              plan.yearlyPrice,
+                              plan.yearlyPrice
                             ) > 0 && (
                               <span
                                 className={cn(
                                   "ml-2 text-xs",
                                   theme === "classic"
                                     ? "font-semibold text-emerald-500"
-                                    : "text-primary font-medium",
+                                    : "font-medium text-primary"
                                 )}
                               >
                                 {calculateDiscount(
                                   plan.monthlyPrice,
-                                  plan.yearlyPrice,
+                                  plan.yearlyPrice
                                 )}
                                 % off
                               </span>
@@ -467,7 +468,7 @@ export function PricingCard({
                                   "custom" && <>{plan.currency}</>}
                               {plan.monthlyPrice}
                             </span>
-                            <span className="text-muted-foreground text-sm">
+                            <span className="text-sm text-muted-foreground">
                               /month
                             </span>
                           </div>
@@ -484,7 +485,7 @@ export function PricingCard({
                         buttonVariants({ theme }),
                         !plan.highlight &&
                           theme === "minimal" &&
-                          "bg-secondary hover:bg-secondary/80 text-secondary-foreground",
+                          "bg-secondary text-secondary-foreground hover:bg-secondary/80"
                       )}
                       variant={plan.highlight ? "default" : "secondary"}
                     >
@@ -499,7 +500,10 @@ export function PricingCard({
                   <div className="flex-1">
                     <ul className="space-y-3">
                       {plan.features.map((feature, featureIndex) => (
-                        <li key={featureIndex} className="flex items-start gap-3">
+                        <li
+                          key={featureIndex}
+                          className="flex items-start gap-3"
+                        >
                           <motion.div
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
@@ -510,14 +514,16 @@ export function PricingCard({
                             className="flex items-start gap-3"
                           >
                             <Check
-                              className={cn(featureIconVariants({ size, theme }))}
+                              className={cn(
+                                featureIconVariants({ size, theme })
+                              )}
                             />
                             <span
                               className={cn(
                                 "text-sm",
                                 theme === "classic"
                                   ? "text-foreground/90"
-                                  : "text-muted-foreground",
+                                  : "text-muted-foreground"
                               )}
                             >
                               {feature.name}

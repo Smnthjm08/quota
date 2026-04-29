@@ -19,7 +19,11 @@ export default function OnboardingGateClient() {
 
         if (!mounted) return;
 
-        if (pathname && pathname.startsWith("/onboarding") && pathname !== target) {
+        if (
+          pathname &&
+          pathname.startsWith("/onboarding") &&
+          pathname !== target
+        ) {
           router.replace(target);
         }
       } catch (err) {

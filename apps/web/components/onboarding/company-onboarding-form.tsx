@@ -190,7 +190,11 @@ export default function CompanyOnboardingForm() {
             >
               Cancel
             </Button>
-            <Button type="submit" className="cursor-pointer whitespace-nowrap" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              className="cursor-pointer whitespace-nowrap"
+              disabled={isSubmitting}
+            >
               {isSubmitting ? "Submitting..." : "Next"}
             </Button>
           </div>

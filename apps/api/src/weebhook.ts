@@ -23,7 +23,9 @@ function getHeaderValue(value: string | string[] | undefined): string | null {
 
   if (Array.isArray(value) && value.length > 0) {
     const firstValue = value[0];
-    return typeof firstValue === "string" && firstValue.trim().length > 0 ? firstValue : null;
+    return typeof firstValue === "string" && firstValue.trim().length > 0
+      ? firstValue
+      : null;
   }
 
   return null;
@@ -68,7 +70,9 @@ function toDateValue(value: unknown): Date | null {
 }
 
 function getObjectValue(value: unknown): Record<string, unknown> | null {
-  return typeof value === "object" && value !== null ? (value as Record<string, unknown>) : null;
+  return typeof value === "object" && value !== null
+    ? (value as Record<string, unknown>)
+    : null;
 }
 
 function getMetadata(data: Record<string, unknown>): Record<string, unknown> {
@@ -139,7 +143,9 @@ function getPeriodEnd(data: Record<string, unknown>): Date | null {
 
 function getCancelAtPeriodEnd(data: Record<string, unknown>): boolean {
   return Boolean(
-    data.cancel_at_period_end ?? data.cancelAtPeriodEnd ?? data.cancel_at_next_billing_date
+    data.cancel_at_period_end ??
+    data.cancelAtPeriodEnd ??
+    data.cancel_at_next_billing_date
   );
 }
 
@@ -207,7 +213,10 @@ async function resolvePlan(data: Record<string, unknown>) {
   return null;
 }
 
-async function syncCompanySubscription(eventType: DodoEventType, data: Record<string, unknown>) {
+async function syncCompanySubscription(
+  eventType: DodoEventType,
+  data: Record<string, unknown>
+) {
   const companyId = getCompanyId(data);
   const subscriptionId = getSubscriptionId(data);
   const plan = await resolvePlan(data);
@@ -310,7 +319,9 @@ export const dodoWebhooksHandler = async (req: Request, res: Response) => {
     const webhookTimestamp = getHeaderValue(req.headers["webhook-timestamp"]);
 
     if (!webhookId || !webhookSignature || !webhookTimestamp) {
-      return res.status(400).json({ error: "Missing required webhook headers" });
+      return res
+        .status(400)
+        .json({ error: "Missing required webhook headers" });
     }
 
     const existingEvent = await prisma.dodoWebhookEvent.findUnique({
@@ -330,8 +341,11 @@ export const dodoWebhooksHandler = async (req: Request, res: Response) => {
             "webhook-signature": webhookSignature,
             "webhook-timestamp": webhookTimestamp,
           },
-        })) as unknown as { type: DodoEventType; data: Record<string, unknown> })
-      : ((dodoClient.webhooks.unsafeUnwrap(payload) as unknown) as {
+        })) as unknown as {
+          type: DodoEventType;
+          data: Record<string, unknown>;
+        })
+      : (dodoClient.webhooks.unsafeUnwrap(payload) as unknown as {
           type: DodoEventType;
           data: Record<string, unknown>;
         });
