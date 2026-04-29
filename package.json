@@ -31,5 +31,10 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ]
+  ],
+  "dependencies": {
+    "@solana/web3.js": "^1.98.4",
+    "class-variance-authority": "^0.7.1",
+    "tweetnacl": "^1.0.3"
+  }
 }

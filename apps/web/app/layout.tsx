@@ -3,6 +3,7 @@ import { Geist_Mono, Outfit } from "next/font/google";
 import "@workspace/ui/globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { cn } from "@workspace/ui/lib/utils";
+import { SolanaProvider } from "@/components/provider/solana-provider";
 
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -28,7 +29,9 @@ export default function RootLayout({
       )}
     >
       <body>
-        <ThemeProvider>{children}</ThemeProvider>
+        <SolanaProvider>
+          <ThemeProvider>{children}</ThemeProvider>
+        </SolanaProvider>
       </body>
     </html>
   );

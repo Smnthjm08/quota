@@ -4,6 +4,8 @@ import cors from "cors";
 import { prisma } from "@workspace/db";
 import authMiddleware from "./auth.middleware.ts";
 import companyMiddleware from "./company.middleware.ts";
+import nacl from "tweetnacl";
+import { PublicKey } from "@solana/web3.js";
 import {
   dodoApiKey,
   dodoClient,
@@ -181,6 +183,90 @@ app.post(
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: "Failed to create Dodo checkout session" });
+    }
+  }
+);
+
+app.post(
+  "/api/auth/wallet/verify",
+  authMiddleware,
+  companyMiddleware,
+  async (req, res) => {
+    try {
+      const { wallet, nonce, signature } = req.body as {
+        wallet?: string;
+        nonce?: string;
+        signature?: number[];
+      };
+
+      if (!wallet || !nonce || !signature) {
+        return res.status(400).json({ message: "wallet, nonce and signature are required" });
+      }
+
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      // Ensure user has a company (companyMiddleware attaches it or null)
+      const company = req.company;
+      if (!company) {
+        return res.status(400).json({ message: "Company not found for user" });
+      }
+
+      // Recreate the message the client signed
+      const messageString = `Verify wallet ownership for Quota\nNonce:${nonce}`;
+      const message = new TextEncoder().encode(messageString);
+
+      // Convert signature array back to Uint8Array
+      const signatureUint8 = new Uint8Array(signature);
+
+      // Verify signature using the public key bytes
+      let pubkeyBytes: Uint8Array;
+      try {
+        pubkeyBytes = new PublicKey(wallet).toBytes();
+      } catch (e) {
+        return res.status(400).json({ message: "Invalid wallet public key" });
+      }
+
+      const isValid = nacl.sign.detached.verify(message, signatureUint8, pubkeyBytes);
+
+      if (!isValid) {
+        return res.status(401).json({ message: "Signature verification failed" });
+      }
+
+      // Persist the wallet public key on the company record for better UX
+      const updated = await prisma.company.update({
+        where: { id: company.id },
+        data: { ownerWalletPubkey: wallet },
+      });
+
+      return res.status(200).json({ message: "Wallet verified", data: { company: updated } });
+    } catch (error) {
+      console.error("Wallet verify error:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  }
+);
+
+// Return wallet status for the authenticated user's company
+app.get(
+  "/api/auth/wallet/status",
+  authMiddleware,
+  companyMiddleware,
+  async (req, res) => {
+    try {
+      const company = req.company;
+      if (!company) {
+        return res.status(200).json({ verified: false, wallet: null });
+      }
+
+      return res.status(200).json({
+        verified: !!company.ownerWalletPubkey,
+        wallet: company.ownerWalletPubkey ?? null,
+      });
+    } catch (error) {
+      console.error("Wallet status error:", error);
+      return res.status(500).json({ message: "Internal server error" });
     }
   }
 );
