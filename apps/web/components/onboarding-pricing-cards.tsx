@@ -24,6 +24,17 @@ type PlanResponse = {
   error: string | null;
 };
 
+type PlanSelectionResponse = {
+  message?: string;
+  data?: {
+    session_id?: string;
+    checkout_url?: string;
+    checkoutUrl?: string;
+    url?: string;
+  };
+  error?: string | null;
+};
+
 const planFeatures = {
   starter: [
     { name: "Company onboarding", icon: "check", iconColor: "text-green-500" },
@@ -127,6 +138,71 @@ function getErrorMessage(error: unknown, fallback: string) {
   return fallback;
 }
 
+function isPlanRecord(value: unknown): value is PlanRecord {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const plan = value as Partial<PlanRecord>;
+
+  return (
+    typeof plan.id === "number" &&
+    typeof plan.key === "string" &&
+    typeof plan.name === "string" &&
+    typeof plan.priceCents === "number" &&
+    typeof plan.currency === "string" &&
+    typeof plan.interval === "string" &&
+    typeof plan.dodoProductId === "string"
+  );
+}
+
+function extractPlanRecords(payload: unknown): PlanRecord[] {
+  if (Array.isArray(payload)) {
+    return payload.filter(isPlanRecord);
+  }
+
+  if (typeof payload !== "object" || payload === null) {
+    return [];
+  }
+
+  const response = payload as {
+    data?: unknown;
+  };
+
+  if (Array.isArray(response.data)) {
+    return response.data.filter(isPlanRecord);
+  }
+
+  if (typeof response.data === "object" && response.data !== null) {
+    const nestedData = response.data as { plans?: unknown };
+
+    if (Array.isArray(nestedData.plans)) {
+      return nestedData.plans.filter(isPlanRecord);
+    }
+  }
+
+  return [];
+}
+
+function extractCheckoutUrl(payload: unknown): string | null {
+  if (typeof payload !== "object" || payload === null) {
+    return null;
+  }
+
+  const response = payload as {
+    data?: {
+      checkout_url?: unknown;
+      checkoutUrl?: unknown;
+      url?: unknown;
+    };
+  };
+
+  const checkoutUrl =
+    response.data?.checkout_url ?? response.data?.checkoutUrl ?? response.data?.url;
+
+  return typeof checkoutUrl === "string" && checkoutUrl.length > 0 ? checkoutUrl : null;
+}
+
 export function OnboardingPlanPricingCard() {
   const router = useRouter();
   const [plans, setPlans] = useState<PricingPlan[]>([]);
@@ -138,8 +214,10 @@ export function OnboardingPlanPricingCard() {
     setErrorMessage(null);
 
     try {
-      const response = await axiosInstance.get<PlanResponse>("/api/v1/onboarding/plan");
-      const rawPlans = response.data.data;
+      const response = await axiosInstance.get<PlanResponse | PlanRecord[]>(
+        "/api/v1/onboarding/plan",
+      );
+      const rawPlans = extractPlanRecords(response.data);
 
       setPlans(rawPlans.map(mapPlanRecordToPricingPlan));
     } catch (error) {
@@ -174,7 +252,17 @@ export function OnboardingPlanPricingCard() {
         body.planId = Number(planId);
       }
 
-      await axiosInstance.post("/api/v1/onboarding/plan", body);
+      const response = await axiosInstance.post<PlanSelectionResponse>(
+        "/api/v1/onboarding/plan",
+        body,
+      );
+
+      const checkoutUrl = extractCheckoutUrl(response.data);
+
+      if (checkoutUrl) {
+        window.location.href = checkoutUrl;
+        return;
+      }
 
       router.push("/onboarding/wallet");
     } catch (error) {

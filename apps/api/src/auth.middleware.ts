@@ -17,8 +17,6 @@ async function authMiddleware(req: Request, res: Response, next: NextFunction) {
       headers: fromNodeHeaders(req.headers),
     })) as AuthSession | null;
 
-    console.log("Session data:", session);
-
     if (!session?.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }

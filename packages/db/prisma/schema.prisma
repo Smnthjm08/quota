@@ -92,6 +92,12 @@ enum SubscriptionStatus {
   EXPIRED
 }
 
+enum WebhookEventStatus {
+  PROCESSING
+  PROCESSED
+  FAILED
+}
+
 model Plan {
   id            Int    @id @default(autoincrement())
   key           String @unique // "starter", "team"
@@ -133,11 +139,30 @@ model Subscription {
   @@map("subscription")
 }
 
+model DodoWebhookEvent {
+  id           String            @id @default(cuid())
+  webhookId    String            @unique
+  eventType    String
+  payload      Json
+  status       WebhookEventStatus @default(PROCESSING)
+  errorMessage String?
+  processedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("dodo_webhook_event")
+}
+
 model Company {
   id      String  @id @default(cuid())
   name    String
   size    String?
   website String?
+  address String?
+  state   String?
+  city    String?
+  pinCode String?
 
   status CompanyStatus @default(PENDING)
 

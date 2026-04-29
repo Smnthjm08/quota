@@ -1,43 +1,37 @@
 import express from "express";
-import dotenv from "dotenv";
-import { fileURLToPath } from "node:url";
 import helmet from "helmet";
 import cors from "cors";
 import { prisma } from "@workspace/db";
 import authMiddleware from "./auth.middleware.ts";
-import DodoPayments from "dodopayments";
+import companyMiddleware from "./company.middleware.ts";
+import {
+  dodoApiKey,
+  dodoClient,
+  maskedDodoApiKey,
+  mode,
+} from "./dodo-client.ts";
+import { dodoWebhooksHandler } from "./weebhook.ts";
 
-const envPath = fileURLToPath(new URL("../../../.env", import.meta.url));
+export { dodoApiKey, dodoClient, mode } from "./dodo-client.ts";
 
-dotenv.config({ path: envPath, override: false });
-
-export const dodoApiKey = process.env.DODO_PAYMENTS_API_KEY;
-
-if (!dodoApiKey) {
-  throw new Error(
-    "Missing DODO_PAYMENTS_API_KEY. Load it from the repo .env file before starting the API."
-  );
-}
-
-const rawMode = process.env.DODO_PAYMENTS_ENVIRONMENT;
-
-export const mode: "test_mode" | "live_mode" =
-  rawMode === "live_mode" ? "live_mode" : "test_mode";
-const masked = `${dodoApiKey.slice(0, 4)}...${dodoApiKey.slice(-4)}`;
 console.info(
-  `DodoPayments init — environment=${mode}, token=${masked}, tokenLength=${dodoApiKey.length}`
+  `DodoPayments init — environment=${mode}, token=${maskedDodoApiKey}, tokenLength=${dodoApiKey.length}`
 );
-
-export const dodoClient = new DodoPayments({
-  bearerToken: dodoApiKey,
-  environment: mode, // 'test_mode' or 'live_mode'
-});
 
 const app: express.Express = express();
 const allowedOrigins = (process.env.CORS_ORIGIN ?? "")
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
+
+const frontendUrl =
+  process.env.NEXT_PUBLIC_WEB_URL ?? process.env.APP_URL ?? "http://localhost:3000";
+
+app.post(
+  "/api/v1/webhooks/dodo",
+  express.raw({ type: "application/json" }),
+  dodoWebhooksHandler
+);
 
 // Basic middleware
 app.use(express.json());
@@ -61,19 +55,43 @@ app.get("/health", (req, res) => {
 app.post("/api/v1/onboarding/company", authMiddleware, async (req, res) => {
   try {
     const { name, size, website, address, state, city, pin_code } = req.body;
-    console.log("Received company onboarding data:", { name, size, website });
-    const company = await prisma.company.create({
-      data: {
+    const ownerId = req.user?.id;
+
+    if (!ownerId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const company = await prisma.company.upsert({
+      where: {
+        ownerId,
+      },
+      create: {
         name,
         size,
         website,
+        address,
+        state,
+        city,
+        pinCode: pin_code,
+        status: "PENDING",
         owner: {
           connect: {
-            id: req?.user?.id,
+            id: ownerId,
           },
         },
       },
+      update: {
+        name,
+        size,
+        website,
+        address,
+        state,
+        city,
+        pinCode: pin_code,
+        status: "PENDING",
+      },
     });
+
     res.status(201).json({
       message: "Company registered successfully",
       data: company,
@@ -85,9 +103,13 @@ app.post("/api/v1/onboarding/company", authMiddleware, async (req, res) => {
   }
 });
 
-app.post("/api/v1/onboarding/plan", async (req, res) => {
+app.post("/api/v1/onboarding/plan", authMiddleware, companyMiddleware, async (req, res) => {
   try {
-    const { planId } = req.body;
+    const planId = Number(req.body?.planId);
+
+    if (!Number.isInteger(planId)) {
+      return res.status(400).json({ message: "A valid planId is required" });
+    }
 
     const plan = await prisma.plan.findUnique({
       where: {
@@ -95,24 +117,39 @@ app.post("/api/v1/onboarding/plan", async (req, res) => {
       },
     });
 
-    if (!plan || !req?.company) {
-      return res.status(400).json({ message: "Plan does not exists" });
+    if (!plan) {
+      return res.status(400).json({ message: "Plan does not exist" });
     }
 
-    const checkout = dodoClient.checkoutSessions.create({
-      product_cart: [{ product_id: plan.dodoProductId, quantity: 1 }],
-      allowed_payment_method_types: [
-        "credit",
-        "debit",
-        "upi_collect",
-        "upi_intent",
-        "crypto_currency",
-      ],
-      metadata: { companyId: req?.company?.id, plan: plan.id.toLocaleString() },
-      return_url: "https://localhost:3000/onboarding/plan/success",
-    });
+    if (!req.company) {
+      return res.status(400).json({ message: "Company not found for user" });
+    }
 
-    console.log("checkout", checkout);
+    const user = req.user;
+
+    if (!user?.id || !user.email || !user.name) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const trialPeriodDays = Number(process.env.DODO_TRIAL_PERIOD_DAYS ?? 0);
+
+    const checkout = await dodoClient.checkoutSessions.create({
+      product_cart: [{ product_id: plan.dodoProductId, quantity: 1 }],
+      ...(trialPeriodDays > 0
+        ? { subscription_data: { trial_period_days: trialPeriodDays } }
+        : {}),
+      customer: {
+        email: user.email,
+        name: user.name,
+      },
+      metadata: {
+        companyId: req.company.id,
+        ownerId: user.id,
+        planId: String(plan.id),
+        planKey: plan.key,
+      },
+      return_url: `${frontendUrl}/onboarding/plan/success`,
+    });
 
     res
       .status(200)
@@ -143,9 +180,11 @@ app.post("/api/v1/onboarding/plan", async (req, res) => {
   }
 });
 
-app.get("/api/v1/onboarding/plan", async (req, res) => {
+app.get("/api/v1/onboarding/plan", authMiddleware, async (req, res) => {
   try {
-    const plans = await prisma.plan.findMany();
+    const plans = await prisma.plan.findMany({
+      orderBy: [{ priceCents: "asc" }, { id: "asc" }],
+    });
     return res.status(200).json({
       message: "Pricing plans fetched successfully",
       data: plans,
@@ -180,12 +219,6 @@ app.get("/api/v1/onboarding/plan", async (req, res) => {
 //   return session.checkout_url;
 // }
 
-const PORT = Number(process.env.API_PORT || process.env.PORT || 4000);
-
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
-
 app.use(
   (
     err: any,
@@ -197,5 +230,11 @@ app.use(
     res.status(500).json({ error: "Internal server error" });
   }
 );
+
+const PORT = Number(process.env.API_PORT || process.env.PORT || 4000);
+
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
 
 export default app;

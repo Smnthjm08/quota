@@ -168,12 +168,12 @@ export default function CompanyOnboardingForm() {
             </div>
             <div className="col-span-full sm:col-span-2">
               <Field className="gap-2">
-                <FieldLabel htmlFor="pin-code">Pin code</FieldLabel>
+                <FieldLabel htmlFor="pin-code">Postal code</FieldLabel>
                 <Input
-                  id="pin-code"
-                  name="pin-code"
-                  autoComplete="pin-code"
-                  placeholder="Pin Code"
+                  id="postal-code"
+                  name="postal-code"
+                  autoComplete="postal-code"
+                  placeholder="Postal Code"
                   value={pinCode}
                   onChange={(e) => setPinCode(e.target.value)}
                 />

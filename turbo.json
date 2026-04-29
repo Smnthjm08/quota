@@ -15,7 +15,8 @@
     "EMAIL_API_KEY",
     "DODO_STARTER_PRODUCT_ID",
     "DODO_TEAM_PRODUCT_ID",
-    "DODO_PAYMENTS_API_KEY"
+    "DODO_PAYMENTS_API_KEY",
+    "DODO_PAYMENTS_WEBHOOK_SECRET"
   ],
   "ui": "tui",
   "tasks": {
