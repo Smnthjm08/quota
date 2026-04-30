@@ -4,6 +4,7 @@ import "@workspace/ui/globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { cn } from "@workspace/ui/lib/utils";
 import { SolanaProvider } from "@/components/provider/solana-provider";
+import { TooltipProvider } from "@workspace/ui/components/tooltip";
 
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -29,9 +30,11 @@ export default function RootLayout({
       )}
     >
       <body>
-        <SolanaProvider>
-          <ThemeProvider>{children}</ThemeProvider>
-        </SolanaProvider>
+        <TooltipProvider>
+          <SolanaProvider>
+            <ThemeProvider>{children}</ThemeProvider>
+          </SolanaProvider>
+        </TooltipProvider>
       </body>
     </html>
   );

@@ -200,7 +200,9 @@ app.post(
       };
 
       if (!wallet || !nonce || !signature) {
-        return res.status(400).json({ message: "wallet, nonce and signature are required" });
+        return res
+          .status(400)
+          .json({ message: "wallet, nonce and signature are required" });
       }
 
       if (!req.user?.id) {
@@ -228,10 +230,16 @@ app.post(
         return res.status(400).json({ message: "Invalid wallet public key" });
       }
 
-      const isValid = nacl.sign.detached.verify(message, signatureUint8, pubkeyBytes);
+      const isValid = nacl.sign.detached.verify(
+        message,
+        signatureUint8,
+        pubkeyBytes
+      );
 
       if (!isValid) {
-        return res.status(401).json({ message: "Signature verification failed" });
+        return res
+          .status(401)
+          .json({ message: "Signature verification failed" });
       }
 
       // Persist the wallet public key on the company record for better UX
@@ -240,7 +248,9 @@ app.post(
         data: { ownerWalletPubkey: wallet },
       });
 
-      return res.status(200).json({ message: "Wallet verified", data: { company: updated } });
+      return res
+        .status(200)
+        .json({ message: "Wallet verified", data: { company: updated } });
     } catch (error) {
       console.error("Wallet verify error:", error);
       return res.status(500).json({ message: "Internal server error" });

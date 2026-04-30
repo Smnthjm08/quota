@@ -1,6 +1,6 @@
-import { Button } from "@workspace/ui/components/button"
-import { Separator } from "@workspace/ui/components/separator"
-import { SidebarTrigger } from "@workspace/ui/components/sidebar"
+import { Button } from "@workspace/ui/components/button";
+import { Separator } from "@workspace/ui/components/separator";
+import { SidebarTrigger } from "@workspace/ui/components/sidebar";
 
 export function SiteHeader() {
   return (
@@ -14,5 +14,5 @@ export function SiteHeader() {
         <h1 className="text-base font-medium">Documents</h1>
       </div>
     </header>
-  )
+  );
 }
