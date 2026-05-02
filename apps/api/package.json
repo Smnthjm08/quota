@@ -15,6 +15,7 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@coral-xyz/anchor": "^0.32.1",
     "better-auth": "^1.6.6",
     "body-parser": "^2.2.2",
     "cors": "^2.8.5",
@@ -26,6 +27,7 @@
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
+    "@workspace/anchor-client": "workspace:*",
     "@workspace/auth": "workspace:*",
     "@workspace/db": "workspace:*",
     "@workspace/eslint-config": "workspace:^",
