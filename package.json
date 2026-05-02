@@ -14,7 +14,8 @@
     "db:migrate": "turbo run db:migrate",
     "db:studio": "turbo run db:studio",
     "db:test": "turbo run db:test",
-    "db:seed": "turbo run db:seed"
+    "db:seed": "turbo run db:seed",
+    "anchor:sync": "cp quota_vault/target/idl/quota_vault.json packages/anchor-client/src/idl/ && cp quota_vault/target/types/quota_vault.ts packages/anchor-client/src/types/"
   },
   "devDependencies": {
     "@workspace/eslint-config": "workspace:*",

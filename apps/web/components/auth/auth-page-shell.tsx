@@ -21,10 +21,10 @@ export function AuthPageShell({
   children,
 }: AuthPageShellProps) {
   return (
-    <section className="relative flex min-h-screen items-center justify-center bg-foreground dark:bg-background">
+    <section className="relative flex min-h-screen items-center justify-center bg-background">
       <div className="pointer-events-none absolute inset-0 right-0 hidden overflow-hidden md:block">
         <div className="absolute top-0 left-1/1 h-650 w-650 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/10" />
-        <div className="absolute top-0 left-1/1 h-175 w-175 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground dark:bg-background" />
+        <div className="absolute top-0 left-1/1 h-175 w-175 -translate-x-1/2 -translate-y-1/2 rounded-full bg-background" />
       </div>
 
       <div className="mx-auto w-full max-w-lg px-4 py-10 sm:px-0 md:py-20">

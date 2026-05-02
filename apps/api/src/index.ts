@@ -1,6 +1,7 @@
 import express from "express";
 import helmet from "helmet";
 import cors from "cors";
+import { randomBytes } from "crypto";
 import { prisma } from "@workspace/db";
 import authMiddleware from "./auth.middleware.ts";
 import companyMiddleware from "./company.middleware.ts";
@@ -30,6 +31,29 @@ const frontendUrl =
   process.env.NEXT_PUBLIC_WEB_URL ??
   process.env.APP_URL ??
   "http://localhost:3000";
+
+const WALLET_CHALLENGE_TTL_MS = 5 * 60 * 1000;
+
+type WalletChallenge = {
+  nonce: string;
+  message: string;
+  expiresAt: number;
+};
+
+const walletChallenges = new Map<string, WalletChallenge>();
+
+function getChallengeKey(userId: string, wallet: string): string {
+  return `${userId}:${wallet}`;
+}
+
+function pruneExpiredChallenges() {
+  const now = Date.now();
+  for (const [key, value] of walletChallenges.entries()) {
+    if (value.expiresAt <= now) {
+      walletChallenges.delete(key);
+    }
+  }
+}
 
 app.post(
   "/api/v1/webhooks/dodo",
@@ -188,6 +212,64 @@ app.post(
 );
 
 app.post(
+  "/api/auth/wallet/challenge",
+  authMiddleware,
+  companyMiddleware,
+  async (req, res) => {
+    try {
+      const { wallet } = req.body as {
+        wallet?: string;
+      };
+
+      if (!wallet) {
+        return res.status(400).json({ message: "wallet is required" });
+      }
+
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      if (!req.company) {
+        return res.status(400).json({ message: "Company not found for user" });
+      }
+
+      try {
+        // Validate wallet format early to avoid issuing invalid challenges.
+        new PublicKey(wallet);
+      } catch (e) {
+        return res.status(400).json({ message: "Invalid wallet public key" });
+      }
+
+      pruneExpiredChallenges();
+
+      const nonce = randomBytes(16).toString("hex");
+      const message = `Verify wallet ownership for Quota\nNonce:${nonce}`;
+      const expiresAt = Date.now() + WALLET_CHALLENGE_TTL_MS;
+      const challengeKey = getChallengeKey(userId, wallet);
+
+      walletChallenges.set(challengeKey, {
+        nonce,
+        message,
+        expiresAt,
+      });
+
+      return res.status(200).json({
+        message: "Wallet challenge created",
+        data: {
+          nonce,
+          message,
+          expiresAt,
+        },
+      });
+    } catch (error) {
+      console.error("Wallet challenge error:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  }
+);
+
+app.post(
   "/api/auth/wallet/verify",
   authMiddleware,
   companyMiddleware,
@@ -205,7 +287,12 @@ app.post(
           .json({ message: "wallet, nonce and signature are required" });
       }
 
-      if (!req.user?.id) {
+      if (!Array.isArray(signature) || signature.length === 0) {
+        return res.status(400).json({ message: "Invalid signature payload" });
+      }
+
+      const userId = req.user?.id;
+      if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
@@ -215,9 +302,23 @@ app.post(
         return res.status(400).json({ message: "Company not found for user" });
       }
 
-      // Recreate the message the client signed
-      const messageString = `Verify wallet ownership for Quota\nNonce:${nonce}`;
-      const message = new TextEncoder().encode(messageString);
+      pruneExpiredChallenges();
+
+      const challengeKey = getChallengeKey(userId, wallet);
+      const challenge = walletChallenges.get(challengeKey);
+
+      if (!challenge || challenge.nonce !== nonce) {
+        return res
+          .status(401)
+          .json({ message: "Wallet challenge is missing or invalid" });
+      }
+
+      if (challenge.expiresAt <= Date.now()) {
+        walletChallenges.delete(challengeKey);
+        return res.status(401).json({ message: "Wallet challenge expired" });
+      }
+
+      const message = new TextEncoder().encode(challenge.message);
 
       // Convert signature array back to Uint8Array
       const signatureUint8 = new Uint8Array(signature);
@@ -241,6 +342,9 @@ app.post(
           .status(401)
           .json({ message: "Signature verification failed" });
       }
+
+      // One-time challenge use to prevent replay.
+      walletChallenges.delete(challengeKey);
 
       // Persist the wallet public key on the company record for better UX
       const updated = await prisma.company.update({

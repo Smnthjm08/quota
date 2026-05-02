@@ -1,5 +1,6 @@
 "use client";
 
+import { authClient } from "@workspace/auth/client";
 import {
   Avatar,
   AvatarFallback,
@@ -20,6 +21,8 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@workspace/ui/components/sidebar";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import {
   EllipsisVerticalIcon,
   CircleUserRoundIcon,
@@ -38,6 +41,20 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
+  const router = useRouter();
+  const [isSigningOut, setIsSigningOut] = useState(false);
+
+  const handleLogout = async () => {
+    setIsSigningOut(true);
+
+    try {
+      await authClient.signOut();
+      router.refresh();
+      router.push("/");
+    } finally {
+      setIsSigningOut(false);
+    }
+  };
 
   return (
     <SidebarMenu>
@@ -97,9 +114,9 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout} disabled={isSigningOut}>
               <LogOutIcon />
-              Log out
+              {isSigningOut ? "Logging out..." : "Log out"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

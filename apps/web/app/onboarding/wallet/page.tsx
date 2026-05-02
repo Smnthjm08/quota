@@ -2,7 +2,19 @@
 
 import { useWallet } from "@solana/wallet-adapter-react";
 import dynamic from "next/dynamic";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { AxiosError } from "axios";
+import { useRouter } from "next/navigation";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui/components/card";
+import { Button } from "@workspace/ui/components/button";
+import { Badge } from "@workspace/ui/components/badge";
 import { axiosInstance } from "@/lib/axios";
 
 const WalletMultiButton = dynamic(
@@ -14,19 +26,20 @@ const WalletMultiButton = dynamic(
 );
 
 export default function WalletConnectPage() {
-  const [mounted, setMounted] = useState(false);
-  const [needsVerification, setNeedsVerification] = useState(false);
   const [isWalletSigned, setIsWalletSigned] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const autoVerifyWalletRef = useRef<string | null>(null);
+  const router = useRouter();
 
   const { connected, publicKey, signMessage } = useWallet();
-
-  useEffect(() => {
-    if (connected && publicKey && !isWalletSigned) {
-      setNeedsVerification(true);
-    }
-  }, [connected, publicKey, isWalletSigned]);
+  const connectedWallet = publicKey?.toBase58() ?? null;
+  const shortWallet = connectedWallet
+    ? `${connectedWallet.slice(0, 4)}...${connectedWallet.slice(-4)}`
+    : null;
+  const needsVerification = Boolean(
+    connected && connectedWallet && !isWalletSigned
+  );
 
   // Check server-side wallet association when wallet or session changes
   useEffect(() => {
@@ -39,14 +52,13 @@ export default function WalletConnectPage() {
 
         if (!mounted) return;
 
-        if (publicKey && wallet && publicKey.toBase58() === wallet) {
+        if (connectedWallet && wallet && connectedWallet === wallet) {
           setIsWalletSigned(true);
-          setNeedsVerification(false);
-        } else if (publicKey && (!wallet || publicKey.toBase58() !== wallet)) {
+        } else if (connectedWallet && (!wallet || connectedWallet !== wallet)) {
           setIsWalletSigned(false);
-          setNeedsVerification(true);
         } else {
           setIsWalletSigned(false);
+          setErrorMessage("");
         }
       } catch (e) {
         console.error("Failed to fetch wallet status", e);
@@ -58,73 +70,145 @@ export default function WalletConnectPage() {
     return () => {
       mounted = false;
     };
-  }, [publicKey, connected]);
+  }, [connectedWallet, connected]);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const verifyWallet = useCallback(async () => {
+    if (!connectedWallet) {
+      setErrorMessage("Connect a wallet first");
+      return;
+    }
 
-  async function verifyWallet() {
-    if (!publicKey || !signMessage) return;
-
-    const nonce = crypto.randomUUID();
-
-    const message = new TextEncoder().encode(
-      `Verify wallet ownership for Quota\nNonce:${nonce}`
-    );
+    if (!signMessage) {
+      setErrorMessage("This wallet does not support message signing");
+      return;
+    }
 
     try {
-      const signature = await signMessage(message);
-
       setIsVerifying(true);
       setErrorMessage("");
 
+      const challengeResp = await axiosInstance.post(
+        "/api/auth/wallet/challenge",
+        {
+          wallet: connectedWallet,
+        }
+      );
+
+      const { nonce, message } = challengeResp.data.data as {
+        nonce: string;
+        message: string;
+      };
+
+      const encodedMessage = new TextEncoder().encode(message);
+
+      const signature = await signMessage(encodedMessage);
+
       await axiosInstance.post("/api/auth/wallet/verify", {
-        wallet: publicKey.toBase58(),
+        wallet: connectedWallet,
         nonce,
         signature: Array.from(signature),
       });
 
       setIsWalletSigned(true);
-      setNeedsVerification(false);
+      setErrorMessage("");
     } catch (e) {
       console.error(e);
+      const apiError = e as AxiosError<{ message?: string }>;
       setErrorMessage(
-        (e as any)?.response?.data?.message ?? "Verification failed"
+        apiError.response?.data?.message ?? "Verification failed"
       );
     } finally {
       setIsVerifying(false);
     }
-  }
+  }, [connectedWallet, signMessage]);
+
+  useEffect(() => {
+    if (!connectedWallet) {
+      autoVerifyWalletRef.current = null;
+      return;
+    }
+
+    if (isWalletSigned || isVerifying) {
+      return;
+    }
+
+    if (autoVerifyWalletRef.current === connectedWallet) {
+      return;
+    }
+
+    autoVerifyWalletRef.current = connectedWallet;
+    void verifyWallet();
+  }, [connectedWallet, isWalletSigned, isVerifying, verifyWallet]);
 
   return (
-    <main>
-      <div className="space-y-4">
-        <h1 className="text-lg font-semibold">Connect your wallet</h1>
-
-        {mounted && <WalletMultiButton />}
-
-        {needsVerification && (
-          <div className="flex items-center gap-3">
-            <button
-              onClick={verifyWallet}
-              disabled={isVerifying}
-              className="rounded-md bg-primary px-3 py-1 text-sm text-primary-foreground disabled:opacity-50"
-            >
-              {isVerifying ? "Verifying…" : "Verify Wallet"}
-            </button>
-            {errorMessage && (
-              <span className="text-sm text-destructive">{errorMessage}</span>
-            )}
+    <main className="mx-auto w-full max-w-xl items-center justify-between px-4 py-8">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <CardTitle>Connect your wallet</CardTitle>
+              <CardDescription>
+                Connect and verify your wallet before creating a vault.
+              </CardDescription>
+            </div>
+            <Badge variant={isWalletSigned ? "default" : "secondary"}>
+              {isWalletSigned ? "Verified" : connectedWallet ? "Connected" : "Not connected"}
+            </Badge>
           </div>
-        )}
+        </CardHeader>
 
-        {isWalletSigned && (
-          <button className="rounded-md border px-3 py-1 text-sm">
+        <CardContent className="space-y-4">
+          <div className="rounded-lg border border-border bg-muted/40 p-3">
+            <div className="text-xs text-muted-foreground">Wallet</div>
+            <div className="mt-1 font-mono text-sm">
+              {shortWallet ?? "No wallet connected"}
+            </div>
+          </div>
+
+          <div>
+            <WalletMultiButton />
+          </div>
+
+          {needsVerification && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span className="inline-flex h-2 w-2 rounded-full bg-amber-500" />
+                {isVerifying ? "Requesting signature..." : "Verifying wallet after connection"}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Your wallet will sign a one-time message automatically.
+              </p>
+            </div>
+          )}
+
+          {errorMessage && (
+            <div className="flex items-center gap-3">
+              <p className="text-sm text-destructive">{errorMessage}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  autoVerifyWalletRef.current = null;
+                  void verifyWallet();
+                }}
+                disabled={isVerifying || !connectedWallet}
+              >
+                Retry
+              </Button>
+            </div>
+          )}
+        </CardContent>
+
+        <CardFooter className="justify-end">
+          <Button
+            variant="outline"
+            disabled={!isWalletSigned}
+            onClick={() => router.push("/dashboard")}
+          >
             Create Vault
-          </button>
-        )}
-      </div>
+          </Button>
+        </CardFooter>
+      </Card>
     </main>
   );
 }
