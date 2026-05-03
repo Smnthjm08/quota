@@ -4,6 +4,7 @@ import { Button } from "@workspace/ui/components/button";
 import { authClient } from "@workspace/auth/client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export function LogoutButton() {
   const router = useRouter();
@@ -15,6 +16,7 @@ export function LogoutButton() {
     try {
       await authClient.signOut();
       router.refresh();
+      toast.success("Logout Successful");
       router.push("/");
     } finally {
       setIsSigningOut(false);

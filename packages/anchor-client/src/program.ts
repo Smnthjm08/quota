@@ -4,7 +4,7 @@ import type { QuotaVault } from "./types/quota_vault.ts";
 import idl from "./idl/quota_vault.json" with { type: "json" };
 
 export const PROGRAM_ID = new PublicKey(
-  "HZ9sQe6snr7g1FrnKftH6xijKWCx3JdJF9XRy1JQuHGC"
+  "CjMHzbSLp1riwY4QPbBSgpjE8jzawFZV86X6sYvMH58Y"
 );
 
 export const VAULT_SEED = Buffer.from("vault");

@@ -16,6 +16,7 @@ import {
 import { Button } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
 import { axiosInstance } from "@/lib/axios";
+import { toast } from "sonner";
 
 const WalletMultiButton = dynamic(
   () =>
@@ -34,9 +35,7 @@ export default function WalletConnectPage() {
 
   const { connected, publicKey, signMessage } = useWallet();
   const connectedWallet = publicKey?.toBase58() ?? null;
-  const shortWallet = connectedWallet
-    ? `${connectedWallet}`
-    : null;
+  const shortWallet = connectedWallet ? `${connectedWallet}` : null;
   const needsVerification = Boolean(
     connected && connectedWallet && !isWalletSigned
   );
@@ -47,12 +46,17 @@ export default function WalletConnectPage() {
     async function checkWalletStatus() {
       try {
         const resp = await axiosInstance.get("/api/auth/wallet/status");
-        const { wallet, vaultPda } = resp.data as { wallet: string | null; vaultPda?: string | null };
+        const { wallet, vaultPda } = resp.data as {
+          wallet: string | null;
+          vaultPda: string | null;
+        };
 
         if (!mounted) return;
 
-        // If company already has a vault PDA, redirect to dashboard.
-        if (vaultPda) {
+        const hasVaultPda = vaultPda !== null;
+          // typeof vaultPda === "string" && vaultPda.trim().length > 0;
+
+        if (hasVaultPda) {
           router.push("/dashboard");
           return;
         }
@@ -76,7 +80,7 @@ export default function WalletConnectPage() {
     return () => {
       mounted = false;
     };
-  }, [connectedWallet, connected]);
+  }, [connectedWallet, connected, router]);
 
   const verifyWallet = useCallback(async () => {
     if (!connectedWallet) {
@@ -128,6 +132,20 @@ export default function WalletConnectPage() {
     }
   }, [connectedWallet, signMessage]);
 
+  const handleCreateVault = async () => {
+    try {
+      console.log("=========");
+      const data = await axiosInstance.post("/api/v1/vaults",{
+        hello: "ssssss"
+      });
+      console.log("data", data)
+      toast.success("====")
+    } catch (error) {
+      console.error("Error creating vault", error);
+      toast.error("Failed to Create vault. Please try after sometime.");
+    }
+  };
+
   useEffect(() => {
     if (!connectedWallet) {
       autoVerifyWalletRef.current = null;
@@ -158,7 +176,11 @@ export default function WalletConnectPage() {
               </CardDescription>
             </div>
             <Badge variant={isWalletSigned ? "default" : "secondary"}>
-              {isWalletSigned ? "Verified" : connectedWallet ? "Connected" : "Not connected"}
+              {isWalletSigned
+                ? "Verified"
+                : connectedWallet
+                  ? "Connected"
+                  : "Not connected"}
             </Badge>
           </div>
         </CardHeader>
@@ -179,7 +201,9 @@ export default function WalletConnectPage() {
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <span className="inline-flex h-2 w-2 rounded-full bg-amber-500" />
-                {isVerifying ? "Requesting signature..." : "Verifying wallet after connection"}
+                {isVerifying
+                  ? "Requesting signature..."
+                  : "Verifying wallet after connection"}
               </div>
               <p className="text-xs text-muted-foreground">
                 Your wallet will sign a one-time message automatically.
@@ -208,33 +232,12 @@ export default function WalletConnectPage() {
         <CardFooter className="justify-end">
           <div className="flex gap-2">
             <Button
-              variant="outline"
-              onClick={async () => {
-                // Initialize vault via API (derives PDA server-side and persists)
-                try {
-                  setIsVerifying(true);
-                  const resp = await axiosInstance.post("/api/onboarding/init-vault");
-                  const vaultPda = resp.data?.data?.vaultPda;
-                  if (vaultPda) {
-                    router.push("/dashboard");
-                  }
-                } catch (err) {
-                  console.error(err);
-                  setErrorMessage("Failed to initialize vault");
-                } finally {
-                  setIsVerifying(false);
-                }
-              }}
-              disabled={!isWalletSigned}
-            >
-              Initialize Vault
-            </Button>
-
-            <Button
               variant="default"
               type="button"
+              className="cursor-pointer"
+              size={"lg"}
               disabled={!isWalletSigned}
-              onClick={() => router.push("/dashboard")}
+              onClick={handleCreateVault}
             >
               Create Vault
             </Button>

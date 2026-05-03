@@ -4,8 +4,9 @@ import {
   type AuthSession,
   type SessionCompany,
   type SessionUser,
-} from "./session.types.ts";
+} from "../types/session.types.ts";
 import { auth } from "@workspace/auth/auth";
+
 declare global {
   namespace Express {
     interface Request {

@@ -1,10 +1,7 @@
 import dotenv from "dotenv";
 import DodoPayments from "dodopayments";
-import { fileURLToPath } from "node:url";
 
-const envPath = fileURLToPath(new URL("../../../.env", import.meta.url));
-
-dotenv.config({ path: envPath, override: false });
+dotenv.config({ path: "../../../.env", override: false });
 
 const dodoApiKeyValue = process.env.DODO_PAYMENTS_API_KEY;
 

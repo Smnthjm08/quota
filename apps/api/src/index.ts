@@ -3,8 +3,7 @@ import helmet from "helmet";
 import cors from "cors";
 import { randomBytes } from "crypto";
 import { prisma } from "@workspace/db";
-import authMiddleware from "./auth.middleware";
-import companyMiddleware from "./company.middleware";
+import companyMiddleware from "./middlewares/company.middleware.ts";
 import nacl from "tweetnacl";
 import { PublicKey } from "@solana/web3.js";
 import {
@@ -12,10 +11,11 @@ import {
   dodoClient,
   maskedDodoApiKey,
   mode,
-} from "./dodo-client";
-import { dodoWebhooksHandler } from "./weebhook";
+} from "./lib/dodo-client.ts";
+import { dodoWebhooksHandler } from "./dodo-weebhook.ts";
+import authMiddleware from "./middlewares/auth.middleware.ts";
 
-export { dodoApiKey, dodoClient, mode } from "./dodo-client";
+export { dodoApiKey, dodoClient, mode } from "./lib/dodo-client.ts";
 
 console.info(
   `DodoPayments init — environment=${mode}, token=${maskedDodoApiKey}, tokenLength=${dodoApiKey.length}`
@@ -61,7 +61,6 @@ app.post(
   dodoWebhooksHandler
 );
 
-// Basic middleware
 app.use(express.json());
 app.use(helmet());
 app.use(
@@ -362,7 +361,6 @@ app.post(
   }
 );
 
-// Return wallet status for the authenticated user's company
 app.get(
   "/api/auth/wallet/status",
   authMiddleware,
@@ -371,7 +369,9 @@ app.get(
     try {
       const company = req.company;
       if (!company) {
-        return res.status(200).json({ verified: false, wallet: null, vaultPda: null });
+        return res
+          .status(200)
+          .json({ verified: false, wallet: null, vaultPda: null });
       }
 
       return res.status(200).json({
@@ -399,6 +399,23 @@ app.get("/api/v1/onboarding/plan", authMiddleware, async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to create Dodo checkout session" });
+  }
+});
+
+app.post("/api/v1/vaults", companyMiddleware, (req, res) => {
+  try {
+    return res.status(200).json({
+      message: "Vault created successfully",
+      data: {
+        vaultPda: "dummy_vault_pda_for_testing",
+      },
+      success: null,
+    });
+  } catch (error) {
+    console.error("Vault creation error:", error);
+    return res
+      .status(500)
+      .json({ message: "Internal server error", success: false, data: null });
   }
 });
 

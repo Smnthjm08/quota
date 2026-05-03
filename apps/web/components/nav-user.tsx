@@ -30,6 +30,7 @@ import {
   BellIcon,
   LogOutIcon,
 } from "lucide-react";
+import { toast } from "sonner";
 
 export function NavUser({
   user,
@@ -50,6 +51,7 @@ export function NavUser({
     try {
       await authClient.signOut();
       router.refresh();
+      toast.success("Logout Successful");
       router.push("/");
     } finally {
       setIsSigningOut(false);
@@ -114,8 +116,12 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout} disabled={isSigningOut}>
-              <LogOutIcon />
+            <DropdownMenuItem
+              onClick={handleLogout}
+              disabled={isSigningOut}
+              className="cursor-pointer bg-red-200 text-red-500 data-highlighted:bg-red-300 data-highlighted:text-red-700"
+            >
+              <LogOutIcon className="text-inherit" />
               {isSigningOut ? "Logging out..." : "Log out"}
             </DropdownMenuItem>
           </DropdownMenuContent>

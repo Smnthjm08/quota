@@ -1,5 +1,5 @@
 {
-  "name": "agent-flow",
+  "name": "quota",
   "version": "0.0.1",
   "private": true,
   "scripts": {

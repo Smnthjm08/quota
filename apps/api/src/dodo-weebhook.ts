@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { Prisma, prisma } from "@workspace/db";
-import { dodoClient, dodoWebhookKey } from "./dodo-client.ts";
+import { dodoClient, dodoWebhookKey } from "./lib/dodo-client.ts";
 
 type DodoEventType =
   | "payment.cancelled"

@@ -17,8 +17,6 @@ export default async function OnboardingLayout({
     redirect("/login");
   }
 
-  // Render children server-side; the client gate will fetch the correct onboarding
-  // step and navigate if the current path does not match the user's state.
   return (
     <>
       {children}

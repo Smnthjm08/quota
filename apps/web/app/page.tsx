@@ -2,13 +2,6 @@ import { Button } from "@workspace/ui/components/button";
 import { AuthActions } from "@/components/auth/auth-actions";
 
 export default function Page() {
-  // try {
-  //   const data = await prisma.user.findMany();
-  //   console.log("data", data);
-  // } catch (error) {
-  //   console.error("Failed to fetch users", error);
-  // }
-
   return (
     <div className="flex min-h-svh p-6">
       <div className="flex max-w-md min-w-0 flex-col gap-4 text-sm leading-loose">
