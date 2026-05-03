@@ -1,7 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@workspace/auth/auth";
-import OnboardingGateClient from "@/components/onboarding/onboarding-gate-client";
 
 export default async function OnboardingLayout({
   children,
@@ -17,10 +16,5 @@ export default async function OnboardingLayout({
     redirect("/login");
   }
 
-  return (
-    <>
-      {children}
-      <OnboardingGateClient />
-    </>
-  );
+  return <>{children}</>;
 }

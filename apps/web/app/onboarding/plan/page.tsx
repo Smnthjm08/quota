@@ -1,4 +1,5 @@
 import { OnboardingPlanPricingCard } from "@/components/onboarding-pricing-cards";
+import OnboardingRouteGuard from "@/components/onboarding/onboarding-route-guard";
 
 export const metadata = {
   title: "Choose your plan",
@@ -7,8 +8,11 @@ export const metadata = {
 
 export default function OnboardingPage() {
   return (
-    <main className="min-h-screen bg-background">
-      <OnboardingPlanPricingCard />
-    </main>
+    <>
+      <OnboardingRouteGuard />
+      <main className="min-h-screen bg-background">
+        <OnboardingPlanPricingCard />
+      </main>
+    </>
   );
 }

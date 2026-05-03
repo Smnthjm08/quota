@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
+import OnboardingRouteGuard from "@/components/onboarding/onboarding-route-guard";
 import {
   Card,
   CardContent,
@@ -54,7 +55,7 @@ export default function WalletConnectPage() {
         if (!mounted) return;
 
         const hasVaultPda = vaultPda !== null;
-          // typeof vaultPda === "string" && vaultPda.trim().length > 0;
+        // typeof vaultPda === "string" && vaultPda.trim().length > 0;
 
         if (hasVaultPda) {
           router.push("/dashboard");
@@ -135,11 +136,11 @@ export default function WalletConnectPage() {
   const handleCreateVault = async () => {
     try {
       console.log("=========");
-      const data = await axiosInstance.post("/api/v1/vaults",{
-        hello: "ssssss"
+      const data = await axiosInstance.post("/api/v1/vaults", {
+        hello: "ssssss",
       });
-      console.log("data", data)
-      toast.success("====")
+      console.log("data", data);
+      toast.success("====");
     } catch (error) {
       console.error("Error creating vault", error);
       toast.error("Failed to Create vault. Please try after sometime.");
@@ -165,85 +166,88 @@ export default function WalletConnectPage() {
   }, [connectedWallet, isWalletSigned, isVerifying, verifyWallet]);
 
   return (
-    <main className="mx-auto w-full max-w-xl items-center justify-between px-4 py-8">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <CardTitle>Connect your wallet</CardTitle>
-              <CardDescription>
-                Connect and verify your wallet before creating a vault.
-              </CardDescription>
-            </div>
-            <Badge variant={isWalletSigned ? "default" : "secondary"}>
-              {isWalletSigned
-                ? "Verified"
-                : connectedWallet
-                  ? "Connected"
-                  : "Not connected"}
-            </Badge>
-          </div>
-        </CardHeader>
-
-        <CardContent className="space-y-4">
-          <div className="rounded-lg border border-border bg-muted/40 p-3">
-            <div className="text-xs text-muted-foreground">Wallet</div>
-            <div className="mt-1 font-mono text-sm">
-              {shortWallet ?? "No wallet connected"}
-            </div>
-          </div>
-
-          <div>
-            <WalletMultiButton />
-          </div>
-
-          {needsVerification && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span className="inline-flex h-2 w-2 rounded-full bg-amber-500" />
-                {isVerifying
-                  ? "Requesting signature..."
-                  : "Verifying wallet after connection"}
+    <>
+      <OnboardingRouteGuard />
+      <main className="mx-auto w-full max-w-xl items-center justify-between px-4 py-8">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <CardTitle>Connect your wallet</CardTitle>
+                <CardDescription>
+                  Connect and verify your wallet before creating a vault.
+                </CardDescription>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Your wallet will sign a one-time message automatically.
-              </p>
+              <Badge variant={isWalletSigned ? "default" : "secondary"}>
+                {isWalletSigned
+                  ? "Verified"
+                  : connectedWallet
+                    ? "Connected"
+                    : "Not connected"}
+              </Badge>
             </div>
-          )}
+          </CardHeader>
 
-          {errorMessage && (
-            <div className="flex items-center gap-3">
-              <p className="text-sm text-destructive">{errorMessage}</p>
+          <CardContent className="space-y-4">
+            <div className="rounded-lg border border-border bg-muted/40 p-3">
+              <div className="text-xs text-muted-foreground">Wallet</div>
+              <div className="mt-1 font-mono text-sm">
+                {shortWallet ?? "No wallet connected"}
+              </div>
+            </div>
+
+            <div>
+              <WalletMultiButton />
+            </div>
+
+            {needsVerification && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span className="inline-flex h-2 w-2 rounded-full bg-amber-500" />
+                  {isVerifying
+                    ? "Requesting signature..."
+                    : "Verifying wallet after connection"}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Your wallet will sign a one-time message automatically.
+                </p>
+              </div>
+            )}
+
+            {errorMessage && (
+              <div className="flex items-center gap-3">
+                <p className="text-sm text-destructive">{errorMessage}</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    autoVerifyWalletRef.current = null;
+                    void verifyWallet();
+                  }}
+                  disabled={isVerifying || !connectedWallet}
+                >
+                  Retry
+                </Button>
+              </div>
+            )}
+          </CardContent>
+
+          <CardFooter className="justify-end">
+            <div className="flex gap-2">
               <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  autoVerifyWalletRef.current = null;
-                  void verifyWallet();
-                }}
-                disabled={isVerifying || !connectedWallet}
+                variant="default"
+                type="button"
+                className="cursor-pointer"
+                size={"lg"}
+                disabled={!isWalletSigned}
+                onClick={handleCreateVault}
               >
-                Retry
+                Create Vault
               </Button>
             </div>
-          )}
-        </CardContent>
-
-        <CardFooter className="justify-end">
-          <div className="flex gap-2">
-            <Button
-              variant="default"
-              type="button"
-              className="cursor-pointer"
-              size={"lg"}
-              disabled={!isWalletSigned}
-              onClick={handleCreateVault}
-            >
-              Create Vault
-            </Button>
-          </div>
-        </CardFooter>
-      </Card>
-    </main>
+          </CardFooter>
+        </Card>
+      </main>
+    </>
   );
 }

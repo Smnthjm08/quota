@@ -1,10 +1,5 @@
 import { prisma } from "@workspace/db";
-
-export type OnboardingRoute =
-  | "/onboarding/company"
-  | "/onboarding/plan"
-  | "/onboarding/wallet"
-  | "/dashboard";
+import { getOnboardingRoute, type OnboardingRoute } from "./onboarding-route";
 
 export async function resolveOnboardingRoute(
   userId: string
@@ -14,22 +9,10 @@ export async function resolveOnboardingRoute(
       ownerId: userId,
     },
     select: {
-      plan: true,
+      planId: true,
       ownerWalletPubkey: true,
     },
   });
 
-  if (!company) {
-    return "/onboarding/company";
-  }
-
-  if (!company.plan) {
-    return "/onboarding/plan";
-  }
-
-  if (!company.ownerWalletPubkey) {
-    return "/onboarding/wallet";
-  }
-
-  return "/dashboard";
+  return getOnboardingRoute(company);
 }
