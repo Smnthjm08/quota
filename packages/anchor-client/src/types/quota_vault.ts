@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/quota_vault.json`.
  */
 export type QuotaVault = {
-  "address": "8ZZtvrepsqb1vHvigFJGJZMf8vPVCBRhPQeVui7FtxnM",
+  "address": "CjMHzbSLp1riwY4QPbBSgpjE8jzawFZV86X6sYvMH58Y",
   "metadata": {
     "name": "quotaVault",
     "version": "0.1.0",

@@ -3,7 +3,8 @@ import { prisma } from "@workspace/db";
 export type OnboardingRoute =
   | "/onboarding/company"
   | "/onboarding/plan"
-  | "/onboarding/wallet";
+  | "/onboarding/wallet"
+  | "/dashboard";
 
 export async function resolveOnboardingRoute(
   userId: string
@@ -14,6 +15,7 @@ export async function resolveOnboardingRoute(
     },
     select: {
       plan: true,
+      ownerWalletPubkey: true,
     },
   });
 
@@ -25,5 +27,9 @@ export async function resolveOnboardingRoute(
     return "/onboarding/plan";
   }
 
-  return "/onboarding/wallet";
+  if (!company.ownerWalletPubkey) {
+    return "/onboarding/wallet";
+  }
+
+  return "/dashboard";
 }

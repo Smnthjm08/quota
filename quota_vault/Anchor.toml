@@ -4,13 +4,12 @@
 resolution = true
 skip-lint = false
 
-[programs.localnet]
-quota_vault = "8ZZtvrepsqb1vHvigFJGJZMf8vPVCBRhPQeVui7FtxnM"
+[programs.devnet]
+quota_vault = "CjMHzbSLp1riwY4QPbBSgpjE8jzawFZV86X6sYvMH58Y"
 
 [provider]
-cluster = "localnet"
-wallet = "~/.config/solana/id.json"
-
+cluster = "devnet"
+wallet = "~/quota-api-signer.json"
 [scripts]
 test = "pnpm exec ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
 

@@ -8,6 +8,7 @@ type OnboardingSession = {
   };
   company?: {
     planId?: number | null;
+    ownerWalletPubkey?: string | null;
   } | null;
 } | null;
 
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
       session.company ??
       (await prisma.company.findUnique({
         where: { ownerId: session.user.id },
-        select: { planId: true },
+        select: { planId: true, ownerWalletPubkey: true },
       }));
 
     if (!company) {
@@ -45,7 +46,14 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return new Response(JSON.stringify({ route: "/onboarding/wallet" }), {
+    if (!company.ownerWalletPubkey) {
+      return new Response(JSON.stringify({ route: "/onboarding/wallet" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    return new Response(JSON.stringify({ route: "/dashboard" }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });

@@ -3,8 +3,8 @@ import helmet from "helmet";
 import cors from "cors";
 import { randomBytes } from "crypto";
 import { prisma } from "@workspace/db";
-import authMiddleware from "./auth.middleware.ts";
-import companyMiddleware from "./company.middleware.ts";
+import authMiddleware from "./auth.middleware";
+import companyMiddleware from "./company.middleware";
 import nacl from "tweetnacl";
 import { PublicKey } from "@solana/web3.js";
 import {
@@ -12,10 +12,10 @@ import {
   dodoClient,
   maskedDodoApiKey,
   mode,
-} from "./dodo-client.ts";
-import { dodoWebhooksHandler } from "./weebhook.ts";
+} from "./dodo-client";
+import { dodoWebhooksHandler } from "./weebhook";
 
-export { dodoApiKey, dodoClient, mode } from "./dodo-client.ts";
+export { dodoApiKey, dodoClient, mode } from "./dodo-client";
 
 console.info(
   `DodoPayments init — environment=${mode}, token=${maskedDodoApiKey}, tokenLength=${dodoApiKey.length}`
@@ -371,12 +371,13 @@ app.get(
     try {
       const company = req.company;
       if (!company) {
-        return res.status(200).json({ verified: false, wallet: null });
+        return res.status(200).json({ verified: false, wallet: null, vaultPda: null });
       }
 
       return res.status(200).json({
         verified: !!company.ownerWalletPubkey,
         wallet: company.ownerWalletPubkey ?? null,
+        vaultPda: company.vaultPda ?? null,
       });
     } catch (error) {
       console.error("Wallet status error:", error);
