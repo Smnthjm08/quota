@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { axiosInstance } from "@/lib/axios";
 import { type Plan as PricingPlan } from "@/lib/billingsdk-config";
+import { useAuthSession } from "@/hooks/use-auth-session";
+import { getOnboardingRoute } from "@/lib/onboarding-route";
 
 type PlanRecord = {
   id: number;
@@ -132,12 +134,13 @@ export function useOnboardingPlans({
   mapPlanRecordToPricingPlan,
 }: UseOnboardingPlansInput) {
   const router = useRouter();
+  const { refreshSession } = useAuthSession();
   const [plans, setPlans] = useState<PricingPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const loadPlans = async () => {
+  const loadPlans = useCallback(async () => {
     setErrorMessage(null);
 
     try {
@@ -156,7 +159,7 @@ export function useOnboardingPlans({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [mapPlanRecordToPricingPlan]);
 
   const reloadPlans = () => {
     setIsLoading(true);
@@ -164,8 +167,12 @@ export function useOnboardingPlans({
   };
 
   useEffect(() => {
-    void loadPlans();
-  }, []);
+    const timeoutId = window.setTimeout(() => {
+      void loadPlans();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [loadPlans]);
 
   const handlePlanSelect = async (planId: string | number) => {
     if (isSubmitting) {
@@ -194,7 +201,8 @@ export function useOnboardingPlans({
         return;
       }
 
-      router.push("/onboarding/wallet");
+      const refreshedSession = await refreshSession();
+      router.push(getOnboardingRoute(refreshedSession?.company ?? null));
     } catch (error) {
       setErrorMessage(
         getErrorMessage(error, "We could not save that plan. Please try again.")

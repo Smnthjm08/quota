@@ -1,5 +1,5 @@
 import { Keypair } from "@solana/web3.js";
-import { createProgram, getConnection } from "@workspace/anchor-client";
+import { createProgram, getConnection } from "@workspace/anchor-client/program.server";
 import type { QuotaVault } from "@workspace/anchor-client";
 
 import { Program } from "@coral-xyz/anchor";
@@ -18,6 +18,7 @@ function loadApiKeypair(): Keypair {
 }
 
 export const apiKeypair = loadApiKeypair();
+export const apiSignerPublicKey = apiKeypair.publicKey;
 export const connection = getConnection(process.env.SOLANA_RPC_URL!);
 export const program: Program<QuotaVault> = createProgram(
   process.env.SOLANA_RPC_URL!,

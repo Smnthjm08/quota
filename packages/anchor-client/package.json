@@ -15,7 +15,8 @@
     "@workspace/typescript-config": "workspace:*"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./program.server": "./src/program.server.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.32.1"

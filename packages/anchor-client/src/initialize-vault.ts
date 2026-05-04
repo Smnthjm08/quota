@@ -1,7 +1,21 @@
-import { PublicKey, SystemProgram, Keypair } from "@solana/web3.js";
-import { Program } from "@coral-xyz/anchor";
+import {
+  PublicKey,
+  SystemProgram,
+  Keypair,
+  Connection,
+  Transaction,
+} from "@solana/web3.js";
+import { Program, AnchorProvider } from "@coral-xyz/anchor";
 import { deriveVaultPda } from "./pda.ts";
+import { PROGRAM_ID } from "./program.ts";
 import type { QuotaVault } from "./types/quota_vault.ts";
+import idl from "./idl/quota_vault.json" with { type: "json" };
+
+type BrowserWallet = {
+  publicKey: PublicKey;
+  signTransaction: (transaction: Transaction) => Promise<Transaction>;
+  signAllTransactions: (transactions: Transaction[]) => Promise<Transaction[]>;
+};
 
 export async function initializeVault(
   program: Program<QuotaVault>,
@@ -22,4 +36,39 @@ export async function initializeVault(
     .rpc();
 
   return { tx, vaultPda };
+}
+
+export interface BuildVaultTxParams {
+  connection: Connection;
+  ownerPublicKey: PublicKey;
+  apiSignerPublicKey: PublicKey;
+  planId: number;
+}
+
+export async function buildInitializeVaultTransaction(
+  params: BuildVaultTxParams
+): Promise<Transaction> {
+  const { connection, ownerPublicKey, apiSignerPublicKey, planId } = params;
+
+  const [vaultPda] = deriveVaultPda(ownerPublicKey);
+
+  const wallet: BrowserWallet = {
+    publicKey: ownerPublicKey,
+    signTransaction: async (transaction) => transaction,
+    signAllTransactions: async (transactions) => transactions,
+  };
+
+  const provider = new AnchorProvider(connection, wallet as any, {
+    commitment: "confirmed",
+  });
+
+  const program = new Program<QuotaVault>(idl as QuotaVault, provider);
+
+  return program.methods
+    .initializeVault(apiSignerPublicKey, planId)
+    .accounts({
+      owner: ownerPublicKey,
+      // systemProgram: SystemProgram.programId,
+    })
+    .transaction();
 }

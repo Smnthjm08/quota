@@ -28,6 +28,8 @@ async function authMiddleware(req: Request, res: Response, next: NextFunction) {
 
     req.user = session.user;
     req.company = session.company ?? null;
+
+    console.log("Authenticated user:", session);
     next();
   } catch (error) {
     console.error("Authentication error:", error);

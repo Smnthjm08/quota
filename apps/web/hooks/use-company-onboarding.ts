@@ -48,16 +48,8 @@ export function useCompanyOnboarding() {
         pin_code: payload.pinCode,
       });
 
-      const refreshedSession = await refreshSession();
-
-      if (!refreshedSession?.company) {
-        setErrorMessage(
-          "Company was created, but session is not updated yet. Please retry in a moment."
-        );
-        return;
-      }
-
       setSuccessMessage("Company registered successfully.");
+      await refreshSession();
       router.push("/onboarding/plan");
     } catch (err: unknown) {
       let message = "Failed to register company";

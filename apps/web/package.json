@@ -25,6 +25,7 @@
     "@workspace/auth": "workspace:*",
     "@workspace/db": "workspace:*",
     "@workspace/ui": "workspace:*",
+    "@workspace/anchor-client": "workspace:*",
     "axios": "^1.15.2",
     "better-auth": "^1.6.6",
     "lucide-react": "^1.8.0",

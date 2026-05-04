@@ -6,6 +6,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { AuthSessionProvider } from "@/components/provider/auth-session-provider";
 import { SiteHeader } from "@/components/site-header";
 import { auth } from "@workspace/auth/auth";
+import { getOnboardingRoute } from "@/lib/onboarding-route";
 import {
   SidebarInset,
   SidebarProvider,
@@ -24,6 +25,12 @@ export default async function DashboardLayout({
 
   if (!session?.user) {
     redirect("/login");
+  }
+
+  const targetRoute = getOnboardingRoute(session?.company ?? null);
+
+  if (targetRoute !== "/dashboard") {
+    redirect(targetRoute);
   }
 
   return (

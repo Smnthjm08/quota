@@ -7,6 +7,7 @@ export type OnboardingRoute =
 export type OnboardingCompany = {
   planId?: number | null;
   ownerWalletPubkey?: string | null;
+  vaultPda?: string | null;
 } | null;
 
 export type OnboardingSession = {
@@ -25,6 +26,10 @@ export function getOnboardingRoute(
   }
 
   if (!company.ownerWalletPubkey) {
+    return "/onboarding/wallet";
+  }
+
+  if (!company.vaultPda) {
     return "/onboarding/wallet";
   }
 
