@@ -1,5 +1,4 @@
 "use client";
-import { axiosInstance } from "@/lib/axios";
 import { Button } from "@workspace/ui/components/button";
 import { Field, FieldLabel } from "@workspace/ui/components/field";
 import { Input } from "@workspace/ui/components/input";
@@ -13,9 +12,12 @@ import {
 import { Separator } from "@workspace/ui/components/separator";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useCompanyOnboarding } from "@/hooks/use-company-onboarding";
 
 export default function CompanyOnboardingForm() {
   const router = useRouter();
+  const { submitCompany, isSubmitting, errorMessage, successMessage } =
+    useCompanyOnboarding();
   const [name, setName] = useState("");
   const [website, setWebsite] = useState("");
   const [size, setSize] = useState("");
@@ -23,40 +25,19 @@ export default function CompanyOnboardingForm() {
   const [city, setCity] = useState("");
   const [stateValue, setStateValue] = useState("");
   const [pinCode, setPinCode] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleCompanyOnboard = async (event?: React.FormEvent) => {
     event?.preventDefault();
-    setErrorMessage(null);
-    setSuccessMessage(null);
-    setIsSubmitting(true);
 
-    try {
-      await axiosInstance.post("/api/v1/onboarding/company", {
-        name,
-        size,
-        website,
-        address,
-        state: stateValue,
-        city,
-        pin_code: pinCode,
-      });
-
-      setSuccessMessage("Company registered successfully.");
-      setIsSubmitting(false);
-      // navigate to plan selection next
-      router.push("/onboarding/plan");
-    } catch (err: unknown) {
-      setIsSubmitting(false);
-      let msg = "Failed to register company";
-      if (typeof err === "object" && err !== null) {
-        const e = err as { message?: string; response?: any };
-        msg = e.response?.data?.error || e.message || msg;
-      }
-      setErrorMessage(msg);
-    }
+    await submitCompany({
+      name,
+      website,
+      size,
+      address,
+      city,
+      stateValue,
+      pinCode,
+    });
   };
 
   return (

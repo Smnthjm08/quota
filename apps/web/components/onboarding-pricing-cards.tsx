@@ -1,12 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-
 import { PricingCard } from "@/components/ui/pricing-card";
-import { axiosInstance } from "@/lib/axios";
 import { type Plan as PricingPlan } from "@/lib/billingsdk-config";
 import { Button } from "@workspace/ui/components/button";
+import { useOnboardingPlans } from "@/hooks/use-onboarding-plans";
 
 type PlanRecord = {
   id: number;
@@ -16,23 +13,6 @@ type PlanRecord = {
   currency: string;
   interval: string;
   dodoProductId: string;
-};
-
-type PlanResponse = {
-  message: string;
-  data: PlanRecord[];
-  error: string | null;
-};
-
-type PlanSelectionResponse = {
-  message?: string;
-  data?: {
-    session_id?: string;
-    checkout_url?: string;
-    checkoutUrl?: string;
-    url?: string;
-  };
-  error?: string | null;
 };
 
 const planFeatures = {
@@ -115,170 +95,15 @@ function mapPlanRecordToPricingPlan(plan: PlanRecord): PricingPlan {
   };
 }
 
-function getErrorMessage(error: unknown, fallback: string) {
-  if (typeof error === "object" && error !== null) {
-    const response = error as {
-      response?: { data?: { error?: string; message?: string } };
-      message?: string;
-    };
-
-    if (typeof response.response?.data?.error === "string") {
-      return response.response.data.error;
-    }
-
-    if (typeof response.response?.data?.message === "string") {
-      return response.response.data.message;
-    }
-
-    if (typeof response.message === "string") {
-      return response.message;
-    }
-  }
-
-  return fallback;
-}
-
-function isPlanRecord(value: unknown): value is PlanRecord {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-
-  const plan = value as Partial<PlanRecord>;
-
-  return (
-    typeof plan.id === "number" &&
-    typeof plan.key === "string" &&
-    typeof plan.name === "string" &&
-    typeof plan.priceCents === "number" &&
-    typeof plan.currency === "string" &&
-    typeof plan.interval === "string" &&
-    typeof plan.dodoProductId === "string"
-  );
-}
-
-function extractPlanRecords(payload: unknown): PlanRecord[] {
-  if (Array.isArray(payload)) {
-    return payload.filter(isPlanRecord);
-  }
-
-  if (typeof payload !== "object" || payload === null) {
-    return [];
-  }
-
-  const response = payload as {
-    data?: unknown;
-  };
-
-  if (Array.isArray(response.data)) {
-    return response.data.filter(isPlanRecord);
-  }
-
-  if (typeof response.data === "object" && response.data !== null) {
-    const nestedData = response.data as { plans?: unknown };
-
-    if (Array.isArray(nestedData.plans)) {
-      return nestedData.plans.filter(isPlanRecord);
-    }
-  }
-
-  return [];
-}
-
-function extractCheckoutUrl(payload: unknown): string | null {
-  if (typeof payload !== "object" || payload === null) {
-    return null;
-  }
-
-  const response = payload as {
-    data?: {
-      checkout_url?: unknown;
-      checkoutUrl?: unknown;
-      url?: unknown;
-    };
-  };
-
-  const checkoutUrl =
-    response.data?.checkout_url ??
-    response.data?.checkoutUrl ??
-    response.data?.url;
-
-  return typeof checkoutUrl === "string" && checkoutUrl.length > 0
-    ? checkoutUrl
-    : null;
-}
-
 export function OnboardingPlanPricingCard() {
-  const router = useRouter();
-  const [plans, setPlans] = useState<PricingPlan[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const loadPlans = async () => {
-    setErrorMessage(null);
-
-    try {
-      const response = await axiosInstance.get<PlanResponse | PlanRecord[]>(
-        "/api/v1/onboarding/plan"
-      );
-      const rawPlans = extractPlanRecords(response.data);
-
-      setPlans(rawPlans.map(mapPlanRecordToPricingPlan));
-    } catch (error) {
-      setErrorMessage(
-        getErrorMessage(
-          error,
-          "We could not load the available plans right now."
-        )
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void loadPlans();
-    }, 0);
-
-    return () => window.clearTimeout(timer);
-  }, []);
-
-  const handlePlanSelect = async (planId: string | number) => {
-    if (isSubmitting) {
-      return;
-    }
-
-    setIsSubmitting(true);
-    setErrorMessage(null);
-
-    try {
-      const body: { planId: string | number } = { planId };
-
-      if (typeof planId === "string" && /^\d+$/.test(planId)) {
-        body.planId = Number(planId);
-      }
-
-      const response = await axiosInstance.post<PlanSelectionResponse>(
-        "/api/v1/onboarding/plan",
-        body
-      );
-
-      const checkoutUrl = extractCheckoutUrl(response.data);
-
-      if (checkoutUrl) {
-        window.location.href = checkoutUrl;
-        return;
-      }
-
-      router.push("/onboarding/wallet");
-    } catch (error) {
-      setErrorMessage(
-        getErrorMessage(error, "We could not save that plan. Please try again.")
-      );
-      setIsSubmitting(false);
-    }
-  };
+  const {
+    plans,
+    isLoading,
+    isSubmitting,
+    errorMessage,
+    handlePlanSelect,
+    reloadPlans,
+  } = useOnboardingPlans({ mapPlanRecordToPricingPlan });
 
   if (isLoading) {
     return (
@@ -331,8 +156,7 @@ export function OnboardingPlanPricingCard() {
             <div className="mt-6 flex justify-center">
               <Button
                 onClick={() => {
-                  setIsLoading(true);
-                  void loadPlans();
+                  reloadPlans();
                 }}
               >
                 Retry
@@ -362,8 +186,7 @@ export function OnboardingPlanPricingCard() {
               <Button
                 variant="outline"
                 onClick={() => {
-                  setIsLoading(true);
-                  void loadPlans();
+                  reloadPlans();
                 }}
               >
                 Reload

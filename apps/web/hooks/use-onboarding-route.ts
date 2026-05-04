@@ -2,26 +2,21 @@
 
 import { useEffect, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { useSession } from "@workspace/auth/client";
+import { useAuthSession } from "@/hooks/use-auth-session";
 import {
   getOnboardingRoute,
   type OnboardingCompany,
 } from "@/lib/onboarding-route";
 
-type OnboardingSession = {
-  company?: OnboardingCompany;
-};
-
 export function useOnboardingRoute() {
   const pathname = usePathname();
   const router = useRouter();
-  const { data: session, isPending } = useSession();
-  const onboardingSession = session as OnboardingSession | null;
-  const company = onboardingSession?.company ?? null;
+  const { company, isPending } = useAuthSession();
+  const onboardingCompany = company as OnboardingCompany;
 
   const targetRoute = useMemo(() => {
-    return getOnboardingRoute(company);
-  }, [company]);
+    return getOnboardingRoute(onboardingCompany ?? null);
+  }, [onboardingCompany]);
 
   useEffect(() => {
     if (isPending) {

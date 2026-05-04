@@ -27,6 +27,7 @@ import {
   ArmchairIcon,
 } from "lucide-react";
 import LogoTitle from "./logo-title";
+import { useAuthSession } from "@/hooks/use-auth-session";
 
 const data = {
   user: {
@@ -93,6 +94,12 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { session, company } = useAuthSession();
+  const displayName =
+    session?.user?.name?.trim() || company?.name || session?.user?.email || "User";
+  const displayEmail = session?.user?.email || "";
+  const displayAvatar = session?.user?.image || "/avatars/shadcn.jpg";
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -112,7 +119,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser
+          user={{
+            name: displayName,
+            email: displayEmail,
+            avatar: displayAvatar,
+          }}
+        />
       </SidebarFooter>
     </Sidebar>
   );

@@ -1,10 +1,6 @@
 "use client";
 
-import { useWallet } from "@solana/wallet-adapter-react";
 import dynamic from "next/dynamic";
-import { useState, useEffect, useRef, useCallback } from "react";
-import { AxiosError } from "axios";
-import { useRouter } from "next/navigation";
 import OnboardingRouteGuard from "@/components/onboarding/onboarding-route-guard";
 import {
   Card,
@@ -16,8 +12,7 @@ import {
 } from "@workspace/ui/components/card";
 import { Button } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
-import { axiosInstance } from "@/lib/axios";
-import { toast } from "sonner";
+import { useOnboardingWallet } from "@/hooks/use-onboarding-wallet";
 
 const WalletMultiButton = dynamic(
   () =>
@@ -28,142 +23,16 @@ const WalletMultiButton = dynamic(
 );
 
 export default function WalletConnectPage() {
-  const [isWalletSigned, setIsWalletSigned] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const autoVerifyWalletRef = useRef<string | null>(null);
-  const router = useRouter();
-
-  const { connected, publicKey, signMessage } = useWallet();
-  const connectedWallet = publicKey?.toBase58() ?? null;
-  const shortWallet = connectedWallet ? `${connectedWallet}` : null;
-  const needsVerification = Boolean(
-    connected && connectedWallet && !isWalletSigned
-  );
-
-  useEffect(() => {
-    let mounted = true;
-
-    async function checkWalletStatus() {
-      try {
-        const resp = await axiosInstance.get("/api/auth/wallet/status");
-        const { wallet, vaultPda } = resp.data as {
-          wallet: string | null;
-          vaultPda: string | null;
-        };
-
-        if (!mounted) return;
-
-        const hasVaultPda = vaultPda !== null;
-        // typeof vaultPda === "string" && vaultPda.trim().length > 0;
-
-        if (hasVaultPda) {
-          router.push("/dashboard");
-          return;
-        }
-
-        if (connectedWallet && wallet && connectedWallet === wallet) {
-          setIsWalletSigned(true);
-        } else if (connectedWallet && (!wallet || connectedWallet !== wallet)) {
-          setIsWalletSigned(false);
-          setErrorMessage("");
-        } else {
-          setIsWalletSigned(false);
-          setErrorMessage("");
-        }
-      } catch (e) {
-        console.error("Failed to fetch wallet status", e);
-      }
-    }
-
-    checkWalletStatus();
-
-    return () => {
-      mounted = false;
-    };
-  }, [connectedWallet, connected, router]);
-
-  const verifyWallet = useCallback(async () => {
-    if (!connectedWallet) {
-      setErrorMessage("Connect a wallet first");
-      return;
-    }
-
-    if (!signMessage) {
-      setErrorMessage("This wallet does not support message signing");
-      return;
-    }
-
-    try {
-      setIsVerifying(true);
-      setErrorMessage("");
-
-      const challengeResp = await axiosInstance.post(
-        "/api/auth/wallet/challenge",
-        {
-          wallet: connectedWallet,
-        }
-      );
-
-      const { nonce, message } = challengeResp.data.data as {
-        nonce: string;
-        message: string;
-      };
-
-      const encodedMessage = new TextEncoder().encode(message);
-
-      const signature = await signMessage(encodedMessage);
-
-      await axiosInstance.post("/api/auth/wallet/verify", {
-        wallet: connectedWallet,
-        nonce,
-        signature: Array.from(signature),
-      });
-
-      setIsWalletSigned(true);
-      setErrorMessage("");
-    } catch (e) {
-      console.error(e);
-      const apiError = e as AxiosError<{ message?: string }>;
-      setErrorMessage(
-        apiError.response?.data?.message ?? "Verification failed"
-      );
-    } finally {
-      setIsVerifying(false);
-    }
-  }, [connectedWallet, signMessage]);
-
-  const handleCreateVault = async () => {
-    try {
-      console.log("=========");
-      const data = await axiosInstance.post("/api/v1/vaults", {
-        hello: "ssssss",
-      });
-      console.log("data", data);
-      toast.success("====");
-    } catch (error) {
-      console.error("Error creating vault", error);
-      toast.error("Failed to Create vault. Please try after sometime.");
-    }
-  };
-
-  useEffect(() => {
-    if (!connectedWallet) {
-      autoVerifyWalletRef.current = null;
-      return;
-    }
-
-    if (isWalletSigned || isVerifying) {
-      return;
-    }
-
-    if (autoVerifyWalletRef.current === connectedWallet) {
-      return;
-    }
-
-    autoVerifyWalletRef.current = connectedWallet;
-    void verifyWallet();
-  }, [connectedWallet, isWalletSigned, isVerifying, verifyWallet]);
+  const {
+    connectedWallet,
+    shortWallet,
+    needsVerification,
+    isWalletSigned,
+    isVerifying,
+    errorMessage,
+    retryVerification,
+    handleCreateVault,
+  } = useOnboardingWallet();
 
   return (
     <>
@@ -220,10 +89,7 @@ export default function WalletConnectPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    autoVerifyWalletRef.current = null;
-                    void verifyWallet();
-                  }}
+                  onClick={retryVerification}
                   disabled={isVerifying || !connectedWallet}
                 >
                   Retry
