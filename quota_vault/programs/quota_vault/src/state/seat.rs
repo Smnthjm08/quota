@@ -10,7 +10,7 @@ pub struct SeatAccount {
     pub seat_id: u64,
     pub period_start: i64,
 
-    pub seat_type: u8,
+    pub seat_type: u8, // 1 - human, 2 - agent
     pub bump: u8,
     pub active: bool,
 }

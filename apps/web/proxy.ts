@@ -12,8 +12,8 @@ export async function proxy(request: NextRequest) {
   }
 
   const targetRoute = getOnboardingRoute(
-    (session as { company?: Parameters<typeof getOnboardingRoute>[0] })?.company ??
-      null
+    (session as { company?: Parameters<typeof getOnboardingRoute>[0] })
+      ?.company ?? null
   );
 
   if (targetRoute !== "/dashboard") {

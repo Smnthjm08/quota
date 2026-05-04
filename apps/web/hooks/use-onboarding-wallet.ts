@@ -106,7 +106,9 @@ export function useOnboardingWallet() {
     } catch (error) {
       console.error(error);
       const apiError = error as AxiosError<{ message?: string }>;
-      setErrorMessage(apiError.response?.data?.message ?? "Verification failed");
+      setErrorMessage(
+        apiError.response?.data?.message ?? "Verification failed"
+      );
     } finally {
       setIsVerifying(false);
     }

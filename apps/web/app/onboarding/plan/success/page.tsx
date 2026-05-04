@@ -14,9 +14,9 @@ export default function PlanSuccess() {
             Your plan is being activated
           </h1>
           <p className="mt-4 max-w-xl text-sm leading-6 text-muted-foreground">
-            Dodo has confirmed the checkout. We are syncing the subscription state
-            now, so your company access should become active automatically within
-            a moment.
+            Dodo has confirmed the checkout. We are syncing the subscription
+            state now, so your company access should become active automatically
+            within a moment.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link

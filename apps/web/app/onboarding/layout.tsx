@@ -18,5 +18,9 @@ export default async function OnboardingLayout({
     redirect("/login");
   }
 
-  return <AuthSessionProvider initialSession={session}>{children}</AuthSessionProvider>;
+  return (
+    <AuthSessionProvider initialSession={session}>
+      {children}
+    </AuthSessionProvider>
+  );
 }

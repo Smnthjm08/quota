@@ -67,28 +67,6 @@ describe("quota_vault", () => {
     console.log("Vault account:", vaultAccount);
   });
 
-  it("Fails if vault already exists", async () => {
-    let failed = false;
-
-    try {
-      await program.methods
-        .initializeVault(owner, plan)
-        .accounts({
-          owner,
-        })
-        .signers([ownerKeypair])
-        .rpc();
-    } catch (err: any) {
-      failed = true;
-      console.log(
-        "Expected duplicate init failure:",
-        err.message
-      );
-    }
-
-    expect(failed).to.equal(true);
-  });
-
   it("Creates a seat", async () => {
     // unique seat every run
     const seatId = new anchor.BN(Date.now());

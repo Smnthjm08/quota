@@ -6,7 +6,11 @@ import { prisma } from "@workspace/db";
 import companyMiddleware from "./middlewares/company.middleware.ts";
 import nacl from "tweetnacl";
 import { PublicKey } from "@solana/web3.js";
-import { deriveVaultPda } from "@workspace/anchor-client";
+import {
+  deriveSeatPda,
+  deriveVaultPda,
+  PROGRAM_ID,
+} from "@workspace/anchor-client";
 import { apiSignerPublicKey, connection } from "./lib/anchor-client.ts";
 import {
   dodoApiKey,
@@ -470,12 +474,10 @@ app.post(
         }
 
         if (tx.meta?.err) {
-          return res
-            .status(400)
-            .json({
-              message: "Transaction failed on chain",
-              error: tx.meta,
-            });
+          return res.status(400).json({
+            message: "Transaction failed on chain",
+            error: tx.meta,
+          });
         }
       } catch (error) {
         console.error("Error fetching transaction:", error);
@@ -530,6 +532,228 @@ app.post(
 //   console.log(session.checkout_url);
 //   return session.checkout_url;
 // }
+
+app.get(
+  "/api/v1/seats",
+  authMiddleware,
+  companyMiddleware,
+  async (req, res) => {
+    try {
+      const seats = await prisma.seat.findMany({
+        where: {
+          companyId: req.company?.id,
+        },
+        orderBy: [{ createdAt: "desc" }, { id: "asc" }],
+      });
+      return res.status(200).json({
+        message: "Seats fetched successfully",
+        data: seats,
+        error: null,
+      });
+    } catch (error) {
+      console.error("Error fetching seats:", error);
+      res.status(500).json({ message: "Failed to fetch seats" });
+    }
+  }
+);
+
+app.post(
+  "/api/v1/seats",
+  authMiddleware,
+  companyMiddleware,
+  async (req, res) => {
+    try {
+      const {
+        name,
+        seatType,
+        holderPubkey,
+        monthlyLimit,
+        txSignature,
+        seatId,
+      } = req.body as {
+        name?: string;
+        seatType?: number | string;
+        holderPubkey?: string;
+        monthlyLimit?: number;
+        txSignature?: string;
+        seatId?: string;
+      };
+
+      if (!req.company) {
+        return res.status(400).json({ message: "Company not found for user" });
+      }
+
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      if (!req.company.vaultPda) {
+        return res
+          .status(400)
+          .json({ message: "Connect and initialize a vault first" });
+      }
+
+      if (!name?.trim()) {
+        return res.status(400).json({ message: "Seat name is required" });
+      }
+
+      const normalizedSeatType =
+        seatType === 0 || seatType === "0" || seatType === "HUMAN"
+          ? "HUMAN"
+          : seatType === 1 || seatType === "1" || seatType === "AGENT"
+            ? "AGENT"
+            : null;
+
+      if (!normalizedSeatType) {
+        return res.status(400).json({ message: "Invalid seat type" });
+      }
+
+      if (!holderPubkey) {
+        return res
+          .status(400)
+          .json({ message: "Holder public key is required" });
+      }
+
+      if (!txSignature) {
+        return res
+          .status(400)
+          .json({ message: "Transaction signature is required" });
+      }
+
+      if (!seatId) {
+        return res.status(400).json({ message: "Seat id is required" });
+      }
+
+      const validatedMonthlyLimit = monthlyLimit;
+
+      if (
+        typeof validatedMonthlyLimit !== "number" ||
+        !Number.isInteger(validatedMonthlyLimit) ||
+        validatedMonthlyLimit <= 0
+      ) {
+        return res
+          .status(400)
+          .json({ message: "Monthly limit must be a positive integer" });
+      }
+
+      let holderKey: PublicKey;
+
+      try {
+        holderKey = new PublicKey(holderPubkey);
+      } catch (error) {
+        return res.status(400).json({ message: "Invalid holder public key" });
+      }
+
+      let parsedSeatId: bigint;
+
+      try {
+        parsedSeatId = BigInt(seatId);
+      } catch (error) {
+        return res.status(400).json({ message: "Seat id must be a valid u64" });
+      }
+
+      if (parsedSeatId <= 0n) {
+        return res
+          .status(400)
+          .json({ message: "Seat id must be greater than 0" });
+      }
+
+      const [seatPda] = deriveSeatPda(
+        new PublicKey(req.company.vaultPda),
+        parsedSeatId
+      );
+
+      const existingSeat = await prisma.seat.findFirst({
+        where: {
+          companyId: req.company.id,
+          holderPubkey: holderKey.toBase58(),
+        },
+      });
+
+      if (existingSeat) {
+        return res.status(409).json({
+          message: "A seat already exists for this holder",
+        });
+      }
+
+      try {
+        const tx = await connection.getTransaction(txSignature, {
+          maxSupportedTransactionVersion: 0,
+        });
+
+        if (!tx) {
+          return res
+            .status(400)
+            .json({ message: "Transaction not found on chain" });
+        }
+
+        if (tx.meta?.err) {
+          return res.status(400).json({
+            message: "Transaction failed on chain",
+            error: tx.meta,
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching seat transaction:", error);
+        return res
+          .status(400)
+          .json({ message: "Could not verify seat transaction on chain" });
+      }
+
+      const onChainSeat = await connection.getAccountInfo(seatPda);
+
+      if (!onChainSeat) {
+        return res.status(400).json({
+          message: "Seat account was not found on-chain",
+        });
+      }
+
+      if (!onChainSeat.owner.equals(PROGRAM_ID)) {
+        return res.status(400).json({
+          message: "Seat account owner mismatch",
+        });
+      }
+
+      const seat = await prisma.seat.create({
+        data: {
+          name: name.trim(),
+          seatType: normalizedSeatType,
+          holderPubkey: holderKey.toBase58(),
+          seatPda: seatPda.toBase58(),
+          monthlyLimit: validatedMonthlyLimit,
+          company: {
+            connect: {
+              id: req.company.id,
+            },
+          },
+          createdByUser: {
+            connect: {
+              id: req.user.id,
+            },
+          },
+          updatedByUser: {
+            connect: {
+              id: req.user.id,
+            },
+          },
+        },
+      });
+
+      return res.status(201).json({
+        message: "Seat created successfully",
+        data: {
+          ...seat,
+          seatId: parsedSeatId.toString(),
+          seatPda: seatPda.toBase58(),
+        },
+        error: null,
+      });
+    } catch (error) {
+      console.error("Error creating seat:", error);
+      res.status(500).json({ message: "Failed to create seat" });
+    }
+  }
+);
 
 app.use(
   (

@@ -1,8 +1,17 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Separator } from "@workspace/ui/components/separator";
 import { SidebarTrigger } from "@workspace/ui/components/sidebar";
 import { usePageTitle } from "@/hooks/use-page-title";
+
+const WalletMultiButton = dynamic(
+  () =>
+    import("@solana/wallet-adapter-react-ui").then(
+      (mod) => mod.WalletMultiButton
+    ),
+  { ssr: false }
+);
 
 interface SiteHeaderProps {
   title?: string;
@@ -22,6 +31,7 @@ export function SiteHeader({ title }: SiteHeaderProps) {
         />
         <h1 className="text-base font-medium">{displayTitle}</h1>
       </div>
+      <WalletMultiButton className="h-11" />
     </header>
   );
 }

@@ -96,7 +96,10 @@ const data = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { session, company } = useAuthSession();
   const displayName =
-    session?.user?.name?.trim() || company?.name || session?.user?.email || "User";
+    session?.user?.name?.trim() ||
+    company?.name ||
+    session?.user?.email ||
+    "User";
   const displayEmail = session?.user?.email || "";
   const displayAvatar = session?.user?.image || "/avatars/shadcn.jpg";
 

@@ -1,5 +1,8 @@
 import { Keypair } from "@solana/web3.js";
-import { createProgram, getConnection } from "@workspace/anchor-client/program.server";
+import {
+  createProgram,
+  getConnection,
+} from "@workspace/anchor-client/program.server";
 import type { QuotaVault } from "@workspace/anchor-client";
 
 import { Program } from "@coral-xyz/anchor";
