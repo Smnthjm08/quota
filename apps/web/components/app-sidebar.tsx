@@ -25,6 +25,7 @@ import {
   FileIcon,
   ReceiptTextIcon,
   ArmchairIcon,
+  VaultIcon,
 } from "lucide-react";
 import LogoTitle from "./logo-title";
 import { useAuthSession } from "@/hooks/use-auth-session";
@@ -40,6 +41,11 @@ const data = {
       title: "Dashboard",
       url: "/dashboard",
       icon: <LayoutDashboardIcon />,
+    },
+    {
+      title: "Vault",
+      url: "/vault",
+      icon: <VaultIcon />,
     },
     {
       title: "Seats",

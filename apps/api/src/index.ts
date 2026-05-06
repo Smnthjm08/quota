@@ -181,6 +181,7 @@ app.post(
         ...(trialPeriodDays > 0
           ? { subscription_data: { trial_period_days: trialPeriodDays } }
           : {}),
+        allowed_payment_method_types: ['credit', 'debit'],
         customer: {
           email: user.email,
           name: user.name,

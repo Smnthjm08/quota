@@ -1,5 +1,6 @@
 import { Button } from "@workspace/ui/components/button";
 import { AuthActions } from "@/components/auth/auth-actions";
+import LinkButton from "@/components/ui/link-button";
 
 export default function Page() {
   return (
@@ -14,6 +15,10 @@ export default function Page() {
         <div className="font-mono text-xs text-muted-foreground">
           (Press <kbd>d</kbd> to toggle dark mode)
         </div>
+
+        <LinkButton href={"/dashboard"}>
+          Go to Dashboard
+        </LinkButton>
 
         <AuthActions />
       </div>
