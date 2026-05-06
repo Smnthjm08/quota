@@ -12,11 +12,11 @@ type LinkButtonProps = Omit<ButtonProps, "asChild"> & {
 };
 
 const LinkButton = React.forwardRef<HTMLAnchorElement, LinkButtonProps>(
-  function LinkButton({ href, linkProps, children, ...buttonProps }, ref) {
+  function LinkButton({ href, linkProps, children, ...buttonProps }) {
     return (
       <Link href={href} {...linkProps}>
         <Button asChild {...(buttonProps as ButtonProps)}>
-          <a ref={ref}>{children}</a>
+          {children}
         </Button>
       </Link>
     );

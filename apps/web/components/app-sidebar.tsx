@@ -43,7 +43,7 @@ const data = {
       icon: <LayoutDashboardIcon />,
     },
     {
-      title: "Vault",
+      title: "My Vault",
       url: "/vault",
       icon: <VaultIcon />,
     },
