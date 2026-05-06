@@ -1,10 +1,23 @@
 "use client";
 
+import { useMemo } from "react";
+import { useSeats } from "@/hooks/use-seats";
+import { useVault } from "@/hooks/use-vault";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { Badge } from "@workspace/ui/components/badge";
 
 export function VaultStats() {
-  // TODO: Fetch actual vault stats from on-chain data
+  const { seats } = useSeats();
+  const { vaultData } = useVault();
+
+  const vaultBalance = useMemo(() => {
+    return vaultData?.totalDeposited ?? 0;
+  }, [vaultData?.totalDeposited]);
+
+  const lastUpdated = vaultData?.updatedAt
+    ? new Date(vaultData.updatedAt).toLocaleString()
+    : "Never";
+
   return (
     <Card>
       <CardHeader>
@@ -20,7 +33,7 @@ export function VaultStats() {
             <p className="text-sm font-medium text-muted-foreground">
               Active Seats
             </p>
-            <p className="text-2xl font-bold">0</p>
+            <p className="text-2xl font-bold">{seats.length}</p>
             <Badge variant="outline" className="text-xs">
               Initialized
             </Badge>
@@ -31,7 +44,7 @@ export function VaultStats() {
             <p className="text-sm font-medium text-muted-foreground">
               Vault Balance
             </p>
-            <p className="text-2xl font-bold">0 SOL</p>
+            <p className="text-2xl font-bold">{vaultBalance.toFixed(2)} USDC</p>
             <Badge variant="outline" className="text-xs">
               On-chain
             </Badge>
@@ -43,14 +56,14 @@ export function VaultStats() {
             <span className="text-sm text-muted-foreground">
               Total Seats Created
             </span>
-            <span className="font-semibold">0</span>
+            <span className="font-semibold">{seats.length}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm text-muted-foreground">
               Last Updated
             </span>
             <span className="text-sm text-muted-foreground">
-              Never
+              {lastUpdated}
             </span>
           </div>
         </div>

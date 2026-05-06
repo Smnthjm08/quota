@@ -21,6 +21,27 @@ import {
 import { dodoWebhooksHandler } from "./dodo-weebhook.ts";
 import authMiddleware from "./middlewares/auth.middleware.ts";
 
+const DEFAULT_USDC_MINT = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
+const USDC_MINT = new PublicKey(process.env.USDC_MINT ?? DEFAULT_USDC_MINT);
+const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey(
+  "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+);
+const TOKEN_PROGRAM_ID = new PublicKey(
+  "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+);
+
+function deriveAssociatedTokenAddress(
+  owner: PublicKey,
+  mint: PublicKey
+): PublicKey {
+  const [address] = PublicKey.findProgramAddressSync(
+    [owner.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), mint.toBuffer()],
+    ASSOCIATED_TOKEN_PROGRAM_ID
+  );
+
+  return address;
+}
+
 export { dodoApiKey, dodoClient, mode } from "./lib/dodo-client.ts";
 
 console.info(
@@ -399,6 +420,64 @@ app.get(
   }
 );
 
+app.get(
+  "/api/v1/vault",
+  authMiddleware,
+  companyMiddleware,
+  async (req, res) => {
+    try {
+      const company = req.company;
+
+      if (!company) {
+        return res.status(200).json({
+          message: "Vault not found",
+          data: null,
+          error: null,
+        });
+      }
+
+      let totalDeposited = 0;
+
+      if (company.vaultPda) {
+        try {
+          const vaultPublicKey = new PublicKey(company.vaultPda);
+          const vaultTokenAccount = deriveAssociatedTokenAddress(
+            vaultPublicKey,
+            USDC_MINT
+          );
+
+          const accountInfo = await connection.getAccountInfo(vaultTokenAccount);
+
+          if (accountInfo) {
+            const balance = await connection.getTokenAccountBalance(
+              vaultTokenAccount
+            );
+            totalDeposited = balance.value.uiAmount ?? 0;
+          }
+        } catch (error) {
+          console.error("Vault balance fetch error:", error);
+        }
+      }
+
+      return res.status(200).json({
+        message: "Vault fetched successfully",
+        data: {
+          vaultPda: company.vaultPda ?? null,
+          ownerWalletPubkey: company.ownerWalletPubkey ?? null,
+          totalDeposited,
+          active: Boolean(company.vaultPda),
+          createdAt: company.createdAt,
+          updatedAt: company.updatedAt,
+        },
+        error: null,
+      });
+    } catch (error) {
+      console.error("Vault fetch error:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  }
+);
+
 app.get("/api/v1/onboarding/plan", authMiddleware, async (req, res) => {
   try {
     const plans = await prisma.plan.findMany({
@@ -414,6 +493,185 @@ app.get("/api/v1/onboarding/plan", authMiddleware, async (req, res) => {
     res.status(500).json({ error: "Failed to create Dodo checkout session" });
   }
 });
+
+app.post(
+  "/api/v1/vault/deposit",
+  authMiddleware,
+  companyMiddleware,
+  async (req: express.Request, res: express.Response) => {
+    try {
+      const company = req.company;
+
+      if (!company) {
+        return res.status(400).json({ message: "Company not found for user" });
+      }
+
+      if (!company.ownerWalletPubkey) {
+        return res
+          .status(400)
+          .json({ message: "Connect and verify a wallet first" });
+      }
+
+      const { amount, txSignature } = req.body as {
+        amount?: number | string;
+        txSignature?: string;
+      };
+
+      const parsedAmount = Number(amount);
+
+      if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+        return res
+          .status(400)
+          .json({ message: "Valid deposit amount is required" });
+      }
+
+      if (!txSignature) {
+        return res
+          .status(400)
+          .json({ message: "Transaction signature is required" });
+      }
+
+      const ownerWallet = new PublicKey(company.ownerWalletPubkey);
+      const [vaultPda] = deriveVaultPda(ownerWallet);
+
+      const tx = await connection.getTransaction(txSignature, {
+        maxSupportedTransactionVersion: 0,
+      });
+
+      if (!tx) {
+        return res.status(400).json({ message: "Transaction not found on chain" });
+      }
+
+      if (tx.meta?.err) {
+        return res.status(400).json({
+          message: "Transaction failed on chain",
+          error: tx.meta,
+        });
+      }
+
+      await prisma.company.update({
+        where: { id: company.id },
+        data: {
+          vaultPda: vaultPda.toBase58(),
+        },
+      });
+
+      return res.status(200).json({
+        message: "Deposit recorded successfully",
+        data: {
+          vaultPda: vaultPda.toBase58(),
+          amount: parsedAmount,
+          txSignature,
+        },
+        error: null,
+      });
+    } catch (error) {
+      console.error("Vault deposit error:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  }
+);
+
+app.post(
+  "/api/v1/vault/withdraw",
+  authMiddleware,
+  companyMiddleware,
+  async (req: express.Request, res: express.Response) => {
+    try {
+      const company = req.company;
+
+      if (!company) {
+        return res.status(400).json({ message: "Company not found for user" });
+      }
+
+      const { txSignature } = req.body as { txSignature?: string };
+
+      if (!txSignature) {
+        return res.status(400).json({ message: "Transaction signature is required" });
+      }
+
+      const tx = await connection.getTransaction(txSignature, {
+        maxSupportedTransactionVersion: 0,
+      });
+
+      if (!tx) {
+        return res.status(400).json({ message: "Transaction not found on chain" });
+      }
+
+      if (tx.meta?.err) {
+        return res.status(400).json({
+          message: "Transaction failed on chain",
+          error: tx.meta,
+        });
+      }
+
+      return res.status(200).json({
+        message: "Withdrawal recorded successfully",
+        data: {
+          txSignature,
+        },
+        error: null,
+      });
+    } catch (error) {
+      console.error("Vault withdraw error:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  }
+);
+
+app.post(
+  "/api/v1/vault/close",
+  authMiddleware,
+  companyMiddleware,
+  async (req: express.Request, res: express.Response) => {
+    try {
+      const company = req.company;
+
+      if (!company) {
+        return res.status(400).json({ message: "Company not found for user" });
+      }
+
+      const { txSignature } = req.body as { txSignature?: string };
+
+      if (!txSignature) {
+        return res.status(400).json({ message: "Transaction signature is required" });
+      }
+
+      const tx = await connection.getTransaction(txSignature, {
+        maxSupportedTransactionVersion: 0,
+      });
+
+      if (!tx) {
+        return res.status(400).json({ message: "Transaction not found on chain" });
+      }
+
+      if (tx.meta?.err) {
+        return res.status(400).json({
+          message: "Transaction failed on chain",
+          error: tx.meta,
+        });
+      }
+
+      await prisma.company.update({
+        where: { id: company.id },
+        data: {
+          vaultPda: null,
+        },
+      });
+
+      return res.status(200).json({
+        message: "Vault closed successfully",
+        data: {
+          txSignature,
+        },
+        error: null,
+      });
+    } catch (error) {
+      console.error("Vault close error:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  }
+);
 
 app.post(
   "/api/v1/vaults",
