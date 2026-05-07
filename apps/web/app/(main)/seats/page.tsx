@@ -7,8 +7,7 @@ import {
   Loader2Icon,
   PlusCircleIcon,
   RefreshCcwIcon,
-  ToggleLeftIcon,
-  ToggleRightIcon,
+  MoreVerticalIcon,
 } from "lucide-react";
 import { deriveVaultPda } from "@workspace/anchor-client";
 import { toast } from "sonner";
@@ -22,7 +21,24 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@workspace/ui/components/alert-dialog";
 import { SeatDialog } from "@/components/seats/seat-dialog";
+import { EditSeatDialog } from "@/components/seats/edit-seat-dialog";
+import { PaginatedTable } from "@/components/paginated-table";
 import { axiosInstance } from "@/lib/axios";
 import {
   buildToggleSeatTransaction,
@@ -48,15 +64,18 @@ function seatStatusLabel(active: boolean) {
 function SeatRowActions({
   seat,
   onToggled,
+  onEditClick,
 }: {
   seat: SeatRecord;
   onToggled: () => Promise<void> | void;
+  onEditClick: (seat: SeatRecord) => void;
 }) {
   const { connection } = useConnection();
   const { publicKey, signTransaction } = useWallet();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
-  const handleToggle = async () => {
+  const handleConfirm = async () => {
     if (!publicKey) {
       toast.error("Connect your wallet to toggle a seat.");
       return;
@@ -121,31 +140,70 @@ function SeatRowActions({
       toast.error("We could not toggle that seat right now.");
     } finally {
       setIsSubmitting(false);
+      setShowConfirm(false);
     }
   };
 
   return (
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={handleToggle}
-      disabled={isSubmitting}
-    >
-      {isSubmitting ? (
-        <Loader2Icon className="animate-spin" />
-      ) : seat.active ? (
-        <ToggleRightIcon />
-      ) : (
-        <ToggleLeftIcon />
-      )}
-      {seat.active ? "Deactivate" : "Activate"}
-    </Button>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={isSubmitting}
+            className="h-8 w-8 p-0"
+          >
+            <MoreVerticalIcon className="h-4 w-4" />
+            <span className="sr-only">Open menu</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => onEditClick(seat)}>
+            Edit
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setShowConfirm(true)}>
+            {seat.active ? "Deactivate" : "Activate"}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {seat.active ? "Deactivate" : "Activate"} seat?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {seat.active
+                ? `Are you sure you want to deactivate "${seat.name}"? This seat will no longer be able to access your vault.`
+                : `Are you sure you want to activate "${seat.name}"? This action will be recorded on-chain.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex gap-3 justify-end">
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirm} disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2Icon className="animate-spin mr-2" />
+                  Processing...
+                </>
+              ) : (
+                (seat.active ? "Deactivate" : "Activate")
+              )}
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
 export default function SeatsPage() {
   const { seats, isLoading, errorMessage, reloadSeats } = useSeats();
   const [isCreateSeatOpen, setIsCreateSeatOpen] = useState(false);
+  const [editingSeat, setEditingSeat] = useState<SeatRecord | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   return (
     <div className="@container/main flex flex-1 flex-col gap-2">
@@ -180,80 +238,102 @@ export default function SeatsPage() {
           </div>
         ) : null}
 
-        <div className="overflow-hidden rounded-xl border bg-background shadow-sm">
-          <Table>
-            <TableHeader className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm">
-              <TableRow>
-                <TableHead className="w-16">#</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Holder wallet</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Monthly limit</TableHead>
-                <TableHead>Seat PDA</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead className="text-right">Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={9}
-                    className="py-12 text-center text-sm text-muted-foreground"
-                  >
-                    Loading seats...
-                  </TableCell>
-                </TableRow>
-              ) : seats.length > 0 ? (
-                seats.map((seat, index) => (
-                  <TableRow key={seat.id}>
-                    <TableCell>{index + 1}</TableCell>
-                    <TableCell className="font-medium">{seat.name}</TableCell>
-                    <TableCell className="max-w-65 truncate font-mono text-xs text-muted-foreground">
-                      {seat.holderPubkey}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">
-                        {seatTypeLabel(seat.seatType)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={seat.active ? "default" : "outline"}>
-                        {seatStatusLabel(seat.active)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{seat.monthlyLimit.toLocaleString()}</TableCell>
-                    <TableCell className="max-w-65 truncate font-mono text-xs text-muted-foreground">
-                      {seat.seatPda}
-                    </TableCell>
-                    <TableCell className="text-sm whitespace-nowrap text-muted-foreground">
-                      {formatDate(seat.createdAt)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <SeatRowActions seat={seat} onToggled={reloadSeats} />
-                    </TableCell>
+        <PaginatedTable
+          data={seats}
+          initialPageSize={10}
+          pageSizeOptions={[10, 20, 30, 40, 50]}
+        >
+          {({ pageItems, startIndex }) => (
+            <div className="overflow-hidden rounded-xl border bg-background shadow-sm">
+              <Table>
+                <TableHeader className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm">
+                  <TableRow>
+                    <TableHead className="w-16">#</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Holder wallet</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Monthly limit</TableHead>
+                    <TableHead>Seat PDA</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={9}
-                    className="py-12 text-center text-sm text-muted-foreground"
-                  >
-                    No seats have been created yet.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={9}
+                        className="py-12 text-center text-sm text-muted-foreground"
+                      >
+                        Loading seats...
+                      </TableCell>
+                    </TableRow>
+                  ) : pageItems.length > 0 ? (
+                    pageItems.map((seat, index) => (
+                      <TableRow key={seat.id}>
+                        <TableCell>{startIndex + index + 1}</TableCell>
+                        <TableCell className="font-medium">{seat.name}</TableCell>
+                        <TableCell className="max-w-65 truncate font-mono text-xs text-muted-foreground">
+                          {seat.holderPubkey}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">
+                            {seatTypeLabel(seat.seatType)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={seat.active ? "default" : "outline"}>
+                            {seatStatusLabel(seat.active)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{seat.monthlyLimit.toLocaleString()}</TableCell>
+                        <TableCell className="max-w-65 truncate font-mono text-xs text-muted-foreground">
+                          {seat.seatPda}
+                        </TableCell>
+                        <TableCell className="text-sm whitespace-nowrap text-muted-foreground">
+                          {formatDate(seat.createdAt)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <SeatRowActions
+                            seat={seat}
+                            onToggled={reloadSeats}
+                            onEditClick={(seat) => {
+                              setEditingSeat(seat);
+                              setIsEditDialogOpen(true);
+                            }}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={9}
+                        className="py-12 text-center text-sm text-muted-foreground"
+                      >
+                        No seats have been created yet.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </PaginatedTable>
       </div>
 
       <SeatDialog
         open={isCreateSeatOpen}
         onOpenChange={setIsCreateSeatOpen}
         onCreated={reloadSeats}
+      />
+
+      <EditSeatDialog
+        seat={editingSeat}
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        onUpdated={reloadSeats}
       />
     </div>
   );
