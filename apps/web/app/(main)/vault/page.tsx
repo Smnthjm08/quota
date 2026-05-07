@@ -58,9 +58,6 @@ export default function VaultPage() {
                 <XCircle className="mr-2 size-4" />
                 Close Vault
               </Button>
-              <span className="text-sm text-muted-foreground">
-                This is intentionally separated from deposit and withdraw actions.
-              </span>
             </CardContent>
           </Card>
         </div>

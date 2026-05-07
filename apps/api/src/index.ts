@@ -1014,6 +1014,110 @@ app.post(
   }
 );
 
+app.patch(
+  "/api/v1/seats/:id/toggle",
+  authMiddleware,
+  companyMiddleware,
+  async (req, res) => {
+    try {
+      const { id } = req.params as { id?: string };
+      const { txSignature } = req.body as { txSignature?: string };
+
+      if (!req.company) {
+        return res.status(400).json({ message: "Company not found for user" });
+      }
+
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      if (!id) {
+        return res.status(400).json({ message: "Seat id is required" });
+      }
+
+      if (!txSignature) {
+        return res
+          .status(400)
+          .json({ message: "Transaction signature is required" });
+      }
+
+      const seat = await prisma.seat.findFirst({
+        where: {
+          id,
+          companyId: req.company.id,
+        },
+      });
+
+      if (!seat) {
+        return res.status(404).json({ message: "Seat not found" });
+      }
+
+      try {
+        const tx = await connection.getTransaction(txSignature, {
+          maxSupportedTransactionVersion: 0,
+        });
+
+        if (!tx) {
+          return res
+            .status(400)
+            .json({ message: "Transaction not found on chain" });
+        }
+
+        if (tx.meta?.err) {
+          return res.status(400).json({
+            message: "Transaction failed on chain",
+            error: tx.meta,
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching seat toggle transaction:", error);
+        return res
+          .status(400)
+          .json({ message: "Could not verify seat toggle on chain" });
+      }
+
+      const onChainSeat = await connection.getAccountInfo(
+        new PublicKey(seat.seatPda)
+      );
+
+      if (!onChainSeat) {
+        return res.status(400).json({
+          message: "Seat account was not found on-chain",
+        });
+      }
+
+      if (!onChainSeat.owner.equals(PROGRAM_ID)) {
+        return res.status(400).json({
+          message: "Seat account owner mismatch",
+        });
+      }
+
+      const updatedSeat = await prisma.seat.update({
+        where: {
+          id: seat.id,
+        },
+        data: {
+          active: !seat.active,
+          updatedByUser: {
+            connect: {
+              id: req.user.id,
+            },
+          },
+        },
+      });
+
+      return res.status(200).json({
+        message: `Seat ${updatedSeat.active ? "activated" : "deactivated"} successfully`,
+        data: updatedSeat,
+        error: null,
+      });
+    } catch (error) {
+      console.error("Error toggling seat:", error);
+      res.status(500).json({ message: "Failed to toggle seat" });
+    }
+  }
+);
+
 app.use(
   (
     err: any,

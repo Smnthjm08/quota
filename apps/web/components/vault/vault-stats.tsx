@@ -18,6 +18,8 @@ export function VaultStats() {
     ? new Date(vaultData.updatedAt).toLocaleString()
     : "Never";
 
+  const activeSeats = seats.filter((seat) => seat.active).length;
+
   return (
     <Card>
       <CardHeader>
@@ -33,7 +35,7 @@ export function VaultStats() {
             <p className="text-sm font-medium text-muted-foreground">
               Active Seats
             </p>
-            <p className="text-2xl font-bold">{seats.length}</p>
+            <p className="text-2xl font-bold">{activeSeats}</p>
             <Badge variant="outline" className="text-xs">
               Initialized
             </Badge>

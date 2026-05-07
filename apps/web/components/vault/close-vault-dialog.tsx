@@ -78,13 +78,6 @@ export function CloseVaultDialog({
       return;
     }
 
-    if (vaultData?.active) {
-      setErrorMessage(
-        "This vault is still active on-chain. The current program does not expose an deactivate instruction, so close is not available yet."
-      );
-      return;
-    }
-
     try {
       setIsSubmitting(true);
 
@@ -140,12 +133,12 @@ export function CloseVaultDialog({
         <DialogHeader>
           <DialogTitle>Close Vault</DialogTitle>
           <DialogDescription>
-            Close the vault only after withdrawing all funds and deactivating it on-chain.
+            Close the vault after withdrawing all funds.
           </DialogDescription>
         </DialogHeader>
 
         <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-          This action will only work when the vault balance is zero and the vault is inactive.
+          This action will only work when the vault balance is zero.
         </div>
 
         {errorMessage && (
@@ -167,7 +160,7 @@ export function CloseVaultDialog({
           </Button>
           <Button
             onClick={handleCloseVault}
-            disabled={isSubmitting || (vaultData?.totalDeposited ?? 0) > 0 || vaultData?.active}
+            disabled={isSubmitting || (vaultData?.totalDeposited ?? 0) > 0}
           >
             {isSubmitting ? "Closing..." : "Close Vault"}
           </Button>

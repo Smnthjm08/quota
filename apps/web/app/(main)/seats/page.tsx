@@ -1,7 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { PlusCircleIcon, RefreshCcwIcon } from "lucide-react";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { PublicKey } from "@solana/web3.js";
+import {
+  Loader2Icon,
+  PlusCircleIcon,
+  RefreshCcwIcon,
+  ToggleLeftIcon,
+  ToggleRightIcon,
+} from "lucide-react";
+import { deriveVaultPda } from "@workspace/anchor-client";
+import { toast } from "sonner";
 import { Button } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
 import {
@@ -13,6 +23,11 @@ import {
   TableRow,
 } from "@workspace/ui/components/table";
 import { SeatDialog } from "@/components/seats/seat-dialog";
+import { axiosInstance } from "@/lib/axios";
+import {
+  buildToggleSeatTransaction,
+  type BuildToggleSeatTxParams,
+} from "@/lib/seat-builder";
 import { type SeatRecord, useSeats } from "@/hooks/use-seats";
 
 function formatDate(value: string) {
@@ -24,6 +39,108 @@ function formatDate(value: string) {
 
 function seatTypeLabel(seatType: SeatRecord["seatType"]) {
   return seatType === "HUMAN" ? "Human" : "Agent";
+}
+
+function seatStatusLabel(active: boolean) {
+  return active ? "Active" : "Inactive";
+}
+
+function SeatRowActions({
+  seat,
+  onToggled,
+}: {
+  seat: SeatRecord;
+  onToggled: () => Promise<void> | void;
+}) {
+  const { connection } = useConnection();
+  const { publicKey, signTransaction } = useWallet();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleToggle = async () => {
+    if (!publicKey) {
+      toast.error("Connect your wallet to toggle a seat.");
+      return;
+    }
+
+    if (!signTransaction) {
+      toast.error("This wallet does not support transaction signing.");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      const seatPublicKey = new PublicKey(seat.seatPda);
+      const [vaultPublicKey] = deriveVaultPda(publicKey);
+
+      const tx = await buildToggleSeatTransaction({
+        connection,
+        ownerPublicKey: publicKey,
+        vaultPublicKey,
+        seatPublicKey,
+      } satisfies BuildToggleSeatTxParams);
+
+      tx.feePayer = publicKey;
+
+      const { blockhash, lastValidBlockHeight } =
+        await connection.getLatestBlockhash("confirmed");
+      tx.recentBlockhash = blockhash;
+
+      const signedTx = await signTransaction(tx);
+      const txSignature = await connection.sendRawTransaction(
+        signedTx.serialize(),
+        { skipPreflight: true }
+      );
+
+      toast.loading(
+        `${seat.active ? "Deactivating" : "Activating"} seat on-chain...`
+      );
+
+      await connection.confirmTransaction({
+        signature: txSignature,
+        blockhash,
+        lastValidBlockHeight,
+      });
+
+      toast.dismiss();
+
+      await axiosInstance.patch<{ data: SeatRecord }>(
+        `/api/v1/seats/${seat.id}/toggle`,
+        {
+          txSignature,
+        }
+      );
+
+      toast.success(
+        `Seat ${seat.active ? "deactivated" : "activated"} successfully`
+      );
+      await onToggled();
+    } catch (error) {
+      toast.dismiss();
+      console.error("Error toggling seat:", error);
+      toast.error("We could not toggle that seat right now.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={handleToggle}
+      disabled={isSubmitting}
+    >
+      {isSubmitting ? (
+        <Loader2Icon className="animate-spin" />
+      ) : seat.active ? (
+        <ToggleRightIcon />
+      ) : (
+        <ToggleLeftIcon />
+      )}
+      {seat.active ? "Deactivate" : "Activate"}
+    </Button>
+  );
 }
 
 export default function SeatsPage() {
@@ -71,16 +188,18 @@ export default function SeatsPage() {
                 <TableHead>Name</TableHead>
                 <TableHead>Holder wallet</TableHead>
                 <TableHead>Type</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Monthly limit</TableHead>
                 <TableHead>Seat PDA</TableHead>
                 <TableHead>Created</TableHead>
+                <TableHead className="text-right">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
                   <TableCell
-                    colSpan={7}
+                    colSpan={9}
                     className="py-12 text-center text-sm text-muted-foreground"
                   >
                     Loading seats...
@@ -99,6 +218,11 @@ export default function SeatsPage() {
                         {seatTypeLabel(seat.seatType)}
                       </Badge>
                     </TableCell>
+                    <TableCell>
+                      <Badge variant={seat.active ? "default" : "outline"}>
+                        {seatStatusLabel(seat.active)}
+                      </Badge>
+                    </TableCell>
                     <TableCell>{seat.monthlyLimit.toLocaleString()}</TableCell>
                     <TableCell className="max-w-65 truncate font-mono text-xs text-muted-foreground">
                       {seat.seatPda}
@@ -106,12 +230,15 @@ export default function SeatsPage() {
                     <TableCell className="text-sm whitespace-nowrap text-muted-foreground">
                       {formatDate(seat.createdAt)}
                     </TableCell>
+                    <TableCell className="text-right">
+                      <SeatRowActions seat={seat} onToggled={reloadSeats} />
+                    </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={7}
+                    colSpan={9}
                     className="py-12 text-center text-sm text-muted-foreground"
                   >
                     No seats have been created yet.

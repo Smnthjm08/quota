@@ -9,6 +9,7 @@ export type SeatRecord = {
   id: string;
   name: string;
   seatType: SeatType;
+  active: boolean;
   holderPubkey: string;
   seatPda: string;
   monthlyLimit: number;

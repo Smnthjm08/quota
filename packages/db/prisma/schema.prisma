@@ -196,6 +196,7 @@ model Seat {
   name String
 
   seatType SeatType
+  active   Boolean @default(true)
 
   holderPubkey String
   seatPda      String @unique
