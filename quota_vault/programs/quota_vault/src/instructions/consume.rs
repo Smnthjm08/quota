@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 
 use crate::{
-    constants::{PERIOD_DURATION, SEAT_SEED, VAULT_SEED},
+    constants::{SEAT_SEED, VAULT_SEED},
     error::QuotaError,
     state::{seat::SeatAccount, vault::VaultAccount},
 };
@@ -9,7 +9,9 @@ use crate::{
 #[derive(Accounts)]
 pub struct Consume<'info> {
     #[account(
-        constraint = authority.key() == vault.api_signer @ QuotaError::UnauthorizedSigner
+        constraint =
+            authority.key() == vault.api_signer
+            @ QuotaError::UnauthorizedSigner
     )]
     pub authority: Signer<'info>,
 
@@ -33,34 +35,30 @@ pub struct Consume<'info> {
     pub seat: Account<'info, SeatAccount>,
 }
 
-pub fn consume_handler(ctx: Context<Consume>, credits: u64) -> Result<()> {
-    require!(credits > 0, QuotaError::InvalidCredits);
+pub fn consume_handler(ctx: Context<Consume>, amount: u64) -> Result<()> {
+    require!(amount > 0, QuotaError::InvalidAmount);
 
     let vault = &mut ctx.accounts.vault;
+
     let seat = &mut ctx.accounts.seat;
 
     require!(vault.active, QuotaError::VaultInactive);
 
     require!(seat.active, QuotaError::SeatInactive);
 
-    let now = Clock::get()?.unix_timestamp;
-
-    if now - seat.period_start >= PERIOD_DURATION {
-        seat.consumed = 0;
-        seat.period_start = now;
-    }
-
     let new_consumed = seat
         .consumed
-        .checked_add(credits)
+        .checked_add(amount)
         .ok_or(QuotaError::MathOverflow)?;
 
-    require!(
-        new_consumed <= seat.monthly_limit,
-        QuotaError::QuotaExceeded
-    );
+    require!(new_consumed <= seat.limit, QuotaError::QuotaExceeded);
 
     seat.consumed = new_consumed;
+
+    vault.total_spent = vault
+        .total_spent
+        .checked_add(amount)
+        .ok_or(QuotaError::MathOverflow)?;
 
     Ok(())
 }

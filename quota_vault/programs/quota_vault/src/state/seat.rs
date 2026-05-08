@@ -2,19 +2,44 @@ use anchor_lang::prelude::*;
 
 #[account]
 pub struct SeatAccount {
+
+    // Parent treasury vault
     pub vault: Pubkey,
+
+    // Human or AI identity
     pub holder: Pubkey,
 
+    // Current usage
     pub consumed: u64,
-    pub monthly_limit: u64,
-    pub seat_id: u64,
-    pub period_start: i64,
 
-    pub seat_type: u8, // 1 - human, 2 - agent
+    // Maximum allowed spend
+    pub limit: u64,
+
+    // Deterministic seat identity
+    pub seat_id: u64,
+
+    // 1 = HUMAN
+    // 2 = AGENT
+    pub seat_type: u8,
+
     pub bump: u8,
+
     pub active: bool,
+
+    pub created_at: i64,
 }
 
 impl SeatAccount {
-    pub const SPACE: usize = 8 + 32 + 32 + 8 + 8 + 8 + 8 + 1 + 1 + 1 + 8; //added extra 8 byte for future alignment - 115
+
+    pub const SPACE: usize =
+        8 +  // discriminator
+        32 + // vault
+        32 + // holder
+        8 +  // consumed
+        8 +  // limit
+        8 +  // seat_id
+        1 +  // seat_type
+        1 +  // bump
+        1 +  // active
+        8;   // created_at
 }

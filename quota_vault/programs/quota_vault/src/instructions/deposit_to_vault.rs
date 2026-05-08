@@ -1,22 +1,13 @@
 use anchor_lang::prelude::*;
 
 use anchor_spl::token_interface::{
-    transfer_checked,
-    Mint,
-    TokenAccount,
-    TokenInterface,
-    TransferChecked,
+    transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked,
 };
 
-use crate::{
-    constants::VAULT_SEED,
-    error::QuotaError,
-    state::vault::VaultAccount,
-};
+use crate::{constants::VAULT_SEED, error::QuotaError, state::vault::VaultAccount};
 
 #[derive(Accounts)]
 pub struct Deposit<'info> {
-
     #[account(
         mut,
         seeds = [VAULT_SEED, vault.owner.as_ref()],
@@ -46,11 +37,7 @@ pub struct Deposit<'info> {
     pub token_program: Interface<'info, TokenInterface>,
 }
 
-pub fn deposit_to_vault_handler(
-    ctx: Context<Deposit>,
-    amount: u64,
-) -> Result<()> {
-
+pub fn deposit_to_vault_handler(ctx: Context<Deposit>, amount: u64) -> Result<()> {
     require!(amount > 0, QuotaError::InvalidDepositAmount);
 
     let vault = &mut ctx.accounts.vault;
@@ -72,16 +59,9 @@ pub fn deposit_to_vault_handler(
         authority: ctx.accounts.authority.to_account_info(),
     };
 
-    let cpi_ctx = CpiContext::new(
-        ctx.accounts.token_program.to_account_info(),
-        cpi_accounts,
-    );
+    let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), cpi_accounts);
 
-    transfer_checked(
-        cpi_ctx,
-        amount,
-        ctx.accounts.mint.decimals,
-    )?;
+    transfer_checked(cpi_ctx, amount, ctx.accounts.mint.decimals)?;
 
     vault.total_deposited = vault
         .total_deposited

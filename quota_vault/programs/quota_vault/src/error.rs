@@ -9,7 +9,10 @@ pub enum QuotaError {
     #[msg("Vault inactive")]
     VaultInactive,
 
-    #[msg("Invalid Deposit Amount")]
+    #[msg("Invalid Amount")]
+    InvalidAmount,  
+    
+      #[msg("Invalid Deposit Amount")]
     InvalidDepositAmount,
 
     #[msg("Unauthorized signer")]

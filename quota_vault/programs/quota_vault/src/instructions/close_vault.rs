@@ -1,9 +1,14 @@
 use anchor_lang::prelude::*;
 
-use crate::{constants::VAULT_SEED, error::QuotaError, state::vault::VaultAccount};
+use crate::{
+    constants::VAULT_SEED,
+    error::QuotaError,
+    state::vault::VaultAccount,
+};
 
 #[derive(Accounts)]
 pub struct CloseVault<'info> {
+
     #[account(mut)]
     pub owner: Signer<'info>,
 
@@ -12,19 +17,28 @@ pub struct CloseVault<'info> {
         close = owner,
         seeds = [VAULT_SEED, owner.key().as_ref()],
         bump = vault.bump,
-        constraint = vault.owner == owner.key()
+        constraint =
+            vault.owner == owner.key()
             @ QuotaError::UnauthorizedSigner
     )]
     pub vault: Account<'info, VaultAccount>,
 }
 
-pub fn close_vault(ctx: Context<CloseVault>) -> Result<()> {
+pub fn close_vault(
+    ctx: Context<CloseVault>
+) -> Result<()> {
+
+    let vault = &ctx.accounts.vault;
+
     require!(
-        ctx.accounts.vault.total_deposited == 0,
-        QuotaError::VaultNotEmpty
+        !vault.active,
+        QuotaError::VaultStillActive
     );
 
-    require!(!ctx.accounts.vault.active, QuotaError::VaultStillActive);
+    require!(
+        vault.total_assigned == 0,
+        QuotaError::VaultNotEmpty
+    );
 
     Ok(())
 }

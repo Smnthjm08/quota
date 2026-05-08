@@ -6,6 +6,7 @@ pub mod initialize_vault;
 pub mod toggle_seat;
 pub mod update_seat;
 pub mod withdraw_from_vault;
+pub mod reclaim_treasury;
 
 pub use close_vault::*;
 pub use consume::*;
@@ -15,3 +16,4 @@ pub use initialize_vault::*;
 pub use toggle_seat::*;
 pub use update_seat::*;
 pub use withdraw_from_vault::*;
+pub use reclaim_treasury::*;

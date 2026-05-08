@@ -14,46 +14,94 @@ pub mod quota_vault {
 
     use super::*;
 
-    // vault
+    // Vault
     pub fn initialize_vault(
         ctx: Context<InitializeVault>,
         api_signer: Pubkey,
         plan: u8,
     ) -> Result<()> {
-        instructions::initialize_vault_handler(ctx, api_signer, plan)
+
+        instructions::initialize_vault_handler(
+            ctx,
+            api_signer,
+            plan,
+        )
     }
 
-    pub fn deposit_to_vault(ctx: Context<Deposit>, amount: u64) -> Result<()> {
-        instructions::deposit_to_vault_handler(ctx, amount)
+    pub fn deposit_to_vault(
+        ctx: Context<Deposit>,
+        amount: u64,
+    ) -> Result<()> {
+
+        instructions::deposit_to_vault_handler(
+            ctx,
+            amount,
+        )
     }
 
-    pub fn withdraw_from_vault(ctx: Context<WithdrawFromVault>, amount: u64) -> Result<()> {
-        instructions::withdraw_from_vault(ctx, amount)
+    pub fn reclaim_treasury(
+        ctx: Context<ReclaimTreasury>,
+        amount: u64,
+    ) -> Result<()> {
+
+        instructions::reclaim_treasury(
+            ctx,
+            amount,
+        )
     }
 
-    pub fn close_vault(ctx: Context<CloseVault>) -> Result<()> {
+    pub fn close_vault(
+        ctx: Context<CloseVault>
+    ) -> Result<()> {
+
         instructions::close_vault(ctx)
     }
 
+    // Seat
     pub fn create_seat(
         ctx: Context<CreateSeat>,
         holder: Pubkey,
         seat_id: u64,
         seat_type: u8,
-        monthly_limit: u64,
+        limit: u64,
     ) -> Result<()> {
-        instructions::seat_handler(ctx, holder, seat_id, seat_type, monthly_limit)
+
+        instructions::seat_handler(
+            ctx,
+            holder,
+            seat_id,
+            seat_type,
+            limit,
+        )
     }
 
-    pub fn consume(ctx: Context<Consume>, credits: u64) -> Result<()> {
-        instructions::consume_handler(ctx, credits)
+    pub fn update_seat_handler(
+        ctx: Context<UpdateSeat>,
+        new_limit: u64,
+    ) -> Result<()> {
+
+        instructions::update_seat(
+            ctx,
+            new_limit,
+        )
     }
 
-    pub fn toggle_seat_handler(ctx: Context<ToggleSeat>) -> Result<()> {
+    pub fn toggle_seat_handler(
+        ctx: Context<ToggleSeat>
+    ) -> Result<()> {
+
         instructions::toggle_seat(ctx)
     }
 
-    pub fn update_seat_handler(ctx: Context<UpdateSeat>, new_limit: u64) -> Result<()> {
-        instructions::update_seat(ctx, new_limit)
+    // Consume
+    pub fn consume(
+        ctx: Context<Consume>,
+        amount: u64,
+    ) -> Result<()> {
+
+        instructions::consume_handler(
+            ctx,
+            amount,
+        )
     }
 }

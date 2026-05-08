@@ -9,7 +9,9 @@ use crate::{
 #[derive(Accounts)]
 pub struct ToggleSeat<'info> {
     #[account(
-        constraint = authority.key() == vault.owner @ QuotaError::UnauthorizedSigner
+        constraint =
+            authority.key() == vault.owner
+            @ QuotaError::UnauthorizedSigner
     )]
     pub authority: Signer<'info>,
 
@@ -34,9 +36,13 @@ pub struct ToggleSeat<'info> {
 }
 
 pub fn toggle_seat(ctx: Context<ToggleSeat>) -> Result<()> {
-    require!(ctx.accounts.vault.active, QuotaError::VaultInactive);
+    let vault = &ctx.accounts.vault;
+
+    require!(vault.active, QuotaError::VaultInactive);
 
     let seat = &mut ctx.accounts.seat;
+
+    require!(seat.limit >= seat.consumed, QuotaError::InvalidLimit);
 
     seat.active = !seat.active;
 

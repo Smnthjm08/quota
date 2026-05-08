@@ -35,7 +35,6 @@ pub struct WithdrawFromVault<'info> {
 }
 
 pub fn withdraw_from_vault(ctx: Context<WithdrawFromVault>, amount: u64) -> Result<()> {
-    // Read first (immutable borrows only)
     let owner_key = ctx.accounts.vault.owner;
     let bump = ctx.accounts.vault.bump;
 
@@ -63,7 +62,6 @@ pub fn withdraw_from_vault(ctx: Context<WithdrawFromVault>, amount: u64) -> Resu
         amount,
     )?;
 
-    // Mutable borrow only AFTER CPI
     ctx.accounts.vault.total_deposited = ctx
         .accounts
         .vault

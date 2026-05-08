@@ -9,7 +9,9 @@ use crate::{
 #[derive(Accounts)]
 pub struct UpdateSeat<'info> {
     #[account(
-        constraint = authority.key() == vault.owner @ QuotaError::UnauthorizedSigner
+        constraint =
+            authority.key() == vault.owner
+            @ QuotaError::UnauthorizedSigner
     )]
     pub authority: Signer<'info>,
 
@@ -34,13 +36,50 @@ pub struct UpdateSeat<'info> {
 }
 
 pub fn update_seat(ctx: Context<UpdateSeat>, new_limit: u64) -> Result<()> {
+    require!(new_limit > 0, QuotaError::InvalidLimit);
+
+    let vault = &mut ctx.accounts.vault;
+
     let seat = &mut ctx.accounts.seat;
 
-    require!(new_limit > 0, QuotaError::InvalidLimit);
+    require!(vault.active, QuotaError::VaultInactive);
+
+    require!(seat.active, QuotaError::SeatInactive);
 
     require!(new_limit >= seat.consumed, QuotaError::InvalidLimit);
 
-    seat.monthly_limit = new_limit;
+    let old_limit = seat.limit;
+
+    if new_limit > old_limit {
+        let increase = new_limit
+            .checked_sub(old_limit)
+            .ok_or(QuotaError::MathOverflow)?;
+
+        require!(
+            vault
+                .total_assigned
+                .checked_add(increase)
+                .ok_or(QuotaError::MathOverflow)?
+                <= vault.total_deposited,
+            QuotaError::InsufficientFunds
+        );
+
+        vault.total_assigned = vault
+            .total_assigned
+            .checked_add(increase)
+            .ok_or(QuotaError::MathOverflow)?;
+    } else if old_limit > new_limit {
+        let decrease = old_limit
+            .checked_sub(new_limit)
+            .ok_or(QuotaError::MathOverflow)?;
+
+        vault.total_assigned = vault
+            .total_assigned
+            .checked_sub(decrease)
+            .ok_or(QuotaError::MathOverflow)?;
+    }
+
+    seat.limit = new_limit;
 
     Ok(())
 }
