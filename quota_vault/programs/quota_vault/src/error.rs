@@ -2,14 +2,21 @@ use anchor_lang::prelude::*;
 
 #[error_code]
 pub enum QuotaError {
+    // vault
+    #[msg("Invalid Plan")]
+    InvalidPlan,
+
+    #[msg("Vault inactive")]
+    VaultInactive,
+
+    #[msg("Invalid Deposit Amount")]
+    InvalidDepositAmount,
+
     #[msg("Unauthorized signer")]
     UnauthorizedSigner,
 
     #[msg("Seat inactive")]
     SeatInactive,
-
-    #[msg("Vault inactive")]
-    VaultInactive,
 
     #[msg("Quota exceeded")]
     QuotaExceeded,
@@ -22,9 +29,6 @@ pub enum QuotaError {
 
     #[msg("Daily limit exceeded")]
     DailyLimitExceeded,
-
-    #[msg("Invalid Deposit Amount")]
-    InvalidDepositAmount,
 
     #[msg("Invalid Seat Type")]
     InvalidSeatType,

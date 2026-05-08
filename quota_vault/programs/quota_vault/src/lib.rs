@@ -14,12 +14,25 @@ pub mod quota_vault {
 
     use super::*;
 
+    // vault
     pub fn initialize_vault(
         ctx: Context<InitializeVault>,
         api_signer: Pubkey,
         plan: u8,
     ) -> Result<()> {
-        instructions::vault_handler(ctx, api_signer, plan)
+        instructions::initialize_vault_handler(ctx, api_signer, plan)
+    }
+
+    pub fn deposit_to_vault(ctx: Context<Deposit>, amount: u64) -> Result<()> {
+        instructions::deposit_to_vault_handler(ctx, amount)
+    }
+
+    pub fn withdraw_from_vault(ctx: Context<WithdrawFromVault>, amount: u64) -> Result<()> {
+        instructions::withdraw_from_vault(ctx, amount)
+    }
+
+    pub fn close_vault(ctx: Context<CloseVault>) -> Result<()> {
+        instructions::close_vault(ctx)
     }
 
     pub fn create_seat(
@@ -32,10 +45,6 @@ pub mod quota_vault {
         instructions::seat_handler(ctx, holder, seat_id, seat_type, monthly_limit)
     }
 
-    pub fn deposit_handler(ctx: Context<Deposit>, amount: u64) -> Result<()> {
-        instructions::deposit_to_vault_handler(ctx, amount)
-    }
-
     pub fn consume(ctx: Context<Consume>, credits: u64) -> Result<()> {
         instructions::consume_handler(ctx, credits)
     }
@@ -46,13 +55,5 @@ pub mod quota_vault {
 
     pub fn update_seat_handler(ctx: Context<UpdateSeat>, new_limit: u64) -> Result<()> {
         instructions::update_seat(ctx, new_limit)
-    }
-
-    pub fn withdraw_from_vault(ctx: Context<WithdrawFromVault>, amount: u64) -> Result<()> {
-        instructions::withdraw_from_vault(ctx, amount)
-    }
-
-    pub fn close_vault(ctx: Context<CloseVault>) -> Result<()> {
-        instructions::close_vault(ctx)
     }
 }

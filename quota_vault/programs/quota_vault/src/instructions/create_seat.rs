@@ -40,8 +40,8 @@ pub fn seat_handler(
     let vault = &mut ctx.accounts.vault;
     let seat = &mut ctx.accounts.seat;
 
-    vault.total_allocated = vault
-        .total_allocated
+    vault.total_assigned = vault
+        .total_assigned
         .checked_add(monthly_limit)
         .ok_or(QuotaError::MathOverflow)?;
 

@@ -1,4 +1,4 @@
-import { AnchorProvider, Program } from "@coral-xyz/anchor";
+import { AnchorProvider, Program, BN } from "@coral-xyz/anchor";
 import { Connection, PublicKey, Transaction } from "@solana/web3.js";
 import type { QuotaVault } from "./types/quota_vault.ts";
 import idl from "./idl/quota_vault.json" with { type: "json" };
@@ -41,7 +41,7 @@ export async function buildUpdateSeatTransaction(
   const program = new Program<QuotaVault>(idl as QuotaVault, provider);
 
   return program.methods
-    .updateSeatHandler(BigInt(newLimit))
+    .updateSeatHandler(new BN(newLimit))
     .accountsPartial({
       authority: ownerPublicKey,
       vault: vaultPublicKey,
