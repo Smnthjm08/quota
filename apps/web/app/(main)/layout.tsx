@@ -2,9 +2,9 @@ import type { ReactNode } from "react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppSidebar } from "@/components/sidebar/app-sidebar";
 import { AuthSessionProvider } from "@/components/provider/auth-session-provider";
-import { SiteHeader } from "@/components/site-header";
+import { SiteHeader } from "@/components/sidebar/site-header";
 import { auth } from "@workspace/auth/auth";
 import { getOnboardingRoute } from "@/lib/onboarding-route";
 import {

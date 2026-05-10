@@ -1,4 +1,4 @@
-import { OnboardingPlanPricingCard } from "@/components/onboarding-pricing-cards";
+import { OnboardingPlanPricingCard } from "@/components/cards/onboarding-pricing-cards";
 import OnboardingRouteGuard from "@/components/onboarding/onboarding-route-guard";
 
 export const metadata = {

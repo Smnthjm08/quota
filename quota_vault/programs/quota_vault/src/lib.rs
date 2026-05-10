@@ -7,7 +7,7 @@ pub mod state;
 
 use instructions::*;
 
-declare_id!("94x5RJgCv2qvkyAFwDP3sdrxHq32WEaTi4dT22BrcgX1");
+declare_id!("4Yq5pVNmQGrVovK7kKwwETTGU2WcLdjbjjQAK8VXfziH");
 
 #[program]
 pub mod quota_vault {
@@ -34,6 +34,17 @@ pub mod quota_vault {
     ) -> Result<()> {
 
         instructions::deposit_to_vault_handler(
+            ctx,
+            amount,
+        )
+    }
+
+    pub fn topup_vault(
+        ctx: Context<TopupVault>,
+        amount: u64,
+    ) -> Result<()> {
+
+        instructions::topup_vault_handler(
             ctx,
             amount,
         )

@@ -1,5 +1,5 @@
 import { BN, AnchorProvider, Program } from "@coral-xyz/anchor";
-import { Connection, PublicKey, Transaction } from "@solana/web3.js";
+import { Connection, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
 import type { QuotaVault } from "../../types/quota_vault.ts";
 import idl from "../../idl/quota_vault.json" with { type: "json" };
 
@@ -53,6 +53,8 @@ export async function buildCreateSeatTransaction(
     )
     .accountsPartial({
       vault: vaultPublicKey,
+      owner: ownerPublicKey,
+      systemProgram: SystemProgram.programId,
     })
     .transaction();
 }

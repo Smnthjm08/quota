@@ -4,6 +4,7 @@ export * from "./pda.ts";
 
 export * from "./client/vault/initialize-vault.ts";
 export * from "./client/vault/deposit-vault.ts";
+export * from "./client/vault/topup-vault.ts";
 export * from "./client/vault/close-vault.ts";
 export * from "./client/vault/withdraw-vault.ts";
 

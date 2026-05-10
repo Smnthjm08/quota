@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/quota_vault.json`.
  */
 export type QuotaVault = {
-  "address": "94x5RJgCv2qvkyAFwDP3sdrxHq32WEaTi4dT22BrcgX1",
+  "address": "4Yq5pVNmQGrVovK7kKwwETTGU2WcLdjbjjQAK8VXfziH",
   "metadata": {
     "name": "quotaVault",
     "version": "0.1.0",
@@ -461,6 +461,69 @@ export type QuotaVault = {
       "args": []
     },
     {
+      "name": "topupVault",
+      "discriminator": [
+        239,
+        129,
+        106,
+        112,
+        69,
+        134,
+        119,
+        203
+      ],
+      "accounts": [
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault.owner",
+                "account": "vaultAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vaultOwner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "ownerTokenAccount",
+          "writable": true
+        },
+        {
+          "name": "vaultTokenAccount",
+          "writable": true
+        },
+        {
+          "name": "tokenProgram"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "updateSeatHandler",
       "discriminator": [
         201,
@@ -563,6 +626,21 @@ export type QuotaVault = {
         202,
         93,
         28
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "topupEvent",
+      "discriminator": [
+        95,
+        106,
+        217,
+        11,
+        141,
+        32,
+        51,
+        186
       ]
     }
   ],
@@ -689,6 +767,30 @@ export type QuotaVault = {
           {
             "name": "createdAt",
             "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "topupEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "newTotalDeposited",
+            "type": "u64"
           }
         ]
       }

@@ -5,7 +5,7 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-quota_vault = "94x5RJgCv2qvkyAFwDP3sdrxHq32WEaTi4dT22BrcgX1"
+quota_vault = "4Yq5pVNmQGrVovK7kKwwETTGU2WcLdjbjjQAK8VXfziH"
 
 [provider]
 cluster = "devnet"

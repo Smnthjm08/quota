@@ -202,8 +202,8 @@ model Company {
 }
 
 enum SeatType {
-  HUMAN //0
-  AGENT //1
+  HUMAN //1
+  AGENT //2
 }
 
 model Seat {

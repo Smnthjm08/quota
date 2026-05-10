@@ -2,9 +2,9 @@
 
 import * as React from "react";
 
-import { NavMain } from "@/components/nav-main";
-import { NavSecondary } from "@/components/nav-secondary";
-import { NavUser } from "@/components/nav-user";
+import { NavMain } from "@/components/sidebar/nav-main";
+import { NavSecondary } from "@/components/sidebar/nav-secondary";
+import { NavUser } from "@/components/sidebar/nav-user";
 import {
   Sidebar,
   SidebarContent,
@@ -17,7 +17,6 @@ import {
 import {
   LayoutDashboardIcon,
   ChartBarIcon,
-  UsersIcon,
   Settings2Icon,
   CircleHelpIcon,
   DatabaseIcon,
@@ -27,7 +26,7 @@ import {
   ArmchairIcon,
   VaultIcon,
 } from "lucide-react";
-import LogoTitle from "./utils/logo-title";
+import LogoTitle from "../utils/logo-title";
 import { useAuthSession } from "@/hooks/use-auth-session";
 
 const data = {
@@ -61,11 +60,6 @@ const data = {
       title: "Billing",
       url: "/billing",
       icon: <ReceiptTextIcon />,
-    },
-    {
-      title: "Team",
-      url: "/team",
-      icon: <UsersIcon />,
     },
   ],
   navSecondary: [

@@ -1,38 +1,15 @@
-# ANCHOR INTEGRATION
+# Quota
 
-ANCHOR INSTRUCTIONS
-[x] initialize_vault
-[x] create_seat
-[x] deposit_handler
-[x] withdraw_from_vault
-[x] toggle_seat_handler
-[x] update_seat_handler
-[ ] close_vault
-[ ] consume
+Instruction              Signer          When called
+─────────────────────────────────────────────────────────
+initialize_vault         Owner wallet    Once at onboarding
+create_seat              Owner wallet    Adding a seat on dashboard
+update_seat              Owner wallet    Editing seat limit
+toggle_seat              Owner wallet    Suspending/resuming seat
+withdraw_from_vault      Owner wallet    Recovering funds
+close_vault              Owner wallet    Shutting down vault
+topup_vault              Owner wallet    User manual deposit
 
-BACKEND SERVICES
-[ ] consumeOnChain
-[ ] toggleSeatOnChain
-[ ] updateSeatOnChain
-[ ] quota middleware with x402 formatted 402
-[ ] GET /api/echo, /api/data, /api/generate protected routes
-[ ] Seed RouteConfig table
-[ ] Human API key generation and resolution
-
-FRONTEND WIRING
-[ ] Add seat calls createSeatOnChain, shows Explorer link
-[ ] Toggle calls toggleSeatOnChain
-[ ] Limit edit calls updateSeatOnChain
-[ ] Seat usage bar reads consumed from on-chain
-[ ] Dashboard stats from real data
-[ ] Vault balance from RPC
-[ ] Usage logs tab with 5s polling
-[ ] Billing tab with Dodo portal
-
-DEMO
-[ ] demo/run-agent.ts working end to end
-[ ] 10 mainnet consume transactions
-[ ] 3 minute demo video recorded
-[ ] README complete
-[ ] landing page
-[ ] Colosseum submitted
+deposit_to_vault         api_signer      Dodo webhook fires
+consume                  api_signer      Every API request
+reclaim_treasury         api_signer      Internal treasury ops
