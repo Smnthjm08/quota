@@ -15,6 +15,7 @@ export interface SessionCompany {
   website?: string | null;
   status: "PENDING" | "ACTIVE" | "ON_HOLD" | "DISABLED";
   planId?: number | null;
+  maxAllowedSeats?: number | null;
   vaultPda?: string | null;
   ownerWalletPubkey?: string | null;
   createdAt: Date;

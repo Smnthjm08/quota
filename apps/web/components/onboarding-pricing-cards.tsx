@@ -19,8 +19,8 @@ const planFeatures = {
   starter: [
     { name: "Company onboarding", icon: "check", iconColor: "text-green-500" },
     { name: "Wallet setup", icon: "check", iconColor: "text-blue-500" },
-    { name: "Plan management", icon: "check", iconColor: "text-teal-500" },
-    { name: "Email support", icon: "check", iconColor: "text-zinc-500" },
+    // { name: "Plan management", icon: "check", iconColor: "text-teal-500" },
+    // { name: "Email support", icon: "check", iconColor: "text-zinc-500" },
   ],
   team: [
     { name: "Company onboarding", icon: "check", iconColor: "text-green-500" },

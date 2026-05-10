@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -24,10 +19,10 @@ model User {
 
   company Company?
 
-  sessions Session[]
-  accounts Account[]
-  createdSeats Seat[] @relation("SeatCreatedBy")
-  updatedSeats Seat[] @relation("SeatUpdatedBy")
+  sessions     Session[]
+  accounts     Account[]
+  createdSeats Seat[]    @relation("SeatCreatedBy")
+  updatedSeats Seat[]    @relation("SeatUpdatedBy")
 
   @@map("user")
 }
@@ -100,14 +95,20 @@ enum WebhookEventStatus {
   FAILED
 }
 
+enum PlanInterval {
+  ONETIME
+  MONTH
+}
+
 model Plan {
-  id            Int    @id @default(autoincrement())
-  key           String @unique // "starter", "team"
+  id            Int          @id @default(autoincrement())
+  key           String       @unique // "starter", "team", "topup_10", "topup_25", "topup_50"
   name          String
   priceCents    Int
-  currency      String @default("USD")
-  interval      String @default("month")
-  dodoProductId String @unique
+  currency      String       @default("USD")
+  interval      PlanInterval
+  maxAllowedSeats   Int?
+  dodoProductId String       @unique
 
   companies Company[]
 
@@ -117,6 +118,19 @@ model Plan {
   subscriptions Subscription[]
 
   @@map("plan")
+}
+
+model VaultTopUp {
+  id            Int      @id @default(autoincrement())
+  companyId     String
+  company       Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  amountUsdc    Float
+  source        String // subscription_activation | subscription_renewal | manual_topup | crypto_deposit
+  dodoPaymentId String?
+  txSignature   String?
+  createdAt     DateTime @default(now())
+
+  @@map("vault_top_up")
 }
 
 model Subscription {
@@ -157,28 +171,29 @@ model DodoWebhookEvent {
 }
 
 model Company {
-  id      String  @id @default(cuid())
-  name    String
-  size    String?
-  website String?
-  address String?
-  state   String?
-  city    String?
-  pinCode String?
+  id                String  @id @default(cuid())
+  name              String
+  size              String
+  website           String?
+  address           String?
+  state             String?
+  city              String?
+  maxAllowedSeats   Int?
+  pinCode           String?
+  vaultPda          String? @unique
+  ownerWalletPubkey String?
 
   status CompanyStatus @default(PENDING)
 
   planId Int?
   plan   Plan? @relation(fields: [planId], references: [id])
 
-  vaultPda          String? @unique
-  ownerWalletPubkey String?
-
   ownerId String @unique
   owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   subscription Subscription?
   seats        Seat[]
+  vaultTopup   VaultTopUp[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -196,7 +211,7 @@ model Seat {
   name String
 
   seatType SeatType
-  active   Boolean @default(true)
+  active   Boolean  @default(true)
 
   holderPubkey String
   seatPda      String @unique

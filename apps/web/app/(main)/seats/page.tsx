@@ -40,6 +40,7 @@ import { SeatDialog } from "@/components/seats/seat-dialog";
 import { EditSeatDialog } from "@/components/seats/edit-seat-dialog";
 import { PaginatedTable } from "@/components/paginated-table";
 import { axiosInstance } from "@/lib/axios";
+import { useAuthSession } from "@/hooks/use-auth-session";
 import {
   buildToggleSeatTransaction,
   type BuildToggleSeatTxParams,
@@ -203,9 +204,14 @@ function SeatRowActions({
 
 export default function SeatsPage() {
   const { seats, isLoading, errorMessage, reloadSeats } = useSeats();
+  const { company } = useAuthSession();
   const [isCreateSeatOpen, setIsCreateSeatOpen] = useState(false);
   const [editingSeat, setEditingSeat] = useState<SeatRecord | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+  const seatLimit = company?.maxAllowedSeats ?? null;
+  const seatLimitReached =
+    typeof seatLimit === "number" && seats.length >= seatLimit;
 
   return (
     <div className="@container/main flex flex-1 flex-col gap-2">
@@ -216,6 +222,11 @@ export default function SeatsPage() {
             <p className="text-sm text-muted-foreground">
               Manage team access and monthly limits from one place.
             </p>
+            {typeof seatLimit === "number" ? (
+              <p className="mt-1 text-sm text-muted-foreground">
+                {seats.length} / {seatLimit} seats used
+              </p>
+            ) : null}
           </div>
 
           <div className="flex gap-2">
@@ -227,12 +238,22 @@ export default function SeatsPage() {
               <RefreshCcwIcon className={isLoading ? "animate-spin" : ""} />
               Refresh
             </Button>
-            <Button onClick={() => setIsCreateSeatOpen(true)}>
+            <Button
+              onClick={() => setIsCreateSeatOpen(true)}
+              disabled={seatLimitReached}
+            >
               <PlusCircleIcon />
-              Add seat
+              {seatLimitReached ? "Seat limit reached" : "Add seat"}
             </Button>
           </div>
         </div>
+
+        {seatLimitReached ? (
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
+            Your plan allows up to {seatLimit} seats. Remove a seat or upgrade
+            your plan to add more.
+          </div>
+        ) : null}
 
         {errorMessage ? (
           <div className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">

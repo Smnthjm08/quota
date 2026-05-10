@@ -17,6 +17,7 @@ type AuthSessionContextValue = {
   company: AppCompany;
   isPending: boolean;
   refreshSession: () => Promise<AppSession>;
+  setManualSessionCompany: (company: AppCompany | null) => void;
 };
 
 const AuthSessionContext = createContext<AuthSessionContextValue | undefined>(
@@ -36,7 +37,8 @@ export function AuthSessionProvider({
 
   useEffect(() => {
     if (liveSession) {
-      setManualSession(liveSession as AppSession);
+      // schedule setState to avoid synchronous state updates inside effect
+      Promise.resolve().then(() => setManualSession(liveSession as AppSession));
     }
   }, [liveSession]);
 
@@ -54,14 +56,19 @@ export function AuthSessionProvider({
     return refreshedSession;
   }, []);
 
+  const setManualSessionCompany = useCallback((company: AppCompany | null) => {
+    setManualSession((prev) => ({ ...(prev ?? {}), company } as AppSession));
+  }, []);
+
   const value = useMemo<AuthSessionContextValue>(() => {
     return {
       session,
       company,
       isPending,
       refreshSession,
+      setManualSessionCompany,
     };
-  }, [session, company, isPending, refreshSession]);
+  }, [session, company, isPending, refreshSession, setManualSessionCompany]);
 
   return (
     <AuthSessionContext.Provider value={value}>

@@ -10,6 +10,7 @@ export type AppCompany = {
   website?: string;
   status?: string;
   planId?: number | null;
+  maxAllowedSeats?: number | null;
   vaultPda?: string | null;
   ownerWalletPubkey?: string | null;
   plan?: AppCompanyPlan;

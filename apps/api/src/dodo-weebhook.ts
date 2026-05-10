@@ -265,6 +265,7 @@ async function syncCompanySubscription(
       where: { id: companyId },
       data: {
         planId: plan.id,
+        maxAllowedSeats: plan.maxAllowedSeats ?? null,
         status: companyStatus,
       },
     }),

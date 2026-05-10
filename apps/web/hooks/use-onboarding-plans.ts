@@ -6,6 +6,7 @@ import { axiosInstance } from "@/lib/axios";
 import { type Plan as PricingPlan } from "@/lib/billingsdk-config";
 import { useAuthSession } from "@/hooks/use-auth-session";
 import { getOnboardingRoute } from "@/lib/onboarding-route";
+import { type AppCompany } from "@/lib/auth-session";
 
 type PlanRecord = {
   id: number;
@@ -26,6 +27,7 @@ type PlanResponse = {
 type PlanSelectionResponse = {
   message?: string;
   data?: {
+    company?: AppCompany;
     session_id?: string;
     checkout_url?: string;
     checkoutUrl?: string;
@@ -134,7 +136,7 @@ export function useOnboardingPlans({
   mapPlanRecordToPricingPlan,
 }: UseOnboardingPlansInput) {
   const router = useRouter();
-  const { refreshSession } = useAuthSession();
+  const { refreshSession, setManualSessionCompany } = useAuthSession();
   const [plans, setPlans] = useState<PricingPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -201,8 +203,16 @@ export function useOnboardingPlans({
         return;
       }
 
+      const company = response.data?.data?.company ?? null;
+
+      if (company) {
+        setManualSessionCompany(company);
+      }
+
       const refreshedSession = await refreshSession();
-      router.push(getOnboardingRoute(refreshedSession?.company ?? null));
+      router.push(
+        getOnboardingRoute(refreshedSession?.company ?? company ?? null)
+      );
     } catch (error) {
       setErrorMessage(
         getErrorMessage(error, "We could not save that plan. Please try again.")

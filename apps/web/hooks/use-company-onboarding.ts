@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { axiosInstance } from "@/lib/axios";
 import { useAuthSession } from "@/hooks/use-auth-session";
+import { useRouter } from "next/navigation";
 
 type CompanyOnboardingInput = {
   name: string;
@@ -17,7 +18,7 @@ type CompanyOnboardingInput = {
 
 export function useCompanyOnboarding() {
   const router = useRouter();
-  const { refreshSession } = useAuthSession();
+  const { refreshSession, setManualSessionCompany } = useAuthSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -38,7 +39,7 @@ export function useCompanyOnboarding() {
     setIsSubmitting(true);
 
     try {
-      await axiosInstance.post("/api/v1/onboarding/company", {
+      const response = await axiosInstance.post("/api/v1/onboarding/company", {
         name: payload.name,
         size: payload.size,
         website: payload.website,
@@ -47,9 +48,27 @@ export function useCompanyOnboarding() {
         city: payload.city,
         pin_code: payload.pinCode,
       });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const createdCompany = (response?.data as any)?.data ?? null;
 
+      // Optimistically update client session with the created company
+      try {
+        setManualSessionCompany?.(createdCompany);
+      } catch {
+        // ignore
+      }
+
+      const refreshed = await refreshSession();
+
+      // If the refreshed session does not yet contain the company, retry once briefly.
+      // The onboarding route guard will handle the actual redirect once the session is ready.
+      if (!refreshed?.company) {
+        await new Promise((res) => setTimeout(res, 400));
+        await refreshSession();
+      }
+
+      toast.success("Company registered successfully.");
       setSuccessMessage("Company registered successfully.");
-      await refreshSession();
       router.push("/onboarding/plan");
     } catch (err: unknown) {
       let message = "Failed to register company";

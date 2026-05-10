@@ -47,12 +47,22 @@ export default function WalletConnectPage() {
                   Connect and verify your wallet before creating a vault.
                 </CardDescription>
               </div>
-              <Badge variant={isWalletSigned ? "default" : "secondary"}>
-                {isWalletSigned
-                  ? "Verified"
-                  : connectedWallet
-                    ? "Connected"
-                    : "Not connected"}
+              <Badge
+                variant={
+                  errorMessage.includes("already registered")
+                    ? "destructive"
+                    : isWalletSigned
+                      ? "default"
+                      : "secondary"
+                }
+              >
+                {errorMessage.includes("already registered")
+                  ? "Not available"
+                  : isWalletSigned
+                    ? "Verified"
+                    : connectedWallet
+                      ? "Connected"
+                      : "Not connected"}
               </Badge>
             </div>
           </CardHeader>
@@ -84,16 +94,33 @@ export default function WalletConnectPage() {
             )}
 
             {errorMessage && (
-              <div className="flex items-center gap-3">
-                <p className="text-sm text-destructive">{errorMessage}</p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={retryVerification}
-                  disabled={isVerifying || !connectedWallet}
-                >
-                  Retry
-                </Button>
+              <div
+                className={`flex items-start gap-3 rounded-lg p-3 ${
+                  errorMessage.includes("already registered")
+                    ? "border border-destructive/30 bg-destructive/5"
+                    : "border border-amber-500/30 bg-amber-500/5"
+                }`}
+              >
+                <span
+                  className={`mt-0.5 inline-flex h-2 w-2 rounded-full ${
+                    errorMessage.includes("already registered")
+                      ? "bg-destructive"
+                      : "bg-amber-500"
+                  }`}
+                />
+                <div className="flex flex-1 items-center gap-2">
+                  <p className="text-sm text-destructive">{errorMessage}</p>
+                  {!errorMessage.includes("already registered") && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={retryVerification}
+                      disabled={isVerifying || !connectedWallet}
+                    >
+                      Retry
+                    </Button>
+                  )}
+                </div>
               </div>
             )}
           </CardContent>
@@ -105,7 +132,10 @@ export default function WalletConnectPage() {
                 type="button"
                 className="cursor-pointer"
                 size={"lg"}
-                disabled={!isWalletSigned}
+                disabled={
+                  !isWalletSigned ||
+                  errorMessage.includes("already registered")
+                }
                 onClick={handleCreateVault}
               >
                 Create Vault

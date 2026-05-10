@@ -197,6 +197,60 @@ app.post(
 
       const trialPeriodDays = Number(process.env.DODO_TRIAL_PERIOD_DAYS ?? 0);
 
+      if (plan.priceCents === 0) {
+        const currentCompany = req.company;
+
+        if (!currentCompany) {
+          return res.status(400).json({ message: "Company not found for user" });
+        }
+
+        const freeSubscriptionId = `free-${currentCompany.id}-${plan.id}`;
+
+        const updatedCompany = await prisma.$transaction(async (tx) => {
+          const updatedCompany = await tx.company.update({
+            where: { id: currentCompany.id },
+            data: {
+              planId: plan.id,
+              maxAllowedSeats: plan.maxAllowedSeats ?? null,
+              status: "ACTIVE",
+            },
+          });
+
+          await tx.subscription.upsert({
+            where: { companyId: currentCompany.id },
+            create: {
+              companyId: currentCompany.id,
+              planId: plan.id,
+              dodoSubscriptionId: freeSubscriptionId,
+              dodoCustomerId: null,
+              status: "ACTIVE",
+            },
+            update: {
+              planId: plan.id,
+              dodoSubscriptionId: freeSubscriptionId,
+              dodoCustomerId: null,
+              status: "ACTIVE",
+            },
+          });
+
+          return updatedCompany;
+        });
+
+        return res.status(200).json({
+          message: "Free plan activated successfully",
+          data: {
+            company: updatedCompany,
+            subscription: {
+              companyId: currentCompany.id,
+              planId: plan.id,
+              dodoSubscriptionId: freeSubscriptionId,
+              status: "ACTIVE",
+            },
+          },
+          error: null,
+        });
+      }
+
       const checkout = await dodoClient.checkoutSessions.create({
         product_cart: [{ product_id: plan.dodoProductId, quantity: 1 }],
         ...(trialPeriodDays > 0
@@ -420,6 +474,31 @@ app.get(
   }
 );
 
+
+app.get("/api/auth/wallet/check", authMiddleware, async (req, res) => {
+  try {
+    const wallet = (req.query.wallet as string) ?? null;
+
+    if (!wallet) {
+      return res.status(400).json({ message: "wallet query param is required" });
+    }
+
+    const existing = await prisma.company.findFirst({
+      where: { ownerWalletPubkey: wallet },
+      select: { id: true, ownerId: true },
+    });
+
+    return res.status(200).json({
+      exists: Boolean(existing),
+      companyId: existing?.id ?? null,
+      ownerId: existing?.ownerId ?? null,
+    });
+  } catch (error) {
+    console.error("Wallet check error:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 app.get(
   "/api/v1/vault",
   authMiddleware,
@@ -481,7 +560,10 @@ app.get(
 app.get("/api/v1/onboarding/plan", authMiddleware, async (req, res) => {
   try {
     const plans = await prisma.plan.findMany({
-      orderBy: [{ priceCents: "asc" }, { id: "asc" }],
+      orderBy: [{ priceCents: "asc" }, { id: "asc" },],
+      where: {
+        interval: "MONTH"
+      }
     });
     return res.status(200).json({
       message: "Pricing plans fetched successfully",
@@ -832,6 +914,26 @@ app.post(
   companyMiddleware,
   async (req, res) => {
     try {
+      const company = req.company;
+
+      if (!company) {
+        return res.status(400).json({ message: "Company not found for user" });
+      }
+
+      if (company.maxAllowedSeats !== null && company.maxAllowedSeats !== undefined) {
+        const seatCount = await prisma.seat.count({
+          where: {
+            companyId: company.id,
+          },
+        });
+
+        if (seatCount >= company.maxAllowedSeats) {
+          return res.status(400).json({
+            message: `Seat limit reached for your plan (${company.maxAllowedSeats} seats)`,
+          });
+        }
+      }
+
       const {
         name,
         seatType,

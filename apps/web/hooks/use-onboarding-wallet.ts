@@ -35,9 +35,10 @@ export function useOnboardingWallet() {
     async function checkWalletStatus() {
       try {
         const resp = await axiosInstance.get("/api/auth/wallet/status");
-        const { wallet, vaultPda } = resp.data as {
+        const { wallet, vaultPda, exists } = resp.data as {
           wallet: string | null;
           vaultPda: string | null;
+          exists?: boolean;
         };
 
         if (!mounted) return;
@@ -47,8 +48,17 @@ export function useOnboardingWallet() {
           return;
         }
 
+        if (connectedWallet && exists && (!wallet || connectedWallet !== wallet)) {
+          setErrorMessage(
+            "This wallet is already registered. Please use a different wallet."
+          );
+          setIsWalletSigned(false);
+          return;
+        }
+
         if (connectedWallet && wallet && connectedWallet === wallet) {
           setIsWalletSigned(true);
+          setErrorMessage("");
         } else {
           setIsWalletSigned(false);
           setErrorMessage("");
@@ -79,6 +89,27 @@ export function useOnboardingWallet() {
     try {
       setIsVerifying(true);
       setErrorMessage("");
+
+      try {
+        const checkResp = await axiosInstance.get("/api/auth/wallet/check", {
+          params: { wallet: connectedWallet },
+        });
+
+        const { exists, ownerId } = checkResp.data ?? {
+          exists: false,
+          ownerId: null,
+        };
+
+        if (exists && ownerId && ownerId !== session?.user?.id) {
+          setErrorMessage(
+            "This wallet is already registered to another user. Please use a different wallet."
+          );
+          setIsVerifying(false);
+          return;
+        }
+      } catch (err) {
+        console.warn("Wallet existence check failed; continuing", err);
+      }
 
       const challengeResp = await axiosInstance.post(
         "/api/auth/wallet/challenge",
@@ -112,7 +143,7 @@ export function useOnboardingWallet() {
     } finally {
       setIsVerifying(false);
     }
-  }, [connectedWallet, signMessage]);
+  }, [connectedWallet, signMessage, session]);
 
   const retryVerification = () => {
     autoVerifyWalletRef.current = null;
@@ -138,6 +169,28 @@ export function useOnboardingWallet() {
     try {
       setIsCreatingVault(true);
       setErrorMessage("");
+
+      try {
+        const vaultResp = await axiosInstance.get("/api/v1/vault");
+        const vaultData = vaultResp.data?.data ?? null;
+
+        if (vaultData?.vaultPda) {
+          const refreshedSession = await refreshSession();
+          const nextRoute = getOnboardingRoute(refreshedSession?.company ?? null);
+
+          if (nextRoute === "/dashboard") {
+            toast.success("Vault already exists. Continuing to dashboard.");
+            router.replace(nextRoute);
+            return;
+          }
+
+          toast.error("Vault exists but session is still catching up.");
+          return;
+        }
+      } catch (err) {
+        // ignore API errors here and fall back to chain check below
+        console.warn("Vault DB check failed, falling back to chain check", err);
+      }
 
       const [vaultPda] = deriveVaultPda(publicKey);
       const existingVault = await connection.getAccountInfo(vaultPda);
@@ -222,6 +275,10 @@ export function useOnboardingWallet() {
       return;
     }
 
+    if (errorMessage.includes("already registered")) {
+      return;
+    }
+
     if (isWalletSigned || isVerifying) {
       return;
     }
@@ -232,7 +289,7 @@ export function useOnboardingWallet() {
 
     autoVerifyWalletRef.current = connectedWallet;
     void verifyWallet();
-  }, [connectedWallet, isWalletSigned, isVerifying, verifyWallet]);
+  }, [connectedWallet, isWalletSigned, isVerifying, verifyWallet, errorMessage]);
 
   return {
     connectedWallet,

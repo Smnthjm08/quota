@@ -11,11 +11,9 @@ import {
 } from "@workspace/ui/components/select";
 import { Separator } from "@workspace/ui/components/separator";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useCompanyOnboarding } from "@/hooks/use-company-onboarding";
 
 export default function CompanyOnboardingForm() {
-  const router = useRouter();
   const { submitCompany, isSubmitting, errorMessage, successMessage } =
     useCompanyOnboarding();
   const [name, setName] = useState("");
@@ -167,7 +165,7 @@ export default function CompanyOnboardingForm() {
               type="button"
               variant="outline"
               className="whitespace-nowrap"
-              onClick={() => router.back()}
+              onClick={() => window.history.back()}
             >
               Cancel
             </Button>

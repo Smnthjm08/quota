@@ -62,6 +62,7 @@ const authConfig: Parameters<typeof betterAuth>[0] = {
           website: true,
           status: true,
           planId: true,
+          maxAllowedSeats: true,
           vaultPda: true,
           ownerWalletPubkey: true,
           createdAt: true,
