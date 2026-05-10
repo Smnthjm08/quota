@@ -27,7 +27,7 @@ import {
   ArmchairIcon,
   VaultIcon,
 } from "lucide-react";
-import LogoTitle from "./logo-title";
+import LogoTitle from "./utils/logo-title";
 import { useAuthSession } from "@/hooks/use-auth-session";
 
 const data = {

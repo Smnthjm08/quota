@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { Button } from "@workspace/ui/components/button";
 
-import LogoTitle from "../logo-title";
+import LogoTitle from "../utils/logo-title";
 
 const navItems = [
   { label: "Product", href: "#product" },

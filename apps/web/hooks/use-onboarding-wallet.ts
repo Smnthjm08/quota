@@ -12,6 +12,14 @@ import { useAuthSession } from "@/hooks/use-auth-session";
 import { getOnboardingRoute } from "@/lib/onboarding-route";
 import { buildInitializeVaultTransaction } from "@/lib/vault-builder";
 
+function mapCompanyPlanIdToVaultPlan(planId: number | null | undefined) {
+  if (planId === 1) return 0; // free
+  if (planId === 2) return 1; // starter
+  if (planId === 3) return 2; // team
+
+  return null;
+}
+
 export function useOnboardingWallet() {
   const router = useRouter();
   const { connection } = useConnection();
@@ -166,6 +174,13 @@ export function useOnboardingWallet() {
       return;
     }
 
+    const vaultPlan = mapCompanyPlanIdToVaultPlan(session.company.planId);
+
+    if (vaultPlan === null) {
+      setErrorMessage("Unsupported plan selected for vault initialization.");
+      return;
+    }
+
     try {
       setIsCreatingVault(true);
       setErrorMessage("");
@@ -220,7 +235,7 @@ export function useOnboardingWallet() {
         connection,
         ownerPublicKey: publicKey,
         apiSignerPublicKey,
-        planId: session.company.planId,
+        planId: vaultPlan,
       });
 
       tx.feePayer = publicKey;

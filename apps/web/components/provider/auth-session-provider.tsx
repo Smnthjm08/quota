@@ -42,7 +42,7 @@ export function AuthSessionProvider({
     }
   }, [liveSession]);
 
-  const session = (liveSession as AppSession | null) ?? manualSession ?? null;
+  const session = manualSession ?? (liveSession as AppSession | null) ?? null;
   const company = session?.company ?? null;
 
   const refreshSession = useCallback(async () => {

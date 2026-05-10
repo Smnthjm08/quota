@@ -6,16 +6,23 @@ import {
   Transaction,
 } from "@solana/web3.js";
 import { Program, AnchorProvider } from "@coral-xyz/anchor";
-import { deriveVaultPda } from "./pda.ts";
-import { PROGRAM_ID } from "./program.ts";
-import type { QuotaVault } from "./types/quota_vault.ts";
-import idl from "./idl/quota_vault.json" with { type: "json" };
+import { deriveVaultPda } from "../../pda.ts";
+import type { QuotaVault } from "../../types/quota_vault.ts";
+import idl from "../../idl/quota_vault.json" with { type: "json" };
 
 type BrowserWallet = {
   publicKey: PublicKey;
   signTransaction: (transaction: Transaction) => Promise<Transaction>;
   signAllTransactions: (transactions: Transaction[]) => Promise<Transaction[]>;
 };
+
+export interface BuildVaultTxParams {
+  connection: Connection;
+  ownerPublicKey: PublicKey;
+  apiSignerPublicKey: PublicKey;
+  planId: number;
+}
+
 
 export async function initializeVault(
   program: Program<QuotaVault>,
@@ -27,10 +34,9 @@ export async function initializeVault(
 
   const tx = await program.methods
     .initializeVault(apiSigner, plan)
-    .accounts({
+    .accountsPartial({
       owner: owner.publicKey,
-      //   vault: vaultPda,
-      //   systemProgram: SystemProgram.programId,
+      systemProgram: SystemProgram.programId,
     })
     .signers([owner])
     .rpc();
@@ -38,19 +44,11 @@ export async function initializeVault(
   return { tx, vaultPda };
 }
 
-export interface BuildVaultTxParams {
-  connection: Connection;
-  ownerPublicKey: PublicKey;
-  apiSignerPublicKey: PublicKey;
-  planId: number;
-}
 
 export async function buildInitializeVaultTransaction(
   params: BuildVaultTxParams
 ): Promise<Transaction> {
   const { connection, ownerPublicKey, apiSignerPublicKey, planId } = params;
-
-  const [vaultPda] = deriveVaultPda(ownerPublicKey);
 
   const wallet: BrowserWallet = {
     publicKey: ownerPublicKey,
@@ -66,9 +64,9 @@ export async function buildInitializeVaultTransaction(
 
   return program.methods
     .initializeVault(apiSignerPublicKey, planId)
-    .accounts({
+    .accountsPartial({
       owner: ownerPublicKey,
-      // systemProgram: SystemProgram.programId,
+      systemProgram: SystemProgram.programId,
     })
     .transaction();
 }

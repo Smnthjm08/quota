@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card";
-import Logo from "../logo";
+import Logo from "../utils/logo";
 
 type AuthPageShellProps = Readonly<{
   title: string;

@@ -1,7 +1,7 @@
 import { Geist_Mono, Outfit } from "next/font/google";
 
 import "@workspace/ui/globals.css";
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider } from "@/components/provider/theme-provider";
 import { cn } from "@workspace/ui/lib/utils";
 import { SolanaProvider } from "@/components/provider/solana-provider";
 import { TooltipProvider } from "@workspace/ui/components/tooltip";

@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import LogoTitle from "../logo-title";
+import LogoTitle from "../utils/logo-title";
 
 const columns = [
   {

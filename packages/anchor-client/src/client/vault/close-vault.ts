@@ -1,7 +1,7 @@
 import { AnchorProvider, Program } from "@coral-xyz/anchor";
 import { Connection, PublicKey, Transaction } from "@solana/web3.js";
-import type { QuotaVault } from "./types/quota_vault.ts";
-import idl from "./idl/quota_vault.json" with { type: "json" };
+import type { QuotaVault } from "../../types/quota_vault.ts";
+import idl from "../../idl/quota_vault.json" with { type: "json" };
 
 type BrowserWallet = {
   publicKey: PublicKey;
@@ -9,17 +9,16 @@ type BrowserWallet = {
   signAllTransactions: (transactions: Transaction[]) => Promise<Transaction[]>;
 };
 
-export interface BuildToggleSeatTxParams {
+export interface BuildCloseVaultTxParams {
   connection: Connection;
   ownerPublicKey: PublicKey;
   vaultPublicKey: PublicKey;
-  seatPublicKey: PublicKey;
 }
 
-export async function buildToggleSeatTransaction(
-  params: BuildToggleSeatTxParams
+export async function buildCloseVaultTransaction(
+  params: BuildCloseVaultTxParams
 ): Promise<Transaction> {
-  const { connection, ownerPublicKey, vaultPublicKey, seatPublicKey } = params;
+  const { connection, ownerPublicKey, vaultPublicKey } = params;
 
   const wallet: BrowserWallet = {
     publicKey: ownerPublicKey,
@@ -34,11 +33,10 @@ export async function buildToggleSeatTransaction(
   const program = new Program<QuotaVault>(idl as QuotaVault, provider);
 
   return program.methods
-    .toggleSeatHandler()
+    .closeVault()
     .accountsPartial({
-      authority: ownerPublicKey,
+      owner: ownerPublicKey,
       vault: vaultPublicKey,
-      seat: seatPublicKey,
     })
     .transaction();
 }

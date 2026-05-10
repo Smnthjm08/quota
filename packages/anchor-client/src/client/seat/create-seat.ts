@@ -1,7 +1,7 @@
-import { AnchorProvider, Program, BN } from "@coral-xyz/anchor";
+import { BN, AnchorProvider, Program } from "@coral-xyz/anchor";
 import { Connection, PublicKey, Transaction } from "@solana/web3.js";
-import type { QuotaVault } from "./types/quota_vault.ts";
-import idl from "./idl/quota_vault.json" with { type: "json" };
+import type { QuotaVault } from "../../types/quota_vault.ts";
+import idl from "../../idl/quota_vault.json" with { type: "json" };
 
 type BrowserWallet = {
   publicKey: PublicKey;
@@ -9,23 +9,27 @@ type BrowserWallet = {
   signAllTransactions: (transactions: Transaction[]) => Promise<Transaction[]>;
 };
 
-export interface BuildUpdateSeatTxParams {
+export interface BuildCreateSeatTxParams {
   connection: Connection;
   ownerPublicKey: PublicKey;
   vaultPublicKey: PublicKey;
-  seatPublicKey: PublicKey;
-  newLimit: number;
+  holderPublicKey: PublicKey;
+  seatId: bigint;
+  seatType: number;
+  monthlyLimit: number;
 }
 
-export async function buildUpdateSeatTransaction(
-  params: BuildUpdateSeatTxParams
+export async function buildCreateSeatTransaction(
+  params: BuildCreateSeatTxParams
 ): Promise<Transaction> {
   const {
     connection,
     ownerPublicKey,
     vaultPublicKey,
-    seatPublicKey,
-    newLimit,
+    holderPublicKey,
+    seatId,
+    seatType,
+    monthlyLimit,
   } = params;
 
   const wallet: BrowserWallet = {
@@ -41,11 +45,14 @@ export async function buildUpdateSeatTransaction(
   const program = new Program<QuotaVault>(idl as QuotaVault, provider);
 
   return program.methods
-    .updateSeatHandler(new BN(newLimit))
+    .createSeat(
+      holderPublicKey,
+      new BN(seatId.toString()),
+      seatType,
+      new BN(monthlyLimit)
+    )
     .accountsPartial({
-      authority: ownerPublicKey,
       vault: vaultPublicKey,
-      seat: seatPublicKey,
     })
     .transaction();
 }

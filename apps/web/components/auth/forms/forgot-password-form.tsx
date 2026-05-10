@@ -15,7 +15,7 @@ import {
   FieldLabel,
 } from "@workspace/ui/components/field";
 import { Input } from "@workspace/ui/components/input";
-import Logo from "../../logo";
+import Logo from "../../utils/logo";
 import { useState } from "react";
 import { authClient } from "@workspace/auth/client";
 import LinkButton from "../../ui/link-button";

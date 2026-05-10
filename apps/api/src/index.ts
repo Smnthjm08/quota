@@ -6,12 +6,17 @@ import { prisma } from "@workspace/db";
 import companyMiddleware from "./middlewares/company.middleware.ts";
 import nacl from "tweetnacl";
 import { PublicKey } from "@solana/web3.js";
+import { BN } from "@coral-xyz/anchor";
 import {
   deriveSeatPda,
   deriveVaultPda,
   PROGRAM_ID,
 } from "@workspace/anchor-client";
-import { apiSignerPublicKey, connection } from "./lib/anchor-client.ts";
+import {
+  apiSignerPublicKey,
+  connection,
+  program,
+} from "./lib/anchor-client.ts";
 import {
   dodoApiKey,
   dodoClient,
@@ -788,6 +793,104 @@ app.post(
       );
 
       const existingVault = await connection.getAccountInfo(vaultPda);
+
+  app.post(
+    "/api/v1/vault/deposit/server",
+    authMiddleware,
+    companyMiddleware,
+    async (req: express.Request, res: express.Response) => {
+      try {
+        const company = req.company;
+
+        if (!company) {
+          return res.status(400).json({ message: "Company not found for user" });
+        }
+
+        if (!company.ownerWalletPubkey) {
+          return res
+            .status(400)
+            .json({ message: "Connect and verify a wallet first" });
+        }
+
+        const { amount } = req.body as { amount?: number | string };
+        const parsedAmount = Number(amount);
+
+        if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+          return res
+            .status(400)
+            .json({ message: "Valid deposit amount is required" });
+        }
+
+        const ownerWallet = new PublicKey(company.ownerWalletPubkey);
+        const [vaultPda] = deriveVaultPda(ownerWallet);
+
+        const vaultAccount = await connection.getAccountInfo(vaultPda);
+        if (!vaultAccount) {
+          return res
+            .status(400)
+            .json({ message: "Initialize the vault before depositing" });
+        }
+
+        const vaultTokenAccount = deriveAssociatedTokenAddress(vaultPda, USDC_MINT);
+        const apiSignerTokenAccount = deriveAssociatedTokenAddress(
+          apiSignerPublicKey,
+          USDC_MINT
+        );
+
+        const apiSignerTokenAccountInfo = await connection.getAccountInfo(
+          apiSignerTokenAccount
+        );
+        if (!apiSignerTokenAccountInfo) {
+          return res.status(400).json({
+            message:
+              "API signer USDC token account does not exist. Fund the signer treasury first.",
+          });
+        }
+
+        const vaultTokenAccountInfo = await connection.getAccountInfo(
+          vaultTokenAccount
+        );
+        if (!vaultTokenAccountInfo) {
+          return res.status(400).json({
+            message:
+              "Vault USDC token account does not exist. Create the vault token account first.",
+          });
+        }
+
+        const txSignature = await program.methods
+          .depositToVault(new BN(parsedAmount))
+          .accountsPartial({
+            vault: vaultPda,
+            authority: apiSignerPublicKey,
+            mint: USDC_MINT,
+            fromTokenAccount: apiSignerTokenAccount,
+            vaultTokenAccount,
+            tokenProgram: TOKEN_PROGRAM_ID,
+          })
+          .rpc();
+
+        await prisma.company.update({
+          where: { id: company.id },
+          data: {
+            vaultPda: vaultPda.toBase58(),
+          },
+        });
+
+        return res.status(200).json({
+          message: "Vault funded successfully",
+          data: {
+            vaultPda: vaultPda.toBase58(),
+            amount: parsedAmount,
+            txSignature,
+          },
+          error: null,
+        });
+      } catch (error) {
+        console.error("Server vault deposit error:", error);
+        return res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  );
 
       if (existingVault) {
         const updatedCompany = await prisma.company.update({

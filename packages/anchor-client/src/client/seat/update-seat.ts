@@ -1,12 +1,7 @@
-import { BN, AnchorProvider, Program } from "@coral-xyz/anchor";
+import { AnchorProvider, Program, BN } from "@coral-xyz/anchor";
 import { Connection, PublicKey, Transaction } from "@solana/web3.js";
-import type { QuotaVault } from "./types/quota_vault.ts";
-import idl from "./idl/quota_vault.json" with { type: "json" };
-
-// SPL Token Program ID (Mainnet)
-const TOKEN_PROGRAM = new PublicKey(
-  "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-);
+import type { QuotaVault } from "../../types/quota_vault.ts";
+import idl from "../../idl/quota_vault.json" with { type: "json" };
 
 type BrowserWallet = {
   publicKey: PublicKey;
@@ -14,25 +9,23 @@ type BrowserWallet = {
   signAllTransactions: (transactions: Transaction[]) => Promise<Transaction[]>;
 };
 
-export interface BuildDepositTxParams {
+export interface BuildUpdateSeatTxParams {
   connection: Connection;
   ownerPublicKey: PublicKey;
   vaultPublicKey: PublicKey;
-  userTokenAccountPublicKey: PublicKey;
-  vaultTokenAccountPublicKey: PublicKey;
-  amount: number;
+  seatPublicKey: PublicKey;
+  newLimit: number;
 }
 
-export async function buildDepositTransaction(
-  params: BuildDepositTxParams
+export async function buildUpdateSeatTransaction(
+  params: BuildUpdateSeatTxParams
 ): Promise<Transaction> {
   const {
     connection,
     ownerPublicKey,
     vaultPublicKey,
-    userTokenAccountPublicKey,
-    vaultTokenAccountPublicKey,
-    amount,
+    seatPublicKey,
+    newLimit,
   } = params;
 
   const wallet: BrowserWallet = {
@@ -48,13 +41,11 @@ export async function buildDepositTransaction(
   const program = new Program<QuotaVault>(idl as QuotaVault, provider);
 
   return program.methods
-    .depositHandler(new BN(amount))
+    .updateSeatHandler(new BN(newLimit))
     .accountsPartial({
+      authority: ownerPublicKey,
       vault: vaultPublicKey,
-      owner: ownerPublicKey,
-      fromTokenAccount: userTokenAccountPublicKey,
-      vaultTokenAccount: vaultTokenAccountPublicKey,
-      tokenProgram: TOKEN_PROGRAM,
+      seat: seatPublicKey,
     })
     .transaction();
 }

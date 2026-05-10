@@ -1,7 +1,11 @@
 import { BN, AnchorProvider, Program } from "@coral-xyz/anchor";
 import { Connection, PublicKey, Transaction } from "@solana/web3.js";
-import type { QuotaVault } from "./types/quota_vault.ts";
-import idl from "./idl/quota_vault.json" with { type: "json" };
+import type { QuotaVault } from "../../types/quota_vault.ts";
+import idl from "../../idl/quota_vault.json" with { type: "json" };
+
+const TOKEN_PROGRAM = new PublicKey(
+  "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+);
 
 type BrowserWallet = {
   publicKey: PublicKey;
@@ -9,27 +13,25 @@ type BrowserWallet = {
   signAllTransactions: (transactions: Transaction[]) => Promise<Transaction[]>;
 };
 
-export interface BuildCreateSeatTxParams {
+export interface BuildWithdrawTxParams {
   connection: Connection;
   ownerPublicKey: PublicKey;
   vaultPublicKey: PublicKey;
-  holderPublicKey: PublicKey;
-  seatId: bigint;
-  seatType: number;
-  monthlyLimit: number;
+  vaultTokenAccountPublicKey: PublicKey;
+  ownerTokenAccountPublicKey: PublicKey;
+  amount: bigint | number;
 }
 
-export async function buildCreateSeatTransaction(
-  params: BuildCreateSeatTxParams
+export async function buildWithdrawTransaction(
+  params: BuildWithdrawTxParams
 ): Promise<Transaction> {
   const {
     connection,
     ownerPublicKey,
     vaultPublicKey,
-    holderPublicKey,
-    seatId,
-    seatType,
-    monthlyLimit,
+    vaultTokenAccountPublicKey,
+    ownerTokenAccountPublicKey,
+    amount,
   } = params;
 
   const wallet: BrowserWallet = {
@@ -45,14 +47,13 @@ export async function buildCreateSeatTransaction(
   const program = new Program<QuotaVault>(idl as QuotaVault, provider);
 
   return program.methods
-    .createSeat(
-      holderPublicKey,
-      new BN(seatId.toString()),
-      seatType,
-      new BN(monthlyLimit)
-    )
+    .withdrawFromVault(new BN(amount.toString()))
     .accountsPartial({
+      owner: ownerPublicKey,
       vault: vaultPublicKey,
+      vaultTokenAccount: vaultTokenAccountPublicKey,
+      ownerTokenAccount: ownerTokenAccountPublicKey,
+      tokenProgram: TOKEN_PROGRAM,
     })
     .transaction();
 }

@@ -176,6 +176,7 @@ export function DepositDialog({
         connection,
         ownerPublicKey: publicKey,
         vaultPublicKey: vaultPda,
+        mintPublicKey: USDC_MINT,
         userTokenAccountPublicKey: userUsdcAccount,
         vaultTokenAccountPublicKey: vaultUsdcAccount,
         amount: amountInLamports,

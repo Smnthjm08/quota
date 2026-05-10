@@ -4,7 +4,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { axiosInstance } from "@/lib/axios";
 import { useAuthSession } from "@/hooks/use-auth-session";
-import { useRouter } from "next/navigation";
 
 type CompanyOnboardingInput = {
   name: string;
@@ -17,7 +16,6 @@ type CompanyOnboardingInput = {
 };
 
 export function useCompanyOnboarding() {
-  const router = useRouter();
   const { refreshSession, setManualSessionCompany } = useAuthSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -69,7 +67,6 @@ export function useCompanyOnboarding() {
 
       toast.success("Company registered successfully.");
       setSuccessMessage("Company registered successfully.");
-      router.push("/onboarding/plan");
     } catch (err: unknown) {
       let message = "Failed to register company";
 
