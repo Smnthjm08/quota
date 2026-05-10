@@ -2,7 +2,12 @@ import type { ComponentType } from "react";
 
 import { BarChart3, Landmark, LockKeyhole, Users } from "lucide-react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui/components/card";
 
 import { SectionHeading } from "./section-heading";
 
@@ -10,26 +15,22 @@ const features = [
   {
     icon: Landmark,
     title: "Fund once, control forever",
-    body:
-      "Your team pays a monthly subscription via card. Quota allocates a USDC budget to your on-chain vault. Agents spend from the vault within the limits you set.",
+    body: "Your team pays a monthly subscription via card. Quota allocates a USDC budget to your on-chain vault. Agents spend from the vault within the limits you set.",
   },
   {
     icon: Users,
     title: "Per-seat monthly limits",
-    body:
-      "Assign every agent and team member a wallet address and a monthly credit limit. When they hit the limit, calls are blocked at the program level. Not by your server. By math.",
+    body: "Assign every agent and team member a wallet address and a monthly credit limit. When they hit the limit, calls are blocked at the program level. Not by your server. By math.",
   },
   {
     icon: LockKeyhole,
     title: "Tamper-proof enforcement",
-    body:
-      "Spending limits live in a Solana program. Not in your database. Not in your config file. No engineer, no hacker, and not even Quota can override the limit without the vault owner's signature.",
+    body: "Spending limits live in a Solana program. Not in your database. Not in your config file. No engineer, no hacker, and not even Quota can override the limit without the vault owner's signature.",
   },
   {
     icon: BarChart3,
     title: "Full audit trail on-chain",
-    body:
-      "Every API call is a Solana transaction. Open Explorer and see exactly which agent called what, when, and how many credits it cost. Forever. No log rotation. No data loss.",
+    body: "Every API call is a Solana transaction. Open Explorer and see exactly which agent called what, when, and how many credits it cost. Forever. No log rotation. No data loss.",
   },
 ];
 
@@ -50,7 +51,9 @@ function FeatureCard({
         </div>
         <CardTitle className="text-xl text-white">{title}</CardTitle>
       </CardHeader>
-      <CardContent className="text-sm leading-7 text-slate-300">{body}</CardContent>
+      <CardContent className="text-sm leading-7 text-slate-300">
+        {body}
+      </CardContent>
     </Card>
   );
 }

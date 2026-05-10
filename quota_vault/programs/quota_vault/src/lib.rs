@@ -7,7 +7,7 @@ pub mod state;
 
 use instructions::*;
 
-declare_id!("CjMHzbSLp1riwY4QPbBSgpjE8jzawFZV86X6sYvMH58Y");
+declare_id!("94x5RJgCv2qvkyAFwDP3sdrxHq32WEaTi4dT22BrcgX1");
 
 #[program]
 pub mod quota_vault {

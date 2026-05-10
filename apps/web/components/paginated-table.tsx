@@ -89,7 +89,10 @@ export function PaginatedTable<T>({
   );
 
   const gotoPage = (nextPageIndex: number) => {
-    const boundedPageIndex = Math.max(0, Math.min(nextPageIndex, pageCount - 1));
+    const boundedPageIndex = Math.max(
+      0,
+      Math.min(nextPageIndex, pageCount - 1)
+    );
     setPageIndex(boundedPageIndex);
   };
 
@@ -106,7 +109,7 @@ export function PaginatedTable<T>({
       })}
 
       {isEmpty ? null : (
-        <div className="flex flex-col gap-4  bg-background px-4 py-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-4 bg-background px-4 py-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Label htmlFor="rows-per-page" className="text-sm font-medium">
               Rows per page
@@ -142,15 +145,21 @@ export function PaginatedTable<T>({
                       gotoPage(safePageIndex - 1);
                     }
                   }}
-                  className={safePageIndex <= 0 ? "pointer-events-none opacity-50" : undefined}
+                  className={
+                    safePageIndex <= 0
+                      ? "pointer-events-none opacity-50"
+                      : undefined
+                  }
                 />
               </PaginationItem>
 
               {visiblePages.map((page) => {
                 const isActive = page === safePageIndex + 1;
-                const previousVisiblePage = visiblePages[visiblePages.indexOf(page) - 1];
+                const previousVisiblePage =
+                  visiblePages[visiblePages.indexOf(page) - 1];
                 const shouldShowEllipsisBefore =
-                  previousVisiblePage !== undefined && page - previousVisiblePage > 1;
+                  previousVisiblePage !== undefined &&
+                  page - previousVisiblePage > 1;
 
                 return (
                   <React.Fragment key={page}>

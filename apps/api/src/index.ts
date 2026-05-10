@@ -202,7 +202,7 @@ app.post(
         ...(trialPeriodDays > 0
           ? { subscription_data: { trial_period_days: trialPeriodDays } }
           : {}),
-        allowed_payment_method_types: ['credit', 'debit'],
+        allowed_payment_method_types: ["credit", "debit"],
         customer: {
           email: user.email,
           name: user.name,
@@ -446,12 +446,12 @@ app.get(
             USDC_MINT
           );
 
-          const accountInfo = await connection.getAccountInfo(vaultTokenAccount);
+          const accountInfo =
+            await connection.getAccountInfo(vaultTokenAccount);
 
           if (accountInfo) {
-            const balance = await connection.getTokenAccountBalance(
-              vaultTokenAccount
-            );
+            const balance =
+              await connection.getTokenAccountBalance(vaultTokenAccount);
             totalDeposited = balance.value.uiAmount ?? 0;
           }
         } catch (error) {
@@ -539,7 +539,9 @@ app.post(
       });
 
       if (!tx) {
-        return res.status(400).json({ message: "Transaction not found on chain" });
+        return res
+          .status(400)
+          .json({ message: "Transaction not found on chain" });
       }
 
       if (tx.meta?.err) {
@@ -587,7 +589,9 @@ app.post(
       const { txSignature } = req.body as { txSignature?: string };
 
       if (!txSignature) {
-        return res.status(400).json({ message: "Transaction signature is required" });
+        return res
+          .status(400)
+          .json({ message: "Transaction signature is required" });
       }
 
       const tx = await connection.getTransaction(txSignature, {
@@ -595,7 +599,9 @@ app.post(
       });
 
       if (!tx) {
-        return res.status(400).json({ message: "Transaction not found on chain" });
+        return res
+          .status(400)
+          .json({ message: "Transaction not found on chain" });
       }
 
       if (tx.meta?.err) {
@@ -634,7 +640,9 @@ app.post(
       const { txSignature } = req.body as { txSignature?: string };
 
       if (!txSignature) {
-        return res.status(400).json({ message: "Transaction signature is required" });
+        return res
+          .status(400)
+          .json({ message: "Transaction signature is required" });
       }
 
       const tx = await connection.getTransaction(txSignature, {
@@ -642,7 +650,9 @@ app.post(
       });
 
       if (!tx) {
-        return res.status(400).json({ message: "Transaction not found on chain" });
+        return res
+          .status(400)
+          .json({ message: "Transaction not found on chain" });
       }
 
       if (tx.meta?.err) {

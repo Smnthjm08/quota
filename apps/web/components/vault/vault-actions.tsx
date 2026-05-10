@@ -12,22 +12,25 @@ export function VaultActions() {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Button onClick={() => setDepositOpen(true)} size="default" className="cursor-pointer">
-        <Plus className="size-4 mr-2" />
+      <Button
+        onClick={() => setDepositOpen(true)}
+        size="default"
+        className="cursor-pointer"
+      >
+        <Plus className="mr-2 size-4" />
         Deposit USDC
       </Button>
-      <Button onClick={() => setWithdrawOpen(true)} size="default" variant="outline" className="cursor-pointer">
-        <ArrowRightLeft className="size-4 mr-2" />
+      <Button
+        onClick={() => setWithdrawOpen(true)}
+        size="default"
+        variant="outline"
+        className="cursor-pointer"
+      >
+        <ArrowRightLeft className="mr-2 size-4" />
         Withdraw All
       </Button>
-      <DepositDialog
-        open={depositOpen}
-        onOpenChange={setDepositOpen}
-      />
-      <WithdrawDialog
-        open={withdrawOpen}
-        onOpenChange={setWithdrawOpen}
-      />
+      <DepositDialog open={depositOpen} onOpenChange={setDepositOpen} />
+      <WithdrawDialog open={withdrawOpen} onOpenChange={setWithdrawOpen} />
     </div>
   );
 }

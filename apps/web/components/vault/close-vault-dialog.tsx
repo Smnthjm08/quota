@@ -4,7 +4,10 @@ import { useState } from "react";
 import { AxiosError } from "axios";
 import { toast } from "sonner";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { buildCloseVaultTransaction, deriveVaultPda } from "@workspace/anchor-client";
+import {
+  buildCloseVaultTransaction,
+  deriveVaultPda,
+} from "@workspace/anchor-client";
 import { axiosInstance } from "@/lib/axios";
 import { useVault } from "@/hooks/use-vault";
 import { Button } from "@workspace/ui/components/button";

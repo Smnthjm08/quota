@@ -43,10 +43,16 @@ export function Footer() {
               On-chain spend firewall for AI agents.
             </p>
             <div className="flex flex-wrap gap-4 text-sm text-slate-300">
-              <Link className="transition-colors hover:text-white" href="https://x.com">
+              <Link
+                className="transition-colors hover:text-white"
+                href="https://x.com"
+              >
                 Twitter
               </Link>
-              <Link className="transition-colors hover:text-white" href="https://github.com">
+              <Link
+                className="transition-colors hover:text-white"
+                href="https://github.com"
+              >
                 GitHub
               </Link>
             </div>
@@ -54,7 +60,7 @@ export function Footer() {
 
           {columns.map((column) => (
             <div key={column.title} className="space-y-4">
-              <h3 className="text-sm font-semibold uppercase tracking-[0.24em] text-white">
+              <h3 className="text-sm font-semibold tracking-[0.24em] text-white uppercase">
                 {column.title}
               </h3>
               <div className="space-y-3 text-sm text-slate-400">
@@ -75,10 +81,16 @@ export function Footer() {
         <div className="mt-12 flex flex-col gap-4 border-t border-white/10 pt-6 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
           <p>© 2025 Quota. All rights reserved.</p>
           <div className="flex flex-wrap gap-4">
-            <Link href="#product" className="transition-colors hover:text-slate-300">
+            <Link
+              href="#product"
+              className="transition-colors hover:text-slate-300"
+            >
               Privacy Policy
             </Link>
-            <Link href="#product" className="transition-colors hover:text-slate-300">
+            <Link
+              href="#product"
+              className="transition-colors hover:text-slate-300"
+            >
               Terms of Service
             </Link>
           </div>

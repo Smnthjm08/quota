@@ -3,7 +3,13 @@
 import { useMemo } from "react";
 import { useSeats } from "@/hooks/use-seats";
 import { useVault } from "@/hooks/use-vault";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui/components/card";
 import { Badge } from "@workspace/ui/components/badge";
 
 export function VaultStats() {
@@ -24,9 +30,7 @@ export function VaultStats() {
     <Card>
       <CardHeader>
         <CardTitle>Vault Stats</CardTitle>
-        <CardDescription>
-          Overview of your vault activity
-        </CardDescription>
+        <CardDescription>Overview of your vault activity</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
@@ -53,20 +57,16 @@ export function VaultStats() {
           </div>
         </div>
 
-        <div className="pt-4 border-t space-y-3">
-          <div className="flex justify-between items-center">
+        <div className="space-y-3 border-t pt-4">
+          <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">
               Total Seats Created
             </span>
             <span className="font-semibold">{seats.length}</span>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">
-              Last Updated
-            </span>
-            <span className="text-sm text-muted-foreground">
-              {lastUpdated}
-            </span>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Last Updated</span>
+            <span className="text-sm text-muted-foreground">{lastUpdated}</span>
           </div>
         </div>
       </CardContent>

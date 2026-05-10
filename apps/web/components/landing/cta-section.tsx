@@ -13,22 +13,34 @@ export function CtaSection() {
               Stop guessing what your agents are spending.
             </h2>
             <p className="mt-5 text-base leading-8 text-slate-300 sm:text-lg">
-              Set up your vault in 5 minutes. Add your first seat. Know exactly where every credit goes.
+              Set up your vault in 5 minutes. Add your first seat. Know exactly
+              where every credit goes.
             </p>
 
             <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
-              <Button asChild size="lg" className="rounded-full bg-cyan-400 px-6 text-slate-950 hover:bg-cyan-300">
+              <Button
+                asChild
+                size="lg"
+                className="rounded-full bg-cyan-400 px-6 text-slate-950 hover:bg-cyan-300"
+              >
                 <Link href="/signup">
                   Get started free
                   <ArrowRight className="size-4" />
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="rounded-full border-white/15 bg-white/5 px-6 text-white hover:bg-white/10">
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="rounded-full border-white/15 bg-white/5 px-6 text-white hover:bg-white/10"
+              >
                 <Link href="#docs">Read the docs</Link>
               </Button>
             </div>
 
-            <p className="mt-4 text-sm text-slate-400">No wallet required to start. Managed setup available.</p>
+            <p className="mt-4 text-sm text-slate-400">
+              No wallet required to start. Managed setup available.
+            </p>
           </div>
         </div>
       </div>

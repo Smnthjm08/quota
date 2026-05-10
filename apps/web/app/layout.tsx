@@ -29,6 +29,11 @@ export default function RootLayout({
         outfit.variable
       )}
     >
+      <script
+        async
+        crossOrigin="anonymous"
+        src="https://tweakcn.com/live-preview.min.js"
+      />
       <body>
         <TooltipProvider>
           <SolanaProvider>

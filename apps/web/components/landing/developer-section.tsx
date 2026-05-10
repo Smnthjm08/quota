@@ -1,4 +1,9 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui/components/card";
 
 import { SectionHeading } from "./section-heading";
 
@@ -26,7 +31,7 @@ function CodeBlock({ title, code }: { title: string; code: string }) {
   return (
     <Card className="border-white/10 bg-slate-950/80">
       <CardHeader className="border-b border-white/10 pb-4">
-        <CardTitle className="text-sm font-medium uppercase tracking-[0.24em] text-slate-400">
+        <CardTitle className="text-sm font-medium tracking-[0.24em] text-slate-400 uppercase">
           {title}
         </CardTitle>
       </CardHeader>
@@ -53,13 +58,21 @@ export function DeveloperSection() {
         <div className="grid gap-5">
           <CodeBlock title="Agent side — just add one header" code={requests} />
           <div className="grid gap-5 lg:grid-cols-2">
-            <CodeBlock title="Response when quota is available" code={successResponse} />
-            <CodeBlock title="Response when quota is exhausted" code={failureResponse} />
+            <CodeBlock
+              title="Response when quota is available"
+              code={successResponse}
+            />
+            <CodeBlock
+              title="Response when quota is exhausted"
+              code={failureResponse}
+            />
           </div>
         </div>
 
         <p className="mt-5 max-w-4xl text-sm leading-7 text-slate-400">
-          The 402 is not thrown by our server. It is thrown because a Solana program rejected the consume instruction. Verify it yourself on Explorer.
+          The 402 is not thrown by our server. It is thrown because a Solana
+          program rejected the consume instruction. Verify it yourself on
+          Explorer.
         </p>
       </div>
     </section>

@@ -3,7 +3,12 @@ import { Check } from "lucide-react";
 
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui/components/card";
 
 import { SectionHeading } from "./section-heading";
 
@@ -65,17 +70,23 @@ export function PricingSection() {
               }
             >
               {plan.highlighted ? (
-                <div className="absolute right-5 top-5">
-                  <Badge className="bg-cyan-400 text-slate-950 hover:bg-cyan-300">Most popular</Badge>
+                <div className="absolute top-5 right-5">
+                  <Badge className="bg-cyan-400 text-slate-950 hover:bg-cyan-300">
+                    Most popular
+                  </Badge>
                 </div>
               ) : null}
 
               <CardHeader className="space-y-4 pb-0">
                 <div>
-                  <p className="text-sm uppercase tracking-[0.24em] text-slate-400">{plan.name}</p>
+                  <p className="text-sm tracking-[0.24em] text-slate-400 uppercase">
+                    {plan.name}
+                  </p>
                   <CardTitle className="mt-3 text-4xl font-semibold text-white">
                     {plan.price}
-                    <span className="ml-2 text-base font-normal text-slate-400">per month</span>
+                    <span className="ml-2 text-base font-normal text-slate-400">
+                      per month
+                    </span>
                   </CardTitle>
                 </div>
                 <p className="text-sm text-slate-300">{plan.subtitle}</p>
@@ -84,22 +95,35 @@ export function PricingSection() {
               <CardContent className="space-y-6 pt-6">
                 <div className="grid gap-3 text-sm text-slate-300 sm:grid-cols-3">
                   <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                    <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Seat limit</p>
-                    <p className="mt-2 text-base text-white">{plan.seatLimit}</p>
+                    <p className="text-xs tracking-[0.24em] text-slate-500 uppercase">
+                      Seat limit
+                    </p>
+                    <p className="mt-2 text-base text-white">
+                      {plan.seatLimit}
+                    </p>
                   </div>
                   <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                    <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Vault allocation</p>
-                    <p className="mt-2 text-base text-white">{plan.allocation}</p>
+                    <p className="text-xs tracking-[0.24em] text-slate-500 uppercase">
+                      Vault allocation
+                    </p>
+                    <p className="mt-2 text-base text-white">
+                      {plan.allocation}
+                    </p>
                   </div>
                   <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                    <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Credits per seat</p>
+                    <p className="text-xs tracking-[0.24em] text-slate-500 uppercase">
+                      Credits per seat
+                    </p>
                     <p className="mt-2 text-base text-white">{plan.credits}</p>
                   </div>
                 </div>
 
                 <div className="space-y-3">
                   {plan.features.map((feature) => (
-                    <div key={feature} className="flex items-center gap-3 text-sm text-slate-300">
+                    <div
+                      key={feature}
+                      className="flex items-center gap-3 text-sm text-slate-300"
+                    >
                       <span className="flex size-5 items-center justify-center rounded-full bg-cyan-400/10 text-cyan-200">
                         <Check className="size-3.5" />
                       </span>
@@ -125,7 +149,9 @@ export function PricingSection() {
         </div>
 
         <p className="mt-5 text-sm text-slate-400">
-          All plans include a managed wallet option. No Solana experience required. Your vault is funded automatically when your subscription activates.
+          All plans include a managed wallet option. No Solana experience
+          required. Your vault is funded automatically when your subscription
+          activates.
         </p>
       </div>
     </section>

@@ -62,7 +62,9 @@ export function FaqSection() {
                   </span>
                 </span>
               </summary>
-              <p className="mt-4 text-sm leading-7 text-slate-300">{faq.answer}</p>
+              <p className="mt-4 text-sm leading-7 text-slate-300">
+                {faq.answer}
+              </p>
             </details>
           ))}
         </div>

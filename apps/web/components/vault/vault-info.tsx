@@ -1,7 +1,13 @@
 "use client";
 
 import { useAuthSession } from "@/hooks/use-auth-session";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui/components/card";
 import { Badge } from "@workspace/ui/components/badge";
 import { Copy, CheckCircle2, AlertCircle } from "lucide-react";
 import { useState } from "react";
@@ -28,12 +34,12 @@ export function VaultInfo() {
           Vault Connection
           {isLinked ? (
             <Badge variant="outline" className="ml-auto">
-              <CheckCircle2 className="size-3 mr-1" />
+              <CheckCircle2 className="mr-1 size-3" />
               Linked
             </Badge>
           ) : (
             <Badge variant="destructive" className="ml-auto">
-              <AlertCircle className="size-3 mr-1" />
+              <AlertCircle className="mr-1 size-3" />
               Not Linked
             </Badge>
           )}
@@ -49,13 +55,13 @@ export function VaultInfo() {
             Linked Wallet
           </label>
           {walletAddress ? (
-            <div className="flex items-center gap-2 p-3 bg-secondary rounded-md">
-              <code className="text-sm font-mono flex-1 truncate">
+            <div className="flex items-center gap-2 rounded-md bg-secondary p-3">
+              <code className="flex-1 truncate font-mono text-sm">
                 {walletAddress}
               </code>
               <button
                 onClick={() => copyToClipboard(walletAddress, "wallet")}
-                className="p-1 hover:bg-primary/10 rounded transition-colors"
+                className="rounded p-1 transition-colors hover:bg-primary/10"
                 title="Copy wallet address"
               >
                 {copied === "wallet" ? (
@@ -66,7 +72,7 @@ export function VaultInfo() {
               </button>
             </div>
           ) : (
-            <div className="p-3 bg-destructive/10 rounded-md text-sm text-destructive">
+            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
               No wallet connected
             </div>
           )}
@@ -78,13 +84,13 @@ export function VaultInfo() {
             Vault PDA
           </label>
           {vaultPda ? (
-            <div className="flex items-center gap-2 p-3 bg-secondary rounded-md">
-              <code className="text-sm font-mono flex-1 truncate">
+            <div className="flex items-center gap-2 rounded-md bg-secondary p-3">
+              <code className="flex-1 truncate font-mono text-sm">
                 {vaultPda}
               </code>
               <button
                 onClick={() => copyToClipboard(vaultPda, "vault")}
-                className="p-1 hover:bg-primary/10 rounded transition-colors"
+                className="rounded p-1 transition-colors hover:bg-primary/10"
                 title="Copy vault PDA"
               >
                 {copied === "vault" ? (
@@ -95,21 +101,21 @@ export function VaultInfo() {
               </button>
             </div>
           ) : (
-            <div className="p-3 bg-destructive/10 rounded-md text-sm text-destructive">
+            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
               No vault initialized
             </div>
           )}
         </div>
 
         {/* Company Info */}
-        <div className="space-y-2 pt-2 border-t">
+        <div className="space-y-2 border-t pt-2">
           <label className="text-sm font-medium text-muted-foreground">
             Company
           </label>
-          <div className="p-3 bg-secondary rounded-md">
+          <div className="rounded-md bg-secondary p-3">
             <p className="text-sm font-medium">{company?.name || "Unknown"}</p>
             {company?.plan && (
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="mt-1 text-xs text-muted-foreground">
                 Plan: <Badge variant="outline">{company.plan.name}</Badge>
               </p>
             )}

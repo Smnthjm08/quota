@@ -9,9 +9,16 @@ type BrandProps = {
   showTagline?: boolean;
 };
 
-export function Brand({ href = "/", className, showTagline = true }: BrandProps) {
+export function Brand({
+  href = "/",
+  className,
+  showTagline = true,
+}: BrandProps) {
   return (
-    <Link href={href} className={cn("inline-flex items-center gap-3", className)}>
+    <Link
+      href={href}
+      className={cn("inline-flex items-center gap-3", className)}
+    >
       <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-cyan-300 shadow-[0_0_0_1px_rgba(255,255,255,0.02),0_20px_40px_rgba(8,15,28,0.35)] backdrop-blur">
         <ShieldCheck className="size-5" />
       </span>

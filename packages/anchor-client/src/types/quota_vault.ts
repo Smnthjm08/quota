@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/quota_vault.json`.
  */
 export type QuotaVault = {
-  "address": "CjMHzbSLp1riwY4QPbBSgpjE8jzawFZV86X6sYvMH58Y",
+  "address": "94x5RJgCv2qvkyAFwDP3sdrxHq32WEaTi4dT22BrcgX1",
   "metadata": {
     "name": "quotaVault",
     "version": "0.1.0",
@@ -128,7 +128,7 @@ export type QuotaVault = {
       ],
       "args": [
         {
-          "name": "credits",
+          "name": "amount",
           "type": "u64"
         }
       ]
@@ -202,22 +202,22 @@ export type QuotaVault = {
           "type": "u8"
         },
         {
-          "name": "monthlyLimit",
+          "name": "limit",
           "type": "u64"
         }
       ]
     },
     {
-      "name": "depositHandler",
+      "name": "depositToVault",
       "discriminator": [
-        132,
-        252,
-        211,
-        213,
-        15,
-        163,
-        42,
-        43
+        18,
+        62,
+        110,
+        8,
+        26,
+        106,
+        248,
+        151
       ],
       "accounts": [
         {
@@ -244,12 +244,12 @@ export type QuotaVault = {
           }
         },
         {
-          "name": "owner",
+          "name": "authority",
           "writable": true,
-          "signer": true,
-          "relations": [
-            "vault"
-          ]
+          "signer": true
+        },
+        {
+          "name": "mint"
         },
         {
           "name": "fromTokenAccount",
@@ -323,6 +323,68 @@ export type QuotaVault = {
         {
           "name": "plan",
           "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "reclaimTreasury",
+      "discriminator": [
+        149,
+        239,
+        212,
+        163,
+        165,
+        105,
+        185,
+        32
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault.owner",
+                "account": "vaultAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "vaultTokenAccount",
+          "writable": true
+        },
+        {
+          "name": "treasuryTokenAccount",
+          "writable": true
+        },
+        {
+          "name": "tokenProgram"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
         }
       ]
     },
@@ -474,66 +536,6 @@ export type QuotaVault = {
           "type": "u64"
         }
       ]
-    },
-    {
-      "name": "withdrawFromVault",
-      "discriminator": [
-        180,
-        34,
-        37,
-        46,
-        156,
-        0,
-        211,
-        238
-      ],
-      "accounts": [
-        {
-          "name": "owner",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "owner"
-              }
-            ]
-          }
-        },
-        {
-          "name": "vaultTokenAccount",
-          "writable": true
-        },
-        {
-          "name": "ownerTokenAccount",
-          "writable": true
-        },
-        {
-          "name": "tokenProgram",
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-        }
-      ],
-      "args": [
-        {
-          "name": "amount",
-          "type": "u64"
-        }
-      ]
     }
   ],
   "accounts": [
@@ -567,71 +569,81 @@ export type QuotaVault = {
   "errors": [
     {
       "code": 6000,
-      "name": "unauthorizedSigner",
-      "msg": "Unauthorized signer"
+      "name": "invalidPlan",
+      "msg": "Invalid Plan"
     },
     {
       "code": 6001,
-      "name": "seatInactive",
-      "msg": "Seat inactive"
-    },
-    {
-      "code": 6002,
       "name": "vaultInactive",
       "msg": "Vault inactive"
     },
     {
+      "code": 6002,
+      "name": "invalidAmount",
+      "msg": "Invalid Amount"
+    },
+    {
       "code": 6003,
-      "name": "quotaExceeded",
-      "msg": "Quota exceeded"
-    },
-    {
-      "code": 6004,
-      "name": "invalidLimit",
-      "msg": "New limit cannot be below already consumed usage"
-    },
-    {
-      "code": 6005,
-      "name": "exceedsPerCallLimit",
-      "msg": "Exceeds per call limit"
-    },
-    {
-      "code": 6006,
-      "name": "dailyLimitExceeded",
-      "msg": "Daily limit exceeded"
-    },
-    {
-      "code": 6007,
       "name": "invalidDepositAmount",
       "msg": "Invalid Deposit Amount"
     },
     {
+      "code": 6004,
+      "name": "unauthorizedSigner",
+      "msg": "Unauthorized signer"
+    },
+    {
+      "code": 6005,
+      "name": "seatInactive",
+      "msg": "Seat inactive"
+    },
+    {
+      "code": 6006,
+      "name": "quotaExceeded",
+      "msg": "Quota exceeded"
+    },
+    {
+      "code": 6007,
+      "name": "invalidLimit",
+      "msg": "New limit cannot be below already consumed usage"
+    },
+    {
       "code": 6008,
+      "name": "exceedsPerCallLimit",
+      "msg": "Exceeds per call limit"
+    },
+    {
+      "code": 6009,
+      "name": "dailyLimitExceeded",
+      "msg": "Daily limit exceeded"
+    },
+    {
+      "code": 6010,
       "name": "invalidSeatType",
       "msg": "Invalid Seat Type"
     },
     {
-      "code": 6009,
+      "code": 6011,
       "name": "invalidCredits",
       "msg": "Invalid Credits"
     },
     {
-      "code": 6010,
+      "code": 6012,
       "name": "mathOverflow",
       "msg": "Math overflow"
     },
     {
-      "code": 6011,
+      "code": 6013,
       "name": "insufficientFunds",
       "msg": "Insufficient Funds"
     },
     {
-      "code": 6012,
+      "code": 6014,
       "name": "vaultNotEmpty",
       "msg": "Vault still contains funds"
     },
     {
-      "code": 6013,
+      "code": 6015,
       "name": "vaultStillActive",
       "msg": "Vault is still active"
     }
@@ -655,16 +667,12 @@ export type QuotaVault = {
             "type": "u64"
           },
           {
-            "name": "monthlyLimit",
+            "name": "limit",
             "type": "u64"
           },
           {
             "name": "seatId",
             "type": "u64"
-          },
-          {
-            "name": "periodStart",
-            "type": "i64"
           },
           {
             "name": "seatType",
@@ -677,6 +685,10 @@ export type QuotaVault = {
           {
             "name": "active",
             "type": "bool"
+          },
+          {
+            "name": "createdAt",
+            "type": "i64"
           }
         ]
       }
@@ -699,7 +711,11 @@ export type QuotaVault = {
             "type": "u64"
           },
           {
-            "name": "totalAllocated",
+            "name": "totalAssigned",
+            "type": "u64"
+          },
+          {
+            "name": "totalSpent",
             "type": "u64"
           },
           {

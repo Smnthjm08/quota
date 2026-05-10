@@ -222,7 +222,6 @@ export function OnboardingPlanPricingCard() {
       <PricingCard
         plans={plans}
         title="Choose Your Plan"
-        theme="classic"
         description="Plans are loaded from the database-backed pricing model and saved before you continue onboarding."
         subtitle="Simple Pricing"
         onPlanSelect={handlePlanSelect}

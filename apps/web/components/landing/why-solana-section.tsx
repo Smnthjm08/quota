@@ -2,7 +2,12 @@ import type { ComponentType } from "react";
 
 import { Database, KeyRound, Wallet } from "lucide-react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui/components/card";
 
 import { SectionHeading } from "./section-heading";
 
@@ -61,12 +66,16 @@ function ComparisonBlock({
       </CardHeader>
       <CardContent className="grid gap-4 pt-6 lg:grid-cols-2">
         <div className="rounded-2xl border border-rose-400/15 bg-rose-400/10 p-4">
-          <p className="text-xs uppercase tracking-[0.24em] text-rose-200">Old way</p>
+          <p className="text-xs tracking-[0.24em] text-rose-200 uppercase">
+            Old way
+          </p>
           <p className="mt-2 text-base font-medium text-white">{oldTitle}</p>
           <p className="mt-3 text-sm leading-7 text-slate-300">{oldBody}</p>
         </div>
         <div className="rounded-2xl border border-emerald-400/15 bg-emerald-400/10 p-4">
-          <p className="text-xs uppercase tracking-[0.24em] text-emerald-200">New way</p>
+          <p className="text-xs tracking-[0.24em] text-emerald-200 uppercase">
+            New way
+          </p>
           <p className="mt-2 text-base font-medium text-white">{newTitle}</p>
           <p className="mt-3 text-sm leading-7 text-slate-300">{newBody}</p>
         </div>

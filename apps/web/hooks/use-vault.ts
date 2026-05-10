@@ -75,9 +75,7 @@ export function useVault() {
     setErrorMessage(null);
 
     try {
-      const response = await axiosInstance.get<VaultResponse>(
-        "/api/v1/vault"
-      );
+      const response = await axiosInstance.get<VaultResponse>("/api/v1/vault");
       setVaultData(response.data.data ?? null);
     } catch (error) {
       setErrorMessage(

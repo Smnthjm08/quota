@@ -180,16 +180,18 @@ function SeatRowActions({
                 : `Are you sure you want to activate "${seat.name}"? This action will be recorded on-chain.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="flex gap-3 justify-end">
+          <div className="flex justify-end gap-3">
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirm} disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
-                  <Loader2Icon className="animate-spin mr-2" />
+                  <Loader2Icon className="mr-2 animate-spin" />
                   Processing...
                 </>
+              ) : seat.active ? (
+                "Deactivate"
               ) : (
-                (seat.active ? "Deactivate" : "Activate")
+                "Activate"
               )}
             </AlertDialogAction>
           </div>
@@ -273,7 +275,9 @@ export default function SeatsPage() {
                     pageItems.map((seat, index) => (
                       <TableRow key={seat.id}>
                         <TableCell>{startIndex + index + 1}</TableCell>
-                        <TableCell className="font-medium">{seat.name}</TableCell>
+                        <TableCell className="font-medium">
+                          {seat.name}
+                        </TableCell>
                         <TableCell className="max-w-65 truncate font-mono text-xs text-muted-foreground">
                           {seat.holderPubkey}
                         </TableCell>
@@ -287,7 +291,9 @@ export default function SeatsPage() {
                             {seatStatusLabel(seat.active)}
                           </Badge>
                         </TableCell>
-                        <TableCell>{seat.monthlyLimit.toLocaleString()}</TableCell>
+                        <TableCell>
+                          {seat.monthlyLimit.toLocaleString()}
+                        </TableCell>
                         <TableCell className="max-w-65 truncate font-mono text-xs text-muted-foreground">
                           {seat.seatPda}
                         </TableCell>

@@ -11,7 +11,10 @@ import {
   createAssociatedTokenAccountInstruction,
   getAssociatedTokenAddressSync,
 } from "@solana/spl-token";
-import { deriveVaultPda, buildDepositTransaction } from "@workspace/anchor-client";
+import {
+  deriveVaultPda,
+  buildDepositTransaction,
+} from "@workspace/anchor-client";
 import { axiosInstance } from "@/lib/axios";
 import { USDC_MINT } from "@/lib/mints";
 import { useVault } from "@/hooks/use-vault";
@@ -42,7 +45,7 @@ export function DepositDialog({
   const { connection } = useConnection();
   const { publicKey, signTransaction } = useWallet();
   const { getVaultTokenAccount, reloadVaultData } = useVault();
-  
+
   const [amount, setAmount] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -136,7 +139,8 @@ export function DepositDialog({
 
       const transactionInstructions = [];
 
-      const userTokenAccountInfo = await connection.getAccountInfo(userUsdcAccount);
+      const userTokenAccountInfo =
+        await connection.getAccountInfo(userUsdcAccount);
       if (!userTokenAccountInfo) {
         transactionInstructions.push(
           createAssociatedTokenAccountInstruction(
@@ -150,7 +154,8 @@ export function DepositDialog({
         );
       }
 
-      const vaultTokenAccountInfo = await connection.getAccountInfo(vaultUsdcAccount);
+      const vaultTokenAccountInfo =
+        await connection.getAccountInfo(vaultUsdcAccount);
       if (!vaultTokenAccountInfo) {
         transactionInstructions.push(
           createAssociatedTokenAccountInstruction(
@@ -215,10 +220,7 @@ export function DepositDialog({
     } catch (error) {
       toast.dismiss();
       setErrorMessage(
-        getErrorMessage(
-          error,
-          "We could not process that deposit right now."
-        )
+        getErrorMessage(error, "We could not process that deposit right now.")
       );
     } finally {
       setIsSubmitting(false);
@@ -236,7 +238,8 @@ export function DepositDialog({
         </DialogHeader>
 
         <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-          Phantom may show the small network fee separately. The actual deposit is a USDC token transfer from your wallet to the vault.
+          Phantom may show the small network fee separately. The actual deposit
+          is a USDC token transfer from your wallet to the vault.
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

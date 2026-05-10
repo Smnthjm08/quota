@@ -3,19 +3,14 @@ use anchor_lang::prelude::*;
 #[account]
 pub struct SeatAccount {
 
-    // Parent treasury vault
     pub vault: Pubkey,
 
-    // Human or AI identity
     pub holder: Pubkey,
 
-    // Current usage
     pub consumed: u64,
 
-    // Maximum allowed spend
     pub limit: u64,
 
-    // Deterministic seat identity
     pub seat_id: u64,
 
     // 1 = HUMAN

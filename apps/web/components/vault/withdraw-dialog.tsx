@@ -11,7 +11,10 @@ import {
   createAssociatedTokenAccountInstruction,
   getAssociatedTokenAddressSync,
 } from "@solana/spl-token";
-import { buildWithdrawTransaction, deriveVaultPda } from "@workspace/anchor-client";
+import {
+  buildWithdrawTransaction,
+  deriveVaultPda,
+} from "@workspace/anchor-client";
 import { axiosInstance } from "@/lib/axios";
 import { USDC_MINT } from "@/lib/mints";
 import { useVault } from "@/hooks/use-vault";
@@ -93,15 +96,15 @@ export function WithdrawDialog({
         throw new Error("Could not derive vault token account.");
       }
 
-      const vaultTokenAccountInfo = await connection.getAccountInfo(
-        vaultTokenAccount
-      );
+      const vaultTokenAccountInfo =
+        await connection.getAccountInfo(vaultTokenAccount);
 
       if (!vaultTokenAccountInfo) {
         throw new Error("Vault token account does not exist yet.");
       }
 
-      const balance = await connection.getTokenAccountBalance(vaultTokenAccount);
+      const balance =
+        await connection.getTokenAccountBalance(vaultTokenAccount);
       const amount = BigInt(balance.value.amount);
 
       if (amount <= 0n) {
@@ -115,9 +118,8 @@ export function WithdrawDialog({
         false
       );
 
-      const ownerTokenAccountInfo = await connection.getAccountInfo(
-        ownerTokenAccount
-      );
+      const ownerTokenAccountInfo =
+        await connection.getAccountInfo(ownerTokenAccount);
 
       const txInstructions = [];
       if (!ownerTokenAccountInfo) {
