@@ -884,6 +884,212 @@ app.post(
   }
 );
 
+// Get available topup plans
+app.get(
+  "/api/v1/plans/topup",
+  async (req: express.Request, res: express.Response) => {
+    try {
+      const topupPlans = await prisma.plan.findMany({
+        where: {
+          interval: "ONETIME",
+        },
+        orderBy: {
+          priceCents: "asc",
+        },
+      });
+
+      res.status(200).json({
+        message: "Topup plans fetched successfully",
+        data: topupPlans,
+        error: null,
+      });
+    } catch (error) {
+      console.error("Error fetching topup plans:", error);
+      res.status(500).json({ error: "Failed to fetch topup plans" });
+    }
+  }
+);
+
+app.post(
+  "/api/v1/vault/topup-checkout",
+  authMiddleware,
+  companyMiddleware,
+  async (req: express.Request, res: express.Response) => {
+    try {
+      const planId = Number(req.body?.planId);
+
+      if (!Number.isInteger(planId)) {
+        return res.status(400).json({ message: "A valid planId is required" });
+      }
+
+      const plan = await prisma.plan.findUnique({
+        where: { id: planId },
+      });
+
+      if (!plan) {
+        return res.status(400).json({ message: "Plan does not exist" });
+      }
+
+      if (plan.interval !== "ONETIME") {
+        return res.status(400).json({ message: "Invalid plan type. Must be a topup product." });
+      }
+
+      if (!req.company) {
+        return res.status(400).json({ message: "Company not found for user" });
+      }
+
+      if (!req.company.vaultPda) {
+        return res.status(400).json({ message: "Initialize your vault before funding" });
+      }
+
+      const user = req.user;
+
+      if (!user?.id || !user.email || !user.name) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const checkout = await dodoClient.checkoutSessions.create({
+        product_cart: [{ product_id: plan.dodoProductId, quantity: 1 }],
+        allowed_payment_method_types: ["credit", "debit", "upi_collect", "upi_intent", "crypto_currency"],
+        customer: {
+          email: user.email,
+          name: user.name,
+        },
+        metadata: {
+          companyId: req.company.id,
+          ownerId: user.id,
+          planId: String(plan.id),
+          planKey: plan.key,
+          topupAmount: String(plan.priceCents / 100),
+          vaultPda: req.company.vaultPda,
+        },
+        return_url: `${frontendUrl}/vault?success=topup`,
+      });
+
+      res.status(200).json({
+        message: "Topup Checkout Session Created",
+        data: checkout,
+        error: null,
+      });
+    } catch (error) {
+      console.error("Topup checkout error:", error);
+      res.status(500).json({ error: "Failed to create topup checkout session" });
+    }
+  }
+);
+
+// Billing: list invoices and download invoice or raw payload
+app.get(
+  "/api/v1/billing/invoices",
+  authMiddleware,
+  companyMiddleware,
+  async (req, res) => {
+    try {
+      const company = req.company;
+
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // List payments stored in DB for this company and enrich via SDK
+      const payments = await prisma.dodoPayment.findMany({
+        where: { companyId: company.id },
+        orderBy: { createdAt: "desc" },
+        take: 100,
+      });
+
+      const invoices = await Promise.all(
+        payments.map(async (p) => {
+          try {
+            if (dodoClient && (dodoClient as any).payments && typeof (dodoClient as any).payments.retrieve === "function") {
+              const paymentObj = await (dodoClient as any).payments.retrieve(p.paymentId);
+              return {
+                paymentId: p.paymentId,
+                companyId: p.companyId,
+                amount: paymentObj?.total_amount ?? p.amount ?? null,
+                currency: paymentObj?.currency ?? p.currency ?? null,
+                createdAt: paymentObj?.created_at ?? p.createdAt,
+                invoiceUrl: paymentObj?.invoice_url ?? null,
+              };
+            }
+          } catch (err) {
+            console.error("Failed to retrieve payment from Dodo SDK:", err);
+          }
+
+          return {
+            paymentId: p.paymentId,
+            companyId: p.companyId,
+            amount: p.amount ?? null,
+            currency: p.currency ?? null,
+            createdAt: p.createdAt,
+            invoiceUrl: null,
+          };
+        })
+      );
+
+      return res.status(200).json({ message: "Invoices fetched", data: invoices, error: null });
+    } catch (error) {
+      console.error("Billing invoices error:", error);
+      return res.status(500).json({ message: "Failed to fetch invoices" });
+    }
+  }
+);
+
+app.get(
+  "/api/v1/billing/invoice/:paymentId/download",
+  authMiddleware,
+  companyMiddleware,
+  async (req, res) => {
+    try {
+      const rawId = req.params.paymentId;
+      const paymentId = Array.isArray(rawId) ? rawId[0] : rawId;
+
+      if (typeof paymentId !== "string" || paymentId.trim().length === 0) {
+        return res.status(400).json({ message: "paymentId is required" });
+      }
+
+      // Prefer SDK invoices endpoint (binary)
+      try {
+        if (
+          dodoClient &&
+          (dodoClient as any).invoices &&
+          (dodoClient as any).invoices.payments &&
+          typeof (dodoClient as any).invoices.payments.retrieve === "function"
+        ) {
+          const dodoRes = await (dodoClient as any).invoices.payments.retrieve(paymentId);
+          if (dodoRes && typeof dodoRes.arrayBuffer === "function") {
+            const pdfBuffer = Buffer.from(await dodoRes.arrayBuffer());
+            const fileName = `invoice-${paymentId}.pdf`;
+            res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+            res.setHeader("Content-Type", "application/pdf");
+            return res.status(200).send(pdfBuffer);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch invoice PDF from Dodo SDK:", err);
+      }
+
+      // Fallback: fetch payment and redirect to invoice URL
+      try {
+        if (dodoClient && (dodoClient as any).payments && typeof (dodoClient as any).payments.retrieve === "function") {
+          const paymentObj = await (dodoClient as any).payments.retrieve(paymentId);
+          const invoiceUrl = paymentObj?.invoice_url ?? paymentObj?.invoiceUrl ?? null;
+          if (invoiceUrl && typeof invoiceUrl === "string") {
+            return res.redirect(invoiceUrl);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch payment/invoice URL from Dodo SDK:", err);
+      }
+
+      return res.status(404).json({ message: "Invoice not available for this paymentId" });
+    } catch (error) {
+      console.error("Invoice download error:", error);
+      return res.status(500).json({ message: "Failed to download invoice" });
+    }
+  }
+);
+
 app.post(
   "/api/v1/vault/withdraw",
   authMiddleware,
@@ -1321,6 +1527,7 @@ app.get(
     }
   }
 );
+
 app.get(
   "/api/v1/usage",
   authMiddleware,

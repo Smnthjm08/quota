@@ -1,6 +1,35 @@
 import type { Request, Response } from "express";
+import { BN } from "@coral-xyz/anchor";
+import {
+  PublicKey,
+  Transaction,
+  sendAndConfirmTransaction,
+} from "@solana/web3.js";
+import {
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  TOKEN_PROGRAM_ID,
+  createAssociatedTokenAccountInstruction,
+} from "@solana/spl-token";
 import { Prisma, prisma } from "@workspace/db";
+import {
+  apiKeypair,
+  apiSignerPublicKey,
+  connection,
+  program,
+} from "./lib/anchor-client.ts";
 import { dodoClient, dodoWebhookKey } from "./lib/dodo-client.ts";
+
+const DEFAULT_USDC_MINT = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
+const USDC_MINT = new PublicKey(process.env.USDC_MINT ?? DEFAULT_USDC_MINT);
+
+function deriveAssociatedTokenAddress(owner: PublicKey, mint: PublicKey): PublicKey {
+  const [address] = PublicKey.findProgramAddressSync(
+    [owner.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), mint.toBuffer()],
+    ASSOCIATED_TOKEN_PROGRAM_ID
+  );
+
+  return address;
+}
 
 type DodoEventType =
   | "payment.cancelled"
@@ -313,6 +342,120 @@ async function recordCheckoutPayment(data: Record<string, unknown>) {
   });
 }
 
+async function persistDodoPayment(data: Record<string, unknown>) {
+  const payment = getObjectValue(data.payment);
+  const paymentId =
+    toStringValue(data.payment_id) ??
+    toStringValue(payment?.id) ??
+    toStringValue(data.id);
+  const companyId = getCompanyId(data);
+
+  if (!paymentId || !companyId) {
+    return;
+  }
+
+  const customerId = getCustomerId(data);
+  const subscriptionId = getSubscriptionId(data);
+  const amount = toNumberValue(data.amount ?? data.amount_paid ?? payment?.amount);
+  const currency = toStringValue(data.currency ?? payment?.currency);
+
+  await prisma.dodoPayment.upsert({
+    where: { paymentId },
+    create: {
+      paymentId,
+      companyId,
+      customerId: customerId ?? null,
+      subscriptionId: subscriptionId ?? null,
+      amount: amount ?? null,
+      currency: currency ?? null,
+    },
+    update: {
+      companyId,
+      customerId: customerId ?? null,
+      subscriptionId: subscriptionId ?? null,
+      amount: amount ?? null,
+      currency: currency ?? null,
+    },
+  });
+}
+
+async function processTopupPayment(data: Record<string, unknown>) {
+  const companyId = getCompanyId(data);
+  const plan = await resolvePlan(data);
+
+  if (!companyId || !plan || plan.interval !== "ONETIME") {
+    return;
+  }
+
+  const company = await prisma.company.findUnique({ where: { id: companyId } });
+
+  if (!company) {
+    return;
+  }
+
+  const ownerWalletPubkey = company.ownerWalletPubkey;
+  if (!ownerWalletPubkey) {
+    return;
+  }
+
+  const vaultPda = company.vaultPda
+    ? new PublicKey(company.vaultPda)
+    : new PublicKey(ownerWalletPubkey);
+
+  const amountInUsdc = plan.priceCents / 100;
+  if (!Number.isFinite(amountInUsdc) || amountInUsdc <= 0) {
+    return;
+  }
+
+  const depositAmount = new BN(Math.round(amountInUsdc * 1_000_000));
+  const vaultTokenAccount = deriveAssociatedTokenAddress(vaultPda, USDC_MINT);
+  const apiSignerTokenAccount = deriveAssociatedTokenAddress(apiSignerPublicKey, USDC_MINT);
+
+  const apiSignerTokenAccountInfo = await connection.getAccountInfo(apiSignerTokenAccount);
+  if (!apiSignerTokenAccountInfo) {
+    console.error("API signer USDC token account is missing for fiat topup processing");
+    return;
+  }
+
+  const transaction = new Transaction();
+
+  const vaultTokenAccountInfo = await connection.getAccountInfo(vaultTokenAccount);
+  if (!vaultTokenAccountInfo) {
+    transaction.add(
+      createAssociatedTokenAccountInstruction(
+        apiKeypair.publicKey,
+        vaultTokenAccount,
+        vaultPda,
+        USDC_MINT,
+        TOKEN_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      )
+    );
+  }
+
+  transaction.add(
+    await program.methods
+      .depositToVault(depositAmount)
+      .accountsPartial({
+        vault: vaultPda,
+        authority: apiSignerPublicKey,
+        mint: USDC_MINT,
+        fromTokenAccount: apiSignerTokenAccount,
+        vaultTokenAccount,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .instruction()
+  );
+
+  transaction.feePayer = apiKeypair.publicKey;
+  const { blockhash } = await connection.getLatestBlockhash("confirmed");
+  transaction.recentBlockhash = blockhash;
+
+  await sendAndConfirmTransaction(connection, transaction, [apiKeypair], {
+    commitment: "confirmed",
+  });
+}
+
 export const dodoWebhooksHandler = async (req: Request, res: Response) => {
   try {
     const webhookId = getHeaderValue(req.headers["webhook-id"]);
@@ -381,6 +524,8 @@ export const dodoWebhooksHandler = async (req: Request, res: Response) => {
         break;
 
       case "payment.succeeded":
+        await persistDodoPayment(eventData);
+        await processTopupPayment(eventData);
         await recordCheckoutPayment(eventData);
         break;
 

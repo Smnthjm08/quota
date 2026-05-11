@@ -196,6 +196,21 @@ model DodoWebhookEvent {
   @@map("dodo_webhook_event")
 }
 
+model DodoPayment {
+  id            String   @id @default(cuid())
+  paymentId     String   @unique
+  companyId     String
+  company       Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customerId    String?
+  subscriptionId String?
+  amount        Int?
+  currency      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("dodo_payment")
+}
+
 model Company {
   id                String  @id @default(cuid())
   name              String
@@ -220,6 +235,7 @@ model Company {
   subscription Subscription?
   seats        Seat[]
   vaultTopup   VaultTopUp[]
+  dodopayments DodoPayment[]
   usageEvents  UsageEvent[]
 
   createdAt DateTime @default(now())
