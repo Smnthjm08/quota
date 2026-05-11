@@ -28,7 +28,10 @@ const invoiceAmountFormatter = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 2,
 });
 
-function formatInvoiceAmount(amount: number | null | undefined, currency?: string | null) {
+function formatInvoiceAmount(
+  amount: number | null | undefined,
+  currency?: string | null
+) {
   if (amount === null || amount === undefined) {
     return "-";
   }
@@ -39,7 +42,9 @@ function formatInvoiceAmount(amount: number | null | undefined, currency?: strin
 export default function BillingPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(false);
-  const [downloadingPaymentId, setDownloadingPaymentId] = useState<string | null>(null);
+  const [downloadingPaymentId, setDownloadingPaymentId] = useState<
+    string | null
+  >(null);
 
   async function fetchInvoices() {
     setLoading(true);
@@ -64,7 +69,9 @@ export default function BillingPage() {
         { responseType: "blob" }
       );
 
-      const contentType = String(response.headers["content-type"] ?? "application/pdf");
+      const contentType = String(
+        response.headers["content-type"] ?? "application/pdf"
+      );
       const blob = new Blob([response.data], {
         type: contentType,
       });
@@ -128,7 +135,7 @@ export default function BillingPage() {
           {({ pageItems }) => (
             <Table>
               <TableHeader>
-                <tr className=" text-left">
+                <tr className="text-left">
                   <TableHead className="px-4 py-2">Date</TableHead>
                   <TableHead className="px-4 py-2">Payment ID</TableHead>
                   <TableHead className="px-4 py-2">Amount</TableHead>
@@ -138,9 +145,17 @@ export default function BillingPage() {
               <TableBody>
                 {pageItems.map((inv) => (
                   <TableRow key={inv.paymentId}>
-                    <TableCell className="px-4 py-3">{inv.createdAt ? new Date(inv.createdAt).toLocaleString() : "-"}</TableCell>
-                    <TableCell className="px-4 py-3 break-all">{inv.paymentId}</TableCell>
-                    <TableCell className="px-4 py-3">{formatInvoiceAmount(inv.amount, inv.currency)}</TableCell>
+                    <TableCell className="px-4 py-3">
+                      {inv.createdAt
+                        ? new Date(inv.createdAt).toLocaleString()
+                        : "-"}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 break-all">
+                      {inv.paymentId}
+                    </TableCell>
+                    <TableCell className="px-4 py-3">
+                      {formatInvoiceAmount(inv.amount, inv.currency)}
+                    </TableCell>
                     <TableCell className="px-4 py-3">
                       <Button
                         type="button"

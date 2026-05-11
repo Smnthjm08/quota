@@ -86,7 +86,9 @@ export function useUsage() {
       const response = await axiosInstance.get<UsageResponse>("/api/v1/usage");
       setData(response.data.data ?? null);
     } catch (error) {
-      setErrorMessage(getErrorMessage(error, "We could not load usage right now."));
+      setErrorMessage(
+        getErrorMessage(error, "We could not load usage right now.")
+      );
     } finally {
       setIsLoading(false);
     }

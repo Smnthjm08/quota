@@ -10,21 +10,20 @@ interface FiatTopupTabProps {
   onError?: (error: string) => void;
 }
 
-export function FiatTopupTab({ onCheckoutStarted, onError }: FiatTopupTabProps) {
-  const {
-    topupPlans,
-    isLoadingPlans,
-    isLoading,
-    error,
-    createCheckout,
-  } = useFiatTopupCheckout();
+export function FiatTopupTab({
+  onCheckoutStarted,
+  onError,
+}: FiatTopupTabProps) {
+  const { topupPlans, isLoadingPlans, isLoading, error, createCheckout } =
+    useFiatTopupCheckout();
 
   const handleSelectPlan = async (planId: number) => {
     try {
       onCheckoutStarted?.();
       await createCheckout(planId);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to create checkout";
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to create checkout";
       onError?.(errorMessage);
     }
   };
@@ -32,8 +31,9 @@ export function FiatTopupTab({ onCheckoutStarted, onError }: FiatTopupTabProps) 
   return (
     <div className="space-y-4">
       <div className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-700">
-        <span className="font-semibold">Fiat Payment:</span> Top up your vault using your credit card or crypto. 
-        Funds are instantly converted to USDC and added to your vault.
+        <span className="font-semibold">Fiat Payment:</span> Top up your vault
+        using your credit card or crypto. Funds are instantly converted to USDC
+        and added to your vault.
       </div>
 
       {error && (
@@ -47,7 +47,9 @@ export function FiatTopupTab({ onCheckoutStarted, onError }: FiatTopupTabProps) 
       {isLoadingPlans ? (
         <div className="flex items-center justify-center py-8">
           <Loader2 className="size-5 animate-spin text-muted-foreground" />
-          <span className="ml-2 text-sm text-muted-foreground">Loading topup options...</span>
+          <span className="ml-2 text-sm text-muted-foreground">
+            Loading topup options...
+          </span>
         </div>
       ) : topupPlans.length === 0 ? (
         <div className="rounded-md bg-muted p-3 text-center text-sm text-muted-foreground">
@@ -65,21 +67,25 @@ export function FiatTopupTab({ onCheckoutStarted, onError }: FiatTopupTabProps) 
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
                   <CreditCard className="size-4 text-muted-foreground group-hover:text-primary" />
-                  <span className="font-medium text-sm">{plan.name}</span>
+                  <span className="text-sm font-medium">{plan.name}</span>
                 </div>
-                <span className="text-xs text-muted-foreground">{plan.currency} {(plan.priceCents / 100).toFixed(2)}</span>
+                <span className="text-xs text-muted-foreground">
+                  {plan.currency} {(plan.priceCents / 100).toFixed(2)}
+                </span>
               </div>
               {isLoading ? (
                 <Loader2 className="size-4 animate-spin text-muted-foreground" />
               ) : (
-                <div className="text-xs font-semibold text-primary group-hover:block">→</div>
+                <div className="text-xs font-semibold text-primary group-hover:block">
+                  →
+                </div>
               )}
             </button>
           ))}
         </div>
       )}
 
-      <div className="text-xs text-muted-foreground space-y-2 pt-2">
+      <div className="space-y-2 pt-2 text-xs text-muted-foreground">
         <p>
           <span className="font-semibold">How it works:</span>
         </p>

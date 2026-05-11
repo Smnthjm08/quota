@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-import { axiosInstance } from '@/lib/axios';
+import { useCallback, useEffect, useState } from "react";
+import { axiosInstance } from "@/lib/axios";
 
 interface TopupPlan {
   id: number;
@@ -8,7 +8,7 @@ interface TopupPlan {
   priceCents: number;
   dodoProductId: string;
   currency: string;
-  interval: 'ONETIME';
+  interval: "ONETIME";
 }
 
 interface CheckoutSession {
@@ -37,7 +37,9 @@ export function useFiatTopupCheckout() {
         }
       } catch (err) {
         if (isMounted) {
-          setError(err instanceof Error ? err.message : "Failed to load topup plans");
+          setError(
+            err instanceof Error ? err.message : "Failed to load topup plans"
+          );
         }
       } finally {
         if (isMounted) {
@@ -53,41 +55,40 @@ export function useFiatTopupCheckout() {
     };
   }, []);
 
-  const createCheckout = useCallback(
-    async (planId: number) => {
-      setIsLoading(true);
-      setError(null);
+  const createCheckout = useCallback(async (planId: number) => {
+    setIsLoading(true);
+    setError(null);
 
-      try {
-        const response = await axiosInstance.post<{
-          message: string;
-          data: CheckoutSession;
-          error: unknown;
-        }>('/api/v1/vault/topup-checkout', {
-          planId,
-        });
+    try {
+      const response = await axiosInstance.post<{
+        message: string;
+        data: CheckoutSession;
+        error: unknown;
+      }>("/api/v1/vault/topup-checkout", {
+        planId,
+      });
 
-        const checkoutSession = response.data.data;
+      const checkoutSession = response.data.data;
 
-        if (!checkoutSession?.checkout_url) {
-          throw new Error('No checkout URL received from server');
-        }
-
-        // Redirect to Dodo checkout
-        window.location.href = checkoutSession.checkout_url;
-
-        return checkoutSession;
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : 'Failed to create checkout session';
-        setError(errorMessage);
-        throw err;
-      } finally {
-        setIsLoading(false);
+      if (!checkoutSession?.checkout_url) {
+        throw new Error("No checkout URL received from server");
       }
-    },
-    []
-  );
+
+      // Redirect to Dodo checkout
+      window.location.href = checkoutSession.checkout_url;
+
+      return checkoutSession;
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "Failed to create checkout session";
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   return {
     topupPlans,

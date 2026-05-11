@@ -22,7 +22,10 @@ import { dodoClient, dodoWebhookKey } from "./lib/dodo-client.ts";
 const DEFAULT_USDC_MINT = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
 const USDC_MINT = new PublicKey(process.env.USDC_MINT ?? DEFAULT_USDC_MINT);
 
-function deriveAssociatedTokenAddress(owner: PublicKey, mint: PublicKey): PublicKey {
+function deriveAssociatedTokenAddress(
+  owner: PublicKey,
+  mint: PublicKey
+): PublicKey {
   const [address] = PublicKey.findProgramAddressSync(
     [owner.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), mint.toBuffer()],
     ASSOCIATED_TOKEN_PROGRAM_ID
@@ -356,7 +359,9 @@ async function persistDodoPayment(data: Record<string, unknown>) {
 
   const customerId = getCustomerId(data);
   const subscriptionId = getSubscriptionId(data);
-  const amount = toNumberValue(data.amount ?? data.amount_paid ?? payment?.amount);
+  const amount = toNumberValue(
+    data.amount ?? data.amount_paid ?? payment?.amount
+  );
   const currency = toStringValue(data.currency ?? payment?.currency);
 
   await prisma.dodoPayment.upsert({
@@ -409,17 +414,25 @@ async function processTopupPayment(data: Record<string, unknown>) {
 
   const depositAmount = new BN(Math.round(amountInUsdc * 1_000_000));
   const vaultTokenAccount = deriveAssociatedTokenAddress(vaultPda, USDC_MINT);
-  const apiSignerTokenAccount = deriveAssociatedTokenAddress(apiSignerPublicKey, USDC_MINT);
+  const apiSignerTokenAccount = deriveAssociatedTokenAddress(
+    apiSignerPublicKey,
+    USDC_MINT
+  );
 
-  const apiSignerTokenAccountInfo = await connection.getAccountInfo(apiSignerTokenAccount);
+  const apiSignerTokenAccountInfo = await connection.getAccountInfo(
+    apiSignerTokenAccount
+  );
   if (!apiSignerTokenAccountInfo) {
-    console.error("API signer USDC token account is missing for fiat topup processing");
+    console.error(
+      "API signer USDC token account is missing for fiat topup processing"
+    );
     return;
   }
 
   const transaction = new Transaction();
 
-  const vaultTokenAccountInfo = await connection.getAccountInfo(vaultTokenAccount);
+  const vaultTokenAccountInfo =
+    await connection.getAccountInfo(vaultTokenAccount);
   if (!vaultTokenAccountInfo) {
     transaction.add(
       createAssociatedTokenAccountInstruction(

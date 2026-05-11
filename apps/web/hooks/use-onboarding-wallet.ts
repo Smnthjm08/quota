@@ -56,7 +56,11 @@ export function useOnboardingWallet() {
           return;
         }
 
-        if (connectedWallet && exists && (!wallet || connectedWallet !== wallet)) {
+        if (
+          connectedWallet &&
+          exists &&
+          (!wallet || connectedWallet !== wallet)
+        ) {
           setErrorMessage(
             "This wallet is already registered. Please use a different wallet."
           );
@@ -191,7 +195,9 @@ export function useOnboardingWallet() {
 
         if (vaultData?.vaultPda) {
           const refreshedSession = await refreshSession();
-          const nextRoute = getOnboardingRoute(refreshedSession?.company ?? null);
+          const nextRoute = getOnboardingRoute(
+            refreshedSession?.company ?? null
+          );
 
           if (nextRoute === "/dashboard") {
             toast.success("Vault already exists. Continuing to dashboard.");
@@ -304,7 +310,13 @@ export function useOnboardingWallet() {
 
     autoVerifyWalletRef.current = connectedWallet;
     void verifyWallet();
-  }, [connectedWallet, isWalletSigned, isVerifying, verifyWallet, errorMessage]);
+  }, [
+    connectedWallet,
+    isWalletSigned,
+    isVerifying,
+    verifyWallet,
+    errorMessage,
+  ]);
 
   return {
     connectedWallet,

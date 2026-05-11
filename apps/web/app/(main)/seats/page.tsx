@@ -322,9 +322,7 @@ export default function SeatsPage() {
                             {seatStatusLabel(seat.active)}
                           </Badge>
                         </TableCell>
-                        <TableCell>
-                          {formatUsdc(seat.monthlyLimit)}
-                        </TableCell>
+                        <TableCell>{formatUsdc(seat.monthlyLimit)}</TableCell>
                         <TableCell className="max-w-65 truncate font-mono text-xs text-muted-foreground">
                           {seat.seatPda}
                         </TableCell>

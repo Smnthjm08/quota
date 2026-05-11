@@ -14,7 +14,6 @@ function formatUsdc(value: number) {
   return `${usdcFormatter.format(value)} USDC`;
 }
 
-
 export default function VaultPage() {
   const { data: usageData, isLoading, reloadUsage } = useUsage();
 
@@ -43,7 +42,9 @@ export default function VaultPage() {
                 </p>
               </div>
               <div className="rounded-lg border bg-background px-3 py-2">
-                <p className="text-xs text-muted-foreground">Allocated to seats</p>
+                <p className="text-xs text-muted-foreground">
+                  Allocated to seats
+                </p>
                 <p className="text-sm font-semibold">
                   {isLoading ? "Loading..." : formatUsdc(usedBalance)}
                 </p>
@@ -63,10 +64,7 @@ export default function VaultPage() {
           <VaultInfo />
           <VaultStats />
         </div>
-
-
       </div>
-
     </div>
   );
 }

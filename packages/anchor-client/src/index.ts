@@ -11,3 +11,4 @@ export * from "./client/vault/withdraw-vault.ts";
 export * from "./client/seat/create-seat.ts";
 export * from "./client/seat/toggle-seat.ts";
 export * from "./client/seat/update-seat.ts";
+export * from "./client/seat/consume.ts";

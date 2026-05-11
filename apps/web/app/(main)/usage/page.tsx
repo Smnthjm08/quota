@@ -23,7 +23,12 @@ type UsageSeat = {
 
 type UsageEvent = {
   id: string;
-  type: "VAULT_CREATED" | "VAULT_FUNDED" | "SEAT_CREATED" | "SEAT_UPDATED" | "SEAT_TOGGLED";
+  type:
+    | "VAULT_CREATED"
+    | "VAULT_FUNDED"
+    | "SEAT_CREATED"
+    | "SEAT_UPDATED"
+    | "SEAT_TOGGLED";
   title: string;
   amountUsdc: number | null;
   txSignature: string | null;
@@ -90,7 +95,8 @@ export default function UsagePage() {
         setIsLoading(true);
         setErrorMessage(null);
 
-        const response = await axiosInstance.get<UsageResponse>("/api/v1/usage");
+        const response =
+          await axiosInstance.get<UsageResponse>("/api/v1/usage");
         if (!cancelled) {
           setData(response.data.data);
         }
@@ -127,10 +133,28 @@ export default function UsagePage() {
             Vault funding, seat allocation, and activity logs in one place.
           </p>
           <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
-            <span>Deposited: {isLoading ? "Loading..." : formatAmount(summary?.totalDeposited ?? null)}</span>
-            <span>Used: {isLoading ? "Loading..." : formatAmount(summary?.usedBalance ?? null)}</span>
-            <span>Available: {isLoading ? "Loading..." : formatAmount(summary?.availableBalance ?? null)}</span>
-            <span>Active seats: {isLoading ? "Loading..." : summary?.activeSeats ?? "—"}</span>
+            <span>
+              Deposited:{" "}
+              {isLoading
+                ? "Loading..."
+                : formatAmount(summary?.totalDeposited ?? null)}
+            </span>
+            <span>
+              Used:{" "}
+              {isLoading
+                ? "Loading..."
+                : formatAmount(summary?.usedBalance ?? null)}
+            </span>
+            <span>
+              Available:{" "}
+              {isLoading
+                ? "Loading..."
+                : formatAmount(summary?.availableBalance ?? null)}
+            </span>
+            <span>
+              Active seats:{" "}
+              {isLoading ? "Loading..." : (summary?.activeSeats ?? "—")}
+            </span>
           </div>
         </div>
 
@@ -145,7 +169,8 @@ export default function UsagePage() {
             <div className="border-b px-4 py-3">
               <p className="text-sm font-medium">Usage log</p>
               <p className="text-xs text-muted-foreground">
-                Ordered newest first. Vault events, seat changes, and deposits appear here.
+                Ordered newest first. Vault events, seat changes, and deposits
+                appear here.
               </p>
             </div>
 
@@ -157,10 +182,15 @@ export default function UsagePage() {
               ) : data?.events.length ? (
                 <div className="divide-y">
                   {data.events.map((event) => (
-                    <div key={event.id} className="flex flex-col gap-3 px-4 py-4 md:flex-row md:items-start md:justify-between">
+                    <div
+                      key={event.id}
+                      className="flex flex-col gap-3 px-4 py-4 md:flex-row md:items-start md:justify-between"
+                    >
                       <div className="space-y-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <Badge variant={eventBadgeVariant(event.type)}>{event.type}</Badge>
+                          <Badge variant={eventBadgeVariant(event.type)}>
+                            {event.type}
+                          </Badge>
                           <p className="font-medium">{event.title}</p>
                         </div>
                         <p className="text-xs text-muted-foreground">
@@ -217,29 +247,43 @@ export default function UsagePage() {
                 <TableBody>
                   {isLoading ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">
+                      <TableCell
+                        colSpan={5}
+                        className="py-8 text-center text-sm text-muted-foreground"
+                      >
                         Loading seats...
                       </TableCell>
                     </TableRow>
                   ) : data?.seats.length ? (
                     data.seats.map((seat) => (
                       <TableRow key={seat.id}>
-                        <TableCell className="font-medium">{seat.name}</TableCell>
+                        <TableCell className="font-medium">
+                          {seat.name}
+                        </TableCell>
                         <TableCell>
                           <Badge variant="outline">{seat.seatType}</Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={seat.active ? "default" : "secondary"}>
+                          <Badge
+                            variant={seat.active ? "default" : "secondary"}
+                          >
                             {seat.active ? "Active" : "Inactive"}
                           </Badge>
                         </TableCell>
-                        <TableCell>{seat.monthlyLimit.toLocaleString()} USDC</TableCell>
-                        <TableCell>{seat.consumed.toLocaleString()} USDC</TableCell>
+                        <TableCell>
+                          {seat.monthlyLimit.toLocaleString()} USDC
+                        </TableCell>
+                        <TableCell>
+                          {seat.consumed.toLocaleString()} USDC
+                        </TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">
+                      <TableCell
+                        colSpan={5}
+                        className="py-8 text-center text-sm text-muted-foreground"
+                      >
                         No seats yet.
                       </TableCell>
                     </TableRow>

@@ -57,7 +57,7 @@ export function AuthSessionProvider({
   }, []);
 
   const setManualSessionCompany = useCallback((company: AppCompany | null) => {
-    setManualSession((prev) => ({ ...(prev ?? {}), company } as AppSession));
+    setManualSession((prev) => ({ ...(prev ?? {}), company }) as AppSession);
   }, []);
 
   const value = useMemo<AuthSessionContextValue>(() => {

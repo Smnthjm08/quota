@@ -31,7 +31,12 @@ import {
 import { Field, FieldLabel } from "@workspace/ui/components/field";
 import { Input } from "@workspace/ui/components/input";
 import { Separator } from "@workspace/ui/components/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@workspace/ui/components/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@workspace/ui/components/tabs";
 import { FiatTopupTab } from "./fiat-topup-tab";
 
 type DepositDialogProps = {
@@ -235,7 +240,11 @@ export function DepositDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "topup" | "fiat")} className="w-full">
+        <Tabs
+          value={activeTab}
+          onValueChange={(v) => setActiveTab(v as "topup" | "fiat")}
+          className="w-full"
+        >
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="topup">Quick Top Up</TabsTrigger>
             <TabsTrigger value="fiat">Fiat Top Up</TabsTrigger>
@@ -243,8 +252,9 @@ export function DepositDialog({
 
           <TabsContent value="topup" className="space-y-4">
             <div className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">
-              <span className="font-semibold">Direct Top Up:</span> Transfer USDC directly from your wallet to fund
-              the vault instantly. No API needed.
+              <span className="font-semibold">Direct Top Up:</span> Transfer
+              USDC directly from your wallet to fund the vault instantly. No API
+              needed.
             </div>
 
             <form onSubmit={handleTopupSubmit} className="space-y-4">

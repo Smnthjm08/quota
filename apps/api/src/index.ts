@@ -166,11 +166,7 @@ function normalizeSeatTypeInput(
     return "HUMAN";
   }
 
-  if (
-    seatType === 2 ||
-    seatType === "2" ||
-    seatType === "AGENT"
-  ) {
+  if (seatType === 2 || seatType === "2" || seatType === "AGENT") {
     return "AGENT";
   }
 
@@ -251,7 +247,8 @@ async function fundVaultForPlan(
   try {
     const transaction = new Transaction();
 
-    const vaultTokenAccountInfo = await connection.getAccountInfo(vaultTokenAccount);
+    const vaultTokenAccountInfo =
+      await connection.getAccountInfo(vaultTokenAccount);
     if (!vaultTokenAccountInfo) {
       transaction.add(
         createAssociatedTokenAccountInstruction(
@@ -300,7 +297,9 @@ async function fundVaultForPlan(
         amount: 0,
         txSignature: null,
         errorMessage:
-          logs?.find((log) => log.toLowerCase().includes("insufficient funds")) ??
+          logs?.find((log) =>
+            log.toLowerCase().includes("insufficient funds")
+          ) ??
           error.message ??
           "Vault funding transaction failed",
       };
@@ -429,7 +428,9 @@ app.post(
         const currentCompany = req.company;
 
         if (!currentCompany) {
-          return res.status(400).json({ message: "Company not found for user" });
+          return res
+            .status(400)
+            .json({ message: "Company not found for user" });
         }
 
         const freeSubscriptionId = `free-${currentCompany.id}-${plan.id}`;
@@ -484,7 +485,13 @@ app.post(
         ...(trialPeriodDays > 0
           ? { subscription_data: { trial_period_days: trialPeriodDays } }
           : {}),
-        allowed_payment_method_types: ["credit", "debit", "upi_collect", "upi_intent", "crypto_currency"],
+        allowed_payment_method_types: [
+          "credit",
+          "debit",
+          "upi_collect",
+          "upi_intent",
+          "crypto_currency",
+        ],
         customer: {
           email: user.email,
           name: user.name,
@@ -702,13 +709,14 @@ app.get(
   }
 );
 
-
 app.get("/api/auth/wallet/check", authMiddleware, async (req, res) => {
   try {
     const wallet = (req.query.wallet as string) ?? null;
 
     if (!wallet) {
-      return res.status(400).json({ message: "wallet query param is required" });
+      return res
+        .status(400)
+        .json({ message: "wallet query param is required" });
     }
 
     const existing = await prisma.company.findFirst({
@@ -788,10 +796,10 @@ app.get(
 app.get("/api/v1/onboarding/plan", authMiddleware, async (req, res) => {
   try {
     const plans = await prisma.plan.findMany({
-      orderBy: [{ priceCents: "asc" }, { id: "asc" },],
+      orderBy: [{ priceCents: "asc" }, { id: "asc" }],
       where: {
-        interval: "MONTH"
-      }
+        interval: "MONTH",
+      },
     });
     return res.status(200).json({
       message: "Pricing plans fetched successfully",
@@ -931,7 +939,9 @@ app.post(
       }
 
       if (plan.interval !== "ONETIME") {
-        return res.status(400).json({ message: "Invalid plan type. Must be a topup product." });
+        return res
+          .status(400)
+          .json({ message: "Invalid plan type. Must be a topup product." });
       }
 
       if (!req.company) {
@@ -939,7 +949,9 @@ app.post(
       }
 
       if (!req.company.vaultPda) {
-        return res.status(400).json({ message: "Initialize your vault before funding" });
+        return res
+          .status(400)
+          .json({ message: "Initialize your vault before funding" });
       }
 
       const user = req.user;
@@ -950,7 +962,13 @@ app.post(
 
       const checkout = await dodoClient.checkoutSessions.create({
         product_cart: [{ product_id: plan.dodoProductId, quantity: 1 }],
-        allowed_payment_method_types: ["credit", "debit", "upi_collect", "upi_intent", "crypto_currency"],
+        allowed_payment_method_types: [
+          "credit",
+          "debit",
+          "upi_collect",
+          "upi_intent",
+          "crypto_currency",
+        ],
         customer: {
           email: user.email,
           name: user.name,
@@ -973,7 +991,9 @@ app.post(
       });
     } catch (error) {
       console.error("Topup checkout error:", error);
-      res.status(500).json({ error: "Failed to create topup checkout session" });
+      res
+        .status(500)
+        .json({ error: "Failed to create topup checkout session" });
     }
   }
 );
@@ -1001,8 +1021,14 @@ app.get(
       const invoices = await Promise.all(
         payments.map(async (p) => {
           try {
-            if (dodoClient && (dodoClient as any).payments && typeof (dodoClient as any).payments.retrieve === "function") {
-              const paymentObj = await (dodoClient as any).payments.retrieve(p.paymentId);
+            if (
+              dodoClient &&
+              (dodoClient as any).payments &&
+              typeof (dodoClient as any).payments.retrieve === "function"
+            ) {
+              const paymentObj = await (dodoClient as any).payments.retrieve(
+                p.paymentId
+              );
               return {
                 paymentId: p.paymentId,
                 companyId: p.companyId,
@@ -1027,7 +1053,9 @@ app.get(
         })
       );
 
-      return res.status(200).json({ message: "Invoices fetched", data: invoices, error: null });
+      return res
+        .status(200)
+        .json({ message: "Invoices fetched", data: invoices, error: null });
     } catch (error) {
       console.error("Billing invoices error:", error);
       return res.status(500).json({ message: "Failed to fetch invoices" });
@@ -1056,11 +1084,16 @@ app.get(
           (dodoClient as any).invoices.payments &&
           typeof (dodoClient as any).invoices.payments.retrieve === "function"
         ) {
-          const dodoRes = await (dodoClient as any).invoices.payments.retrieve(paymentId);
+          const dodoRes = await (dodoClient as any).invoices.payments.retrieve(
+            paymentId
+          );
           if (dodoRes && typeof dodoRes.arrayBuffer === "function") {
             const pdfBuffer = Buffer.from(await dodoRes.arrayBuffer());
             const fileName = `invoice-${paymentId}.pdf`;
-            res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+            res.setHeader(
+              "Content-Disposition",
+              `attachment; filename="${fileName}"`
+            );
             res.setHeader("Content-Type", "application/pdf");
             return res.status(200).send(pdfBuffer);
           }
@@ -1071,18 +1104,30 @@ app.get(
 
       // Fallback: fetch payment and redirect to invoice URL
       try {
-        if (dodoClient && (dodoClient as any).payments && typeof (dodoClient as any).payments.retrieve === "function") {
-          const paymentObj = await (dodoClient as any).payments.retrieve(paymentId);
-          const invoiceUrl = paymentObj?.invoice_url ?? paymentObj?.invoiceUrl ?? null;
+        if (
+          dodoClient &&
+          (dodoClient as any).payments &&
+          typeof (dodoClient as any).payments.retrieve === "function"
+        ) {
+          const paymentObj = await (dodoClient as any).payments.retrieve(
+            paymentId
+          );
+          const invoiceUrl =
+            paymentObj?.invoice_url ?? paymentObj?.invoiceUrl ?? null;
           if (invoiceUrl && typeof invoiceUrl === "string") {
             return res.redirect(invoiceUrl);
           }
         }
       } catch (err) {
-        console.error("Failed to fetch payment/invoice URL from Dodo SDK:", err);
+        console.error(
+          "Failed to fetch payment/invoice URL from Dodo SDK:",
+          err
+        );
       }
 
-      return res.status(404).json({ message: "Invoice not available for this paymentId" });
+      return res
+        .status(404)
+        .json({ message: "Invoice not available for this paymentId" });
     } catch (error) {
       console.error("Invoice download error:", error);
       return res.status(500).json({ message: "Failed to download invoice" });
@@ -1227,115 +1272,119 @@ app.post(
         txSignature: null,
       };
 
-  app.post(
-    "/api/v1/vault/deposit/server",
-    authMiddleware,
-    companyMiddleware,
-    async (req: express.Request, res: express.Response) => {
-      try {
-        const company = req.company;
+      app.post(
+        "/api/v1/vault/deposit/server",
+        authMiddleware,
+        companyMiddleware,
+        async (req: express.Request, res: express.Response) => {
+          try {
+            const company = req.company;
 
-        if (!company) {
-          return res.status(400).json({ message: "Company not found for user" });
+            if (!company) {
+              return res
+                .status(400)
+                .json({ message: "Company not found for user" });
+            }
+
+            if (!company.ownerWalletPubkey) {
+              return res
+                .status(400)
+                .json({ message: "Connect and verify a wallet first" });
+            }
+
+            const { amount } = req.body as { amount?: number | string };
+            const parsedAmount = Number(amount);
+
+            if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+              return res
+                .status(400)
+                .json({ message: "Valid deposit amount is required" });
+            }
+
+            const ownerWallet = new PublicKey(company.ownerWalletPubkey);
+            const [vaultPda] = deriveVaultPda(ownerWallet);
+
+            const vaultAccount = await connection.getAccountInfo(vaultPda);
+            if (!vaultAccount) {
+              return res
+                .status(400)
+                .json({ message: "Initialize the vault before depositing" });
+            }
+
+            const vaultTokenAccount = deriveAssociatedTokenAddress(
+              vaultPda,
+              USDC_MINT
+            );
+            const apiSignerTokenAccount = deriveAssociatedTokenAddress(
+              apiSignerPublicKey,
+              USDC_MINT
+            );
+
+            const apiSignerTokenAccountInfo = await connection.getAccountInfo(
+              apiSignerTokenAccount
+            );
+            if (!apiSignerTokenAccountInfo) {
+              return res.status(400).json({
+                message:
+                  "API signer USDC token account does not exist. Fund the signer treasury first.",
+              });
+            }
+
+            const vaultTokenAccountInfo =
+              await connection.getAccountInfo(vaultTokenAccount);
+            if (!vaultTokenAccountInfo) {
+              return res.status(400).json({
+                message:
+                  "Vault USDC token account does not exist. Create the vault token account first.",
+              });
+            }
+
+            const txSignature = await program.methods
+              .depositToVault(new BN(parsedAmount).mul(new BN(1_000_000)))
+              .accountsPartial({
+                vault: vaultPda,
+                authority: apiSignerPublicKey,
+                mint: USDC_MINT,
+                fromTokenAccount: apiSignerTokenAccount,
+                vaultTokenAccount,
+                tokenProgram: TOKEN_PROGRAM_ID,
+              })
+              .rpc();
+
+            await prisma.company.update({
+              where: { id: company.id },
+              data: {
+                vaultPda: vaultPda.toBase58(),
+              },
+            });
+
+            await recordUsageEvent({
+              companyId: company.id,
+              type: "VAULT_FUNDED",
+              title: "Vault funded",
+              amountUsdc: parsedAmount,
+              txSignature,
+              metadata: {
+                vaultPda: vaultPda.toBase58(),
+                source: "api_deposit",
+              },
+            });
+
+            return res.status(200).json({
+              message: "Vault funded successfully",
+              data: {
+                vaultPda: vaultPda.toBase58(),
+                amount: parsedAmount,
+                txSignature,
+              },
+              error: null,
+            });
+          } catch (error) {
+            console.error("Server vault deposit error:", error);
+            return res.status(500).json({ message: "Internal server error" });
+          }
         }
-
-        if (!company.ownerWalletPubkey) {
-          return res
-            .status(400)
-            .json({ message: "Connect and verify a wallet first" });
-        }
-
-        const { amount } = req.body as { amount?: number | string };
-        const parsedAmount = Number(amount);
-
-        if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-          return res
-            .status(400)
-            .json({ message: "Valid deposit amount is required" });
-        }
-
-        const ownerWallet = new PublicKey(company.ownerWalletPubkey);
-        const [vaultPda] = deriveVaultPda(ownerWallet);
-
-        const vaultAccount = await connection.getAccountInfo(vaultPda);
-        if (!vaultAccount) {
-          return res
-            .status(400)
-            .json({ message: "Initialize the vault before depositing" });
-        }
-
-        const vaultTokenAccount = deriveAssociatedTokenAddress(vaultPda, USDC_MINT);
-        const apiSignerTokenAccount = deriveAssociatedTokenAddress(
-          apiSignerPublicKey,
-          USDC_MINT
-        );
-
-        const apiSignerTokenAccountInfo = await connection.getAccountInfo(
-          apiSignerTokenAccount
-        );
-        if (!apiSignerTokenAccountInfo) {
-          return res.status(400).json({
-            message:
-              "API signer USDC token account does not exist. Fund the signer treasury first.",
-          });
-        }
-
-        const vaultTokenAccountInfo = await connection.getAccountInfo(
-          vaultTokenAccount
-        );
-        if (!vaultTokenAccountInfo) {
-          return res.status(400).json({
-            message:
-              "Vault USDC token account does not exist. Create the vault token account first.",
-          });
-        }
-
-        const txSignature = await program.methods
-          .depositToVault(new BN(parsedAmount).mul(new BN(1_000_000)))
-          .accountsPartial({
-            vault: vaultPda,
-            authority: apiSignerPublicKey,
-            mint: USDC_MINT,
-            fromTokenAccount: apiSignerTokenAccount,
-            vaultTokenAccount,
-            tokenProgram: TOKEN_PROGRAM_ID,
-          })
-          .rpc();
-
-        await prisma.company.update({
-          where: { id: company.id },
-          data: {
-            vaultPda: vaultPda.toBase58(),
-          },
-        });
-
-        await recordUsageEvent({
-          companyId: company.id,
-          type: "VAULT_FUNDED",
-          title: "Vault funded",
-          amountUsdc: parsedAmount,
-          txSignature,
-          metadata: {
-            vaultPda: vaultPda.toBase58(),
-            source: "api_deposit",
-          },
-        });
-
-        return res.status(200).json({
-          message: "Vault funded successfully",
-          data: {
-            vaultPda: vaultPda.toBase58(),
-            amount: parsedAmount,
-            txSignature,
-          },
-          error: null,
-        });
-      } catch (error) {
-        console.error("Server vault deposit error:", error);
-        return res.status(500).json({ message: "Internal server error" });
-      }
-    }
-  );
+      );
 
       if (existingVault) {
         fundingResult = await fundVaultForPlan(vaultPda, req.company.planId);
@@ -1615,7 +1664,6 @@ app.get(
   }
 );
 
-
 app.post(
   "/api/v1/seats",
   authMiddleware,
@@ -1628,7 +1676,10 @@ app.post(
         return res.status(400).json({ message: "Company not found for user" });
       }
 
-      if (company.maxAllowedSeats !== null && company.maxAllowedSeats !== undefined) {
+      if (
+        company.maxAllowedSeats !== null &&
+        company.maxAllowedSeats !== undefined
+      ) {
         const seatCount = await prisma.seat.count({
           where: {
             companyId: company.id,
@@ -1796,7 +1847,9 @@ app.post(
       const onChainSeatLimitRaw = toSafeNumber(onChainSeatData.limit);
       // on-chain limits are stored in base units (USDC: 1 USDC = 1_000_000 base units)
       const onChainSeatLimit =
-        onChainSeatLimitRaw === null ? null : Math.floor(onChainSeatLimitRaw / 1_000_000);
+        onChainSeatLimitRaw === null
+          ? null
+          : Math.floor(onChainSeatLimitRaw / 1_000_000);
 
       if (!onChainSeatData.vault.equals(new PublicKey(req.company.vaultPda))) {
         return res.status(400).json({
@@ -1822,7 +1875,10 @@ app.post(
         });
       }
 
-      if (onChainSeatLimit === null || onChainSeatLimit !== validatedMonthlyLimit) {
+      if (
+        onChainSeatLimit === null ||
+        onChainSeatLimit !== validatedMonthlyLimit
+      ) {
         return res.status(400).json({
           message: "Seat limit does not match on-chain transaction",
         });
@@ -1832,8 +1888,11 @@ app.post(
       const vaultOnChain = await program.account.vaultAccount.fetch(
         new PublicKey(req.company.vaultPda)
       );
-      const vaultTotalDepositedRaw = toSafeNumber(vaultOnChain.totalDeposited) ?? 0;
-      const vaultTotalDepositedHuman = Math.floor(vaultTotalDepositedRaw / 1_000_000);
+      const vaultTotalDepositedRaw =
+        toSafeNumber(vaultOnChain.totalDeposited) ?? 0;
+      const vaultTotalDepositedHuman = Math.floor(
+        vaultTotalDepositedRaw / 1_000_000
+      );
 
       const assignedAgg = await prisma.seat.aggregate({
         where: { companyId: req.company.id },
@@ -1842,7 +1901,10 @@ app.post(
 
       const currentlyAssigned = assignedAgg._sum.monthlyLimit ?? 0;
 
-      if (currentlyAssigned + validatedMonthlyLimit > vaultTotalDepositedHuman) {
+      if (
+        currentlyAssigned + validatedMonthlyLimit >
+        vaultTotalDepositedHuman
+      ) {
         return res.status(400).json({
           message:
             "Insufficient vault funds: creating this seat would exceed the vault's deposited amount",
@@ -2010,11 +2072,12 @@ app.patch(
         data: {
           active: Boolean(onChainSeatData.active),
           consumed: toSafeNumber(onChainSeatData.consumed) ?? seat.consumed,
-          monthlyLimit:
-            (() => {
-              const onChainLimitRaw = toSafeNumber(onChainSeatData.limit);
-              return onChainLimitRaw === null ? seat.monthlyLimit : Math.floor(onChainLimitRaw / 1_000_000);
-            })(),
+          monthlyLimit: (() => {
+            const onChainLimitRaw = toSafeNumber(onChainSeatData.limit);
+            return onChainLimitRaw === null
+              ? seat.monthlyLimit
+              : Math.floor(onChainLimitRaw / 1_000_000);
+          })(),
           updatedByUser: {
             connect: {
               id: req.user.id,
@@ -2161,27 +2224,31 @@ app.patch(
 
       const onChainLimitRaw = toSafeNumber(onChainSeatData.limit);
       const onChainLimit =
-        onChainLimitRaw === null ? null : Math.floor(onChainLimitRaw / USDC_SCALE);
+        onChainLimitRaw === null
+          ? null
+          : Math.floor(onChainLimitRaw / USDC_SCALE);
 
       const vaultTotalDepositedRaw =
         toSafeNumber(vaultOnChain.totalDeposited) ?? 0;
-      const vaultTotalAssignedRaw = toSafeNumber(vaultOnChain.totalAssigned) ?? 0;
+      const vaultTotalAssignedRaw =
+        toSafeNumber(vaultOnChain.totalAssigned) ?? 0;
       const availableBalanceBase = Math.max(
         vaultTotalDepositedRaw - vaultTotalAssignedRaw,
         0
       );
-      const currentSeatLimitBase = onChainLimitRaw ?? seat.monthlyLimit * USDC_SCALE;
+      const currentSeatLimitBase =
+        onChainLimitRaw ?? seat.monthlyLimit * USDC_SCALE;
       const requiredAdditionalBalanceBase = Math.max(
         newLimit * USDC_SCALE - currentSeatLimitBase,
         0
       );
-      const requiredAdditionalBalanceHuman = requiredAdditionalBalanceBase / USDC_SCALE;
+      const requiredAdditionalBalanceHuman =
+        requiredAdditionalBalanceBase / USDC_SCALE;
       const availableBalanceHuman = availableBalanceBase / USDC_SCALE;
 
       if (requiredAdditionalBalanceBase > availableBalanceBase) {
         return res.status(400).json({
-          message:
-            `Insufficient vault funds. This update needs ${formatUsdcAmount(requiredAdditionalBalanceHuman)} more USDC, but only ${formatUsdcAmount(availableBalanceHuman)} USDC is available.`,
+          message: `Insufficient vault funds. This update needs ${formatUsdcAmount(requiredAdditionalBalanceHuman)} more USDC, but only ${formatUsdcAmount(availableBalanceHuman)} USDC is available.`,
         });
       }
 

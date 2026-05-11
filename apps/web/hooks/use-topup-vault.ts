@@ -1,12 +1,12 @@
-import { useCallback, useState } from 'react';
-import { useConnection, useWallet } from '@solana/wallet-adapter-react';
-import { PublicKey } from '@solana/web3.js';
+import { useCallback, useState } from "react";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { PublicKey } from "@solana/web3.js";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
   createAssociatedTokenAccountInstruction,
-} from '@solana/spl-token';
-import { buildTopupTransaction } from '@workspace/anchor-client';
+} from "@solana/spl-token";
+import { buildTopupTransaction } from "@workspace/anchor-client";
 
 interface UseTopupVaultParams {
   vaultPublicKey: string;
@@ -24,7 +24,7 @@ export function useTopupVault(params: UseTopupVaultParams) {
   const topup = useCallback(
     async (amount: number) => {
       if (!publicKey) {
-        throw new Error('Wallet not connected');
+        throw new Error("Wallet not connected");
       }
 
       setIsLoading(true);
@@ -33,8 +33,12 @@ export function useTopupVault(params: UseTopupVaultParams) {
       try {
         const vaultPublicKey = new PublicKey(params.vaultPublicKey);
         const mintPublicKey = new PublicKey(params.mintPublicKey);
-        const ownerTokenAccountPublicKey = new PublicKey(params.ownerTokenAccountPublicKey);
-        const vaultTokenAccountPublicKey = new PublicKey(params.vaultTokenAccountPublicKey);
+        const ownerTokenAccountPublicKey = new PublicKey(
+          params.ownerTokenAccountPublicKey
+        );
+        const vaultTokenAccountPublicKey = new PublicKey(
+          params.vaultTokenAccountPublicKey
+        );
 
         const setupInstructions = [];
 
@@ -88,17 +92,17 @@ export function useTopupVault(params: UseTopupVaultParams) {
         // Send and confirm transaction
         const signature = await sendTransaction(tx, connection, {
           skipPreflight: false,
-          preflightCommitment: 'confirmed',
+          preflightCommitment: "confirmed",
         });
 
         // Wait for confirmation
         const confirmation = await connection.confirmTransaction(
           signature,
-          'confirmed'
+          "confirmed"
         );
 
         if (confirmation.value.err) {
-          throw new Error('Transaction failed');
+          throw new Error("Transaction failed");
         }
 
         return {
@@ -107,7 +111,8 @@ export function useTopupVault(params: UseTopupVaultParams) {
           message: `Successfully topped up ${amount} tokens`,
         };
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        const errorMessage =
+          err instanceof Error ? err.message : "Unknown error";
         setError(errorMessage);
         throw err;
       } finally {
