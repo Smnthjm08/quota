@@ -101,14 +101,15 @@ enum PlanInterval {
 }
 
 model Plan {
-  id            Int          @id @default(autoincrement())
-  key           String       @unique // "starter", "team", "topup_10", "topup_25", "topup_50"
-  name          String
-  priceCents    Int
-  currency      String       @default("USD")
-  interval      PlanInterval
-  maxAllowedSeats   Int?
-  dodoProductId String       @unique
+  id              Int          @id @default(autoincrement())
+  key             String       @unique // "starter", "team", "topup_10", "topup_25", "topup_50"
+  name            String
+  priceCents      Int
+  currency        String       @default("USD")
+  interval        PlanInterval
+  maxAllowedSeats Int?
+  initDeposit     Int?
+  dodoProductId   String       @unique
 
   companies Company[]
 

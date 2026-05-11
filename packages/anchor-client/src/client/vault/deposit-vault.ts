@@ -21,6 +21,7 @@ export interface BuildDepositTxParams {
   mintPublicKey: PublicKey;
   userTokenAccountPublicKey: PublicKey;
   vaultTokenAccountPublicKey: PublicKey;
+  // `amount` is expected in base token units (for USDC use 1 USDC = 1_000_000 units)
   amount: number;
 }
 

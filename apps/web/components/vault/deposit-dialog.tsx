@@ -14,6 +14,7 @@ import {
 import {
   deriveVaultPda,
   buildDepositTransaction,
+  buildTopupTransaction,
 } from "@workspace/anchor-client";
 import { axiosInstance } from "@/lib/axios";
 import { USDC_MINT } from "@/lib/mints";
@@ -30,6 +31,7 @@ import {
 import { Field, FieldLabel } from "@workspace/ui/components/field";
 import { Input } from "@workspace/ui/components/input";
 import { Separator } from "@workspace/ui/components/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@workspace/ui/components/tabs";
 
 type DepositDialogProps = {
   open: boolean;
@@ -49,6 +51,7 @@ export function DepositDialog({
   const [amount, setAmount] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"api" | "topup">("api");
 
   const resetForm = () => {
     setAmount("");
@@ -78,6 +81,147 @@ export function DepositDialog({
     }
 
     return fallback;
+  };
+
+  const handleTopupSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setErrorMessage(null);
+
+    const parsedAmount = Number.parseFloat(amount);
+
+    if (!amount.trim()) {
+      setErrorMessage("Top up amount is required.");
+      return;
+    }
+
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      setErrorMessage("Top up amount must be a positive number.");
+      return;
+    }
+
+    if (!publicKey) {
+      setErrorMessage("Connect your wallet to top up vault.");
+      return;
+    }
+
+    if (!signTransaction) {
+      setErrorMessage("This wallet does not support transaction signing.");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      const [vaultPda] = deriveVaultPda(publicKey);
+      const vaultAccount = await connection.getAccountInfo(vaultPda);
+
+      if (!vaultAccount) {
+        setErrorMessage(
+          "No vault exists for this wallet yet. Create the vault first, then top up."
+        );
+        return;
+      }
+
+      // Get owner's USDC token account (ATA)
+      let ownerUsdcAccount: PublicKey;
+      try {
+        ownerUsdcAccount = getAssociatedTokenAddressSync(
+          USDC_MINT,
+          publicKey,
+          false
+        );
+      } catch {
+        throw new Error("Could not derive your USDC token account.");
+      }
+
+      // Get vault's USDC token account
+      const vaultUsdcAccount = getVaultTokenAccount(vaultPda);
+      if (!vaultUsdcAccount) {
+        throw new Error("Could not derive vault USDC token account.");
+      }
+
+      const transactionInstructions = [];
+
+      const ownerTokenAccountInfo =
+        await connection.getAccountInfo(ownerUsdcAccount);
+      if (!ownerTokenAccountInfo) {
+        transactionInstructions.push(
+          createAssociatedTokenAccountInstruction(
+            publicKey,
+            ownerUsdcAccount,
+            publicKey,
+            USDC_MINT,
+            TOKEN_PROGRAM_ID,
+            ASSOCIATED_TOKEN_PROGRAM_ID
+          )
+        );
+      }
+
+      const vaultTokenAccountInfo =
+        await connection.getAccountInfo(vaultUsdcAccount);
+      if (!vaultTokenAccountInfo) {
+        transactionInstructions.push(
+          createAssociatedTokenAccountInstruction(
+            publicKey,
+            vaultUsdcAccount,
+            vaultPda,
+            USDC_MINT,
+            TOKEN_PROGRAM_ID,
+            ASSOCIATED_TOKEN_PROGRAM_ID
+          )
+        );
+      }
+
+      // Convert amount to lamports (6 decimals for USDC)
+      const amountInLamports = Math.floor(parsedAmount * 1_000_000);
+
+      const tx = await buildTopupTransaction({
+        connection,
+        vaultOwnerPublicKey: publicKey,
+        vaultPublicKey: vaultPda,
+        mintPublicKey: USDC_MINT,
+        ownerTokenAccountPublicKey: ownerUsdcAccount,
+        vaultTokenAccountPublicKey: vaultUsdcAccount,
+        amount: amountInLamports,
+      });
+
+      if (transactionInstructions.length > 0) {
+        tx.instructions.unshift(...transactionInstructions);
+      }
+
+      tx.feePayer = publicKey;
+      const { blockhash, lastValidBlockHeight } =
+        await connection.getLatestBlockhash("confirmed");
+      tx.recentBlockhash = blockhash;
+
+      const signedTx = await signTransaction(tx);
+      const txSignature = await connection.sendRawTransaction(
+        signedTx.serialize(),
+        { skipPreflight: true }
+      );
+
+      toast.loading("Confirming top up on-chain...");
+
+      await connection.confirmTransaction({
+        signature: txSignature,
+        blockhash,
+        lastValidBlockHeight,
+      });
+
+      toast.dismiss();
+      toast.success(`Successfully topped up vault with ${parsedAmount} USDC`);
+      reloadVaultData();
+      await onDeposited?.();
+      resetForm();
+      onOpenChange(false);
+    } catch (error) {
+      toast.dismiss();
+      setErrorMessage(
+        getErrorMessage(error, "We could not process that top up right now.")
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -232,55 +376,112 @@ export function DepositDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-96">
         <DialogHeader>
-          <DialogTitle>Deposit to Vault</DialogTitle>
+          <DialogTitle>Fund Your Vault</DialogTitle>
           <DialogDescription>
             Add USDC to your vault to fund agent spending limits
           </DialogDescription>
         </DialogHeader>
 
-        <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-          Phantom may show the small network fee separately. The actual deposit
-          is a USDC token transfer from your wallet to the vault.
-        </div>
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "api" | "topup")} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="api">API Deposit</TabsTrigger>
+            <TabsTrigger value="topup">Quick Top Up</TabsTrigger>
+          </TabsList>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Field>
-            <FieldLabel htmlFor="amount">Amount (USDC)</FieldLabel>
-            <Input
-              id="amount"
-              type="number"
-              placeholder="Enter amount"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              step="0.01"
-              min="0"
-              disabled={isSubmitting}
-              required
-            />
-          </Field>
-
-          {errorMessage && (
-            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-              {errorMessage}
+          {/* API Deposit Tab */}
+          <TabsContent value="api" className="space-y-4">
+            <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+              Phantom may show the small network fee separately. The actual deposit
+              is a USDC token transfer from your wallet to the vault.
             </div>
-          )}
 
-          <Separator />
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <Field>
+                <FieldLabel htmlFor="amount-api">Amount (USDC)</FieldLabel>
+                <Input
+                  id="amount-api"
+                  type="number"
+                  placeholder="Enter amount"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  step="0.01"
+                  min="0"
+                  disabled={isSubmitting}
+                  required
+                />
+              </Field>
 
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleOpenChange(false)}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Processing..." : "Deposit"}
-            </Button>
-          </DialogFooter>
-        </form>
+              {errorMessage && activeTab === "api" && (
+                <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                  {errorMessage}
+                </div>
+              )}
+
+              <Separator />
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleOpenChange(false)}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Processing..." : "Deposit"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </TabsContent>
+
+          {/* Quick Top Up Tab */}
+          <TabsContent value="topup" className="space-y-4">
+            <div className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">
+              <span className="font-semibold">Direct Top Up:</span> Transfer USDC directly from your wallet to fund
+              the vault instantly. No API needed.
+            </div>
+
+            <form onSubmit={handleTopupSubmit} className="space-y-4">
+              <Field>
+                <FieldLabel htmlFor="amount-topup">Amount (USDC)</FieldLabel>
+                <Input
+                  id="amount-topup"
+                  type="number"
+                  placeholder="Enter amount"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  step="0.01"
+                  min="0"
+                  disabled={isSubmitting}
+                  required
+                />
+              </Field>
+
+              {errorMessage && activeTab === "topup" && (
+                <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                  {errorMessage}
+                </div>
+              )}
+
+              <Separator />
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleOpenChange(false)}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Processing..." : "Top Up Vault"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );

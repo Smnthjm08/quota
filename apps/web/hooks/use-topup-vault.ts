@@ -1,7 +1,12 @@
 import { useCallback, useState } from 'react';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
-import { Transaction } from '@solana/web3.js';
-import { buildTopupTransaction } from '@quota/anchor-client';
+import { PublicKey } from '@solana/web3.js';
+import {
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  TOKEN_PROGRAM_ID,
+  createAssociatedTokenAccountInstruction,
+} from '@solana/spl-token';
+import { buildTopupTransaction } from '@workspace/anchor-client';
 
 interface UseTopupVaultParams {
   vaultPublicKey: string;
@@ -12,7 +17,7 @@ interface UseTopupVaultParams {
 
 export function useTopupVault(params: UseTopupVaultParams) {
   const { connection } = useConnection();
-  const { publicKey, sendTransaction, wallet } = useWallet();
+  const { publicKey, sendTransaction } = useWallet();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,16 +31,59 @@ export function useTopupVault(params: UseTopupVaultParams) {
       setError(null);
 
       try {
+        const vaultPublicKey = new PublicKey(params.vaultPublicKey);
+        const mintPublicKey = new PublicKey(params.mintPublicKey);
+        const ownerTokenAccountPublicKey = new PublicKey(params.ownerTokenAccountPublicKey);
+        const vaultTokenAccountPublicKey = new PublicKey(params.vaultTokenAccountPublicKey);
+
+        const setupInstructions = [];
+
+        const ownerTokenAccountInfo = await connection.getAccountInfo(
+          ownerTokenAccountPublicKey
+        );
+        if (!ownerTokenAccountInfo) {
+          setupInstructions.push(
+            createAssociatedTokenAccountInstruction(
+              publicKey,
+              ownerTokenAccountPublicKey,
+              publicKey,
+              mintPublicKey,
+              TOKEN_PROGRAM_ID,
+              ASSOCIATED_TOKEN_PROGRAM_ID
+            )
+          );
+        }
+
+        const vaultTokenAccountInfo = await connection.getAccountInfo(
+          vaultTokenAccountPublicKey
+        );
+        if (!vaultTokenAccountInfo) {
+          setupInstructions.push(
+            createAssociatedTokenAccountInstruction(
+              publicKey,
+              vaultTokenAccountPublicKey,
+              vaultPublicKey,
+              mintPublicKey,
+              TOKEN_PROGRAM_ID,
+              ASSOCIATED_TOKEN_PROGRAM_ID
+            )
+          );
+        }
+
         // Build the transaction
         const tx = await buildTopupTransaction({
           connection,
           vaultOwnerPublicKey: publicKey,
-          vaultPublicKey: new PublicKey(params.vaultPublicKey),
-          mintPublicKey: new PublicKey(params.mintPublicKey),
-          ownerTokenAccountPublicKey: new PublicKey(params.ownerTokenAccountPublicKey),
-          vaultTokenAccountPublicKey: new PublicKey(params.vaultTokenAccountPublicKey),
+          vaultPublicKey,
+          mintPublicKey,
+          ownerTokenAccountPublicKey,
+          vaultTokenAccountPublicKey,
           amount,
         });
+
+        if (setupInstructions.length > 0) {
+          tx.instructions.unshift(...setupInstructions);
+        }
 
         // Send and confirm transaction
         const signature = await sendTransaction(tx, connection, {

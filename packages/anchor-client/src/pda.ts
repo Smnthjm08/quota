@@ -12,8 +12,15 @@ export function deriveSeatPda(
   vaultPubkey: PublicKey,
   seatId: bigint
 ): [PublicKey, number] {
-  const buf = Buffer.alloc(8);
-  buf.writeBigUInt64LE(seatId);
+  const bytes = new Uint8Array(8);
+  let value = seatId;
+
+  for (let i = 0; i < 8; i += 1) {
+    bytes[i] = Number(value & 0xffn);
+    value >>= 8n;
+  }
+
+  const buf = Buffer.from(bytes);
   return PublicKey.findProgramAddressSync(
     [SEAT_SEED, vaultPubkey.toBuffer(), buf],
     PROGRAM_ID

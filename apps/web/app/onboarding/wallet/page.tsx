@@ -29,6 +29,7 @@ export default function WalletConnectPage() {
     needsVerification,
     isWalletSigned,
     isVerifying,
+    isCreatingVault,
     errorMessage,
     retryVerification,
     handleCreateVault,
@@ -134,11 +135,12 @@ export default function WalletConnectPage() {
                 size={"lg"}
                 disabled={
                   !isWalletSigned ||
-                  errorMessage.includes("already registered")
+                  errorMessage.includes("already registered") ||
+                  isCreatingVault
                 }
                 onClick={handleCreateVault}
               >
-                Create Vault
+                {isCreatingVault ? "Creating Vault..." : "Create Vault"}
               </Button>
             </div>
           </CardFooter>

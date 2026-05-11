@@ -5,7 +5,13 @@ import { randomBytes } from "crypto";
 import { prisma } from "@workspace/db";
 import companyMiddleware from "./middlewares/company.middleware.ts";
 import nacl from "tweetnacl";
-import { PublicKey } from "@solana/web3.js";
+import {
+  PublicKey,
+  SendTransactionError,
+  Transaction,
+  sendAndConfirmTransaction,
+} from "@solana/web3.js";
+import { createAssociatedTokenAccountInstruction } from "@solana/spl-token";
 import { BN } from "@coral-xyz/anchor";
 import {
   deriveSeatPda,
@@ -13,6 +19,7 @@ import {
   PROGRAM_ID,
 } from "@workspace/anchor-client";
 import {
+  apiKeypair,
   apiSignerPublicKey,
   connection,
   program,
@@ -84,6 +91,186 @@ function pruneExpiredChallenges() {
     if (value.expiresAt <= now) {
       walletChallenges.delete(key);
     }
+  }
+}
+
+type VaultFundingResult = {
+  amount: number;
+  txSignature: string | null;
+  errorMessage?: string;
+};
+
+function toSafeNumber(value: unknown): number | null {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : null;
+  }
+
+  if (
+    typeof value === "bigint" ||
+    typeof value === "string" ||
+    (typeof value === "object" && value !== null && "toString" in value)
+  ) {
+    const parsed = Number(value.toString());
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  return null;
+}
+
+function normalizeSeatTypeInput(
+  seatType: number | string | undefined
+): "HUMAN" | "AGENT" | null {
+  if (
+    seatType === 0 ||
+    seatType === "0" ||
+    seatType === 1 ||
+    seatType === "1" ||
+    seatType === "HUMAN"
+  ) {
+    return "HUMAN";
+  }
+
+  if (
+    seatType === 2 ||
+    seatType === "2" ||
+    seatType === "AGENT"
+  ) {
+    return "AGENT";
+  }
+
+  return null;
+}
+
+function programValueToSeatType(seatType: number): "HUMAN" | "AGENT" | null {
+  if (seatType === 1) {
+    return "HUMAN";
+  }
+
+  if (seatType === 2) {
+    return "AGENT";
+  }
+
+  return null;
+}
+
+async function fundVaultForPlan(
+  vaultPda: PublicKey,
+  planId?: number | null
+): Promise<VaultFundingResult> {
+  if (!planId) {
+    return { amount: 0, txSignature: null };
+  }
+
+  const plan = await prisma.plan.findUnique({
+    where: { id: planId },
+    select: { initDeposit: true, key: true },
+  });
+
+  const initDeposit = plan?.initDeposit ?? 0;
+  const targetAmount = new BN(initDeposit).mul(new BN(1_000_000));
+
+  if (targetAmount.lte(new BN(0))) {
+    return { amount: 0, txSignature: null };
+  }
+
+  const vaultAccount = await program.account.vaultAccount.fetch(vaultPda);
+  const currentDeposited = new BN(vaultAccount.totalDeposited.toString());
+
+  if (currentDeposited.gte(targetAmount)) {
+    return { amount: 0, txSignature: null };
+  }
+
+  const depositAmount = targetAmount.sub(currentDeposited);
+  const vaultTokenAccount = deriveAssociatedTokenAddress(vaultPda, USDC_MINT);
+  const apiSignerTokenAccount = deriveAssociatedTokenAddress(
+    apiSignerPublicKey,
+    USDC_MINT
+  );
+
+  const apiSignerTokenAccountInfo = await connection.getAccountInfo(
+    apiSignerTokenAccount
+  );
+  if (!apiSignerTokenAccountInfo) {
+    return {
+      amount: 0,
+      txSignature: null,
+      errorMessage:
+        "API signer USDC account is missing. Fund the treasury with USDC before creating a vault.",
+    };
+  }
+
+  const apiSignerTokenBalance = await connection.getTokenAccountBalance(
+    apiSignerTokenAccount
+  );
+  const availableAmount = BigInt(apiSignerTokenBalance.value.amount);
+
+  if (availableAmount < BigInt(depositAmount.toString())) {
+    return {
+      amount: depositAmount.toNumber(),
+      txSignature: null,
+      errorMessage: `API signer USDC balance is insufficient. Need ${depositAmount.toString()} base units (${initDeposit} USDC) but only ${apiSignerTokenBalance.value.uiAmountString ?? "0"} USDC is available.`,
+    };
+  }
+
+  try {
+    const transaction = new Transaction();
+
+    const vaultTokenAccountInfo = await connection.getAccountInfo(vaultTokenAccount);
+    if (!vaultTokenAccountInfo) {
+      transaction.add(
+        createAssociatedTokenAccountInstruction(
+          apiKeypair.publicKey,
+          vaultTokenAccount,
+          vaultPda,
+          USDC_MINT,
+          TOKEN_PROGRAM_ID,
+          ASSOCIATED_TOKEN_PROGRAM_ID
+        )
+      );
+    }
+
+    transaction.add(
+      await program.methods
+        .depositToVault(depositAmount)
+        .accountsPartial({
+          vault: vaultPda,
+          authority: apiSignerPublicKey,
+          mint: USDC_MINT,
+          fromTokenAccount: apiSignerTokenAccount,
+          vaultTokenAccount,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .instruction()
+    );
+
+    transaction.feePayer = apiKeypair.publicKey;
+    const { blockhash } = await connection.getLatestBlockhash("confirmed");
+    transaction.recentBlockhash = blockhash;
+
+    const txSignature = await sendAndConfirmTransaction(
+      connection,
+      transaction,
+      [apiKeypair],
+      { commitment: "confirmed" }
+    );
+
+    return { amount: depositAmount.toNumber(), txSignature };
+  } catch (error) {
+    if (error instanceof SendTransactionError) {
+      const logs = await error.getLogs(connection);
+      console.error("Vault funding transaction logs:", logs);
+
+      return {
+        amount: 0,
+        txSignature: null,
+        errorMessage:
+          logs?.find((log) => log.toLowerCase().includes("insufficient funds")) ??
+          error.message ??
+          "Vault funding transaction failed",
+      };
+    }
+
+    throw error;
   }
 }
 
@@ -793,6 +980,10 @@ app.post(
       );
 
       const existingVault = await connection.getAccountInfo(vaultPda);
+      let fundingResult: VaultFundingResult = {
+        amount: 0,
+        txSignature: null,
+      };
 
   app.post(
     "/api/v1/vault/deposit/server",
@@ -858,7 +1049,7 @@ app.post(
         }
 
         const txSignature = await program.methods
-          .depositToVault(new BN(parsedAmount))
+          .depositToVault(new BN(parsedAmount).mul(new BN(1_000_000)))
           .accountsPartial({
             vault: vaultPda,
             authority: apiSignerPublicKey,
@@ -893,6 +1084,14 @@ app.post(
   );
 
       if (existingVault) {
+        fundingResult = await fundVaultForPlan(vaultPda, req.company.planId);
+
+        if (fundingResult.errorMessage) {
+          return res.status(400).json({
+            message: fundingResult.errorMessage,
+          });
+        }
+
         const updatedCompany = await prisma.company.update({
           where: { id: req.company.id },
           data: {
@@ -901,10 +1100,15 @@ app.post(
         });
 
         return res.status(200).json({
-          message: "Vault already exists",
+          message:
+            fundingResult.txSignature && fundingResult.amount > 0
+              ? "Vault already exists and was funded"
+              : "Vault already exists",
           data: {
             vaultPda: updatedCompany.vaultPda,
             txSignature: txSignature ?? null,
+            fundingTxSignature: fundingResult.txSignature,
+            fundedAmount: fundingResult.amount,
           },
           success: null,
         });
@@ -940,6 +1144,20 @@ app.post(
           .json({ message: "Could not verify transaction on chain" });
       }
 
+      fundingResult = await fundVaultForPlan(vaultPda, req.company.planId);
+
+      if (fundingResult.errorMessage) {
+        return res.status(400).json({
+          message: fundingResult.errorMessage,
+        });
+      }
+
+      if (fundingResult.txSignature === null && fundingResult.amount > 0) {
+        return res.status(400).json({
+          message: "Vault created, but it could not be funded automatically",
+        });
+      }
+
       const updatedCompany = await prisma.company.update({
         where: { id: req.company.id },
         data: {
@@ -948,10 +1166,15 @@ app.post(
       });
 
       return res.status(200).json({
-        message: "Vault created successfully",
+        message:
+          fundingResult.txSignature && fundingResult.amount > 0
+            ? "Vault created and funded successfully"
+            : "Vault created successfully",
         data: {
           vaultPda: updatedCompany.vaultPda,
           txSignature,
+          fundingTxSignature: fundingResult.txSignature,
+          fundedAmount: fundingResult.amount,
         },
         success: null,
       });
@@ -1071,12 +1294,7 @@ app.post(
         return res.status(400).json({ message: "Seat name is required" });
       }
 
-      const normalizedSeatType =
-        seatType === 0 || seatType === "0" || seatType === "HUMAN"
-          ? "HUMAN"
-          : seatType === 1 || seatType === "1" || seatType === "AGENT"
-            ? "AGENT"
-            : null;
+      const normalizedSeatType = normalizeSeatTypeInput(seatType);
 
       if (!normalizedSeatType) {
         return res.status(400).json({ message: "Invalid seat type" });
@@ -1188,13 +1406,76 @@ app.post(
         });
       }
 
+      const onChainSeatData = await program.account.seatAccount.fetch(seatPda);
+      const onChainSeatTypeValue = toSafeNumber(onChainSeatData.seatType);
+      const onChainSeatType = onChainSeatTypeValue
+        ? programValueToSeatType(onChainSeatTypeValue)
+        : null;
+      const onChainSeatLimitRaw = toSafeNumber(onChainSeatData.limit);
+      // on-chain limits are stored in base units (USDC: 1 USDC = 1_000_000 base units)
+      const onChainSeatLimit =
+        onChainSeatLimitRaw === null ? null : Math.floor(onChainSeatLimitRaw / 1_000_000);
+
+      if (!onChainSeatData.vault.equals(new PublicKey(req.company.vaultPda))) {
+        return res.status(400).json({
+          message: "Seat vault mismatch",
+        });
+      }
+
+      if (!onChainSeatData.holder.equals(holderKey)) {
+        return res.status(400).json({
+          message: "Seat holder mismatch",
+        });
+      }
+
+      if (onChainSeatType === null) {
+        return res.status(400).json({
+          message: "Invalid seat type on-chain",
+        });
+      }
+
+      if (onChainSeatType !== normalizedSeatType) {
+        return res.status(400).json({
+          message: "Seat type does not match on-chain transaction",
+        });
+      }
+
+      if (onChainSeatLimit === null || onChainSeatLimit !== validatedMonthlyLimit) {
+        return res.status(400).json({
+          message: "Seat limit does not match on-chain transaction",
+        });
+      }
+
+      // Defensive server-side check: ensure vault has enough unassigned funds
+      const vaultOnChain = await program.account.vaultAccount.fetch(
+        new PublicKey(req.company.vaultPda)
+      );
+      const vaultTotalDepositedRaw = toSafeNumber(vaultOnChain.totalDeposited) ?? 0;
+      const vaultTotalDepositedHuman = Math.floor(vaultTotalDepositedRaw / 1_000_000);
+
+      const assignedAgg = await prisma.seat.aggregate({
+        where: { companyId: req.company.id },
+        _sum: { monthlyLimit: true },
+      });
+
+      const currentlyAssigned = assignedAgg._sum.monthlyLimit ?? 0;
+
+      if (currentlyAssigned + validatedMonthlyLimit > vaultTotalDepositedHuman) {
+        return res.status(400).json({
+          message:
+            "Insufficient vault funds: creating this seat would exceed the vault's deposited amount",
+        });
+      }
+
       const seat = await prisma.seat.create({
         data: {
           name: name.trim(),
-          seatType: normalizedSeatType,
-          holderPubkey: holderKey.toBase58(),
+          seatType: onChainSeatType,
+          holderPubkey: onChainSeatData.holder.toBase58(),
           seatPda: seatPda.toBase58(),
-          monthlyLimit: validatedMonthlyLimit,
+          monthlyLimit: onChainSeatLimit,
+          consumed: toSafeNumber(onChainSeatData.consumed) ?? 0,
+          active: Boolean(onChainSeatData.active),
           company: {
             connect: {
               id: req.company.id,
@@ -1267,6 +1548,12 @@ app.patch(
         return res.status(404).json({ message: "Seat not found" });
       }
 
+      if (!req.company.vaultPda) {
+        return res
+          .status(400)
+          .json({ message: "Connect and initialize a vault first" });
+      }
+
       try {
         const tx = await connection.getTransaction(txSignature, {
           maxSupportedTransactionVersion: 0,
@@ -1307,12 +1594,25 @@ app.patch(
         });
       }
 
+      const onChainSeatData = await program.account.seatAccount.fetch(
+        new PublicKey(seat.seatPda)
+      );
+
+      if (!onChainSeatData.vault.equals(new PublicKey(req.company.vaultPda))) {
+        return res.status(400).json({
+          message: "Seat vault mismatch",
+        });
+      }
+
       const updatedSeat = await prisma.seat.update({
         where: {
           id: seat.id,
         },
         data: {
-          active: !seat.active,
+          active: Boolean(onChainSeatData.active),
+          consumed: toSafeNumber(onChainSeatData.consumed) ?? seat.consumed,
+          monthlyLimit:
+            toSafeNumber(onChainSeatData.limit) ?? seat.monthlyLimit,
           updatedByUser: {
             connect: {
               id: req.user.id,
@@ -1384,6 +1684,12 @@ app.patch(
         return res.status(404).json({ message: "Seat not found" });
       }
 
+      if (!req.company.vaultPda) {
+        return res
+          .status(400)
+          .json({ message: "Connect and initialize a vault first" });
+      }
+
       try {
         const tx = await connection.getTransaction(txSignature, {
           maxSupportedTransactionVersion: 0,
@@ -1424,12 +1730,34 @@ app.patch(
         });
       }
 
+      const onChainSeatData = await program.account.seatAccount.fetch(
+        new PublicKey(seat.seatPda)
+      );
+
+      if (!onChainSeatData.vault.equals(new PublicKey(req.company.vaultPda))) {
+        return res.status(400).json({
+          message: "Seat vault mismatch",
+        });
+      }
+
+      const onChainLimitRaw = toSafeNumber(onChainSeatData.limit);
+      const onChainLimit =
+        onChainLimitRaw === null ? null : Math.floor(onChainLimitRaw / 1_000_000);
+
+      if (onChainLimit === null || onChainLimit !== newLimit) {
+        return res.status(400).json({
+          message: "Seat limit does not match on-chain transaction",
+        });
+      }
+
       const updatedSeat = await prisma.seat.update({
         where: {
           id: seat.id,
         },
         data: {
-          monthlyLimit: newLimit,
+          monthlyLimit: onChainLimit,
+          consumed: toSafeNumber(onChainSeatData.consumed) ?? seat.consumed,
+          active: Boolean(onChainSeatData.active),
           updatedByUser: {
             connect: {
               id: req.user.id,

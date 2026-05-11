@@ -3,12 +3,16 @@
 import { useState } from "react";
 import { Button } from "@workspace/ui/components/button";
 import { DepositDialog } from "./deposit-dialog";
-import { WithdrawDialog } from "./withdraw-dialog";
+// import { WithdrawDialog } from "./withdraw-dialog";
 import { Plus, ArrowRightLeft } from "lucide-react";
 
-export function VaultActions() {
+type VaultActionsProps = {
+  onDeposited?: () => Promise<void> | void;
+};
+
+export function VaultActions({ onDeposited }: VaultActionsProps) {
   const [depositOpen, setDepositOpen] = useState(false);
-  const [withdrawOpen, setWithdrawOpen] = useState(false);
+  const [, setWithdrawOpen] = useState(false);
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -29,8 +33,12 @@ export function VaultActions() {
         <ArrowRightLeft className="mr-2 size-4" />
         Withdraw All
       </Button>
-      <DepositDialog open={depositOpen} onOpenChange={setDepositOpen} />
-      <WithdrawDialog open={withdrawOpen} onOpenChange={setWithdrawOpen} />
+      <DepositDialog
+        open={depositOpen}
+        onOpenChange={setDepositOpen}
+        onDeposited={onDeposited}
+      />
+      {/* <WithdrawDialog open={withdrawOpen} onOpenChange={setWithdrawOpen} /> */}
     </div>
   );
 }

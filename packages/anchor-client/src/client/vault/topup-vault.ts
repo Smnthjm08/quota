@@ -8,6 +8,14 @@ const TOKEN_PROGRAM = new PublicKey(
   "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
 );
 
+const ASSOCIATED_TOKEN_PROGRAM = new PublicKey(
+  "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA9w2q"
+);
+
+const SYSTEM_PROGRAM = new PublicKey(
+  "11111111111111111111111111111111"
+);
+
 type BrowserWallet = {
   publicKey: PublicKey;
   signTransaction: (transaction: Transaction) => Promise<Transaction>;
@@ -52,7 +60,7 @@ export async function buildTopupTransaction(
     commitment: "confirmed",
   });
 
-  const program = new Program<QuotaVault>(idl as QuotaVault, provider);
+  const program = new Program<QuotaVault>(idl as unknown as QuotaVault, provider);
 
   return program.methods
     .topupVault(new BN(amount))
@@ -63,7 +71,9 @@ export async function buildTopupTransaction(
       ownerTokenAccount: ownerTokenAccountPublicKey,
       vaultTokenAccount: vaultTokenAccountPublicKey,
       tokenProgram: TOKEN_PROGRAM,
-    })
+      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM,
+      systemProgram: SYSTEM_PROGRAM,
+    } as any)
     .transaction();
 }
 
@@ -94,7 +104,7 @@ export async function buildTopupInstruction(
     commitment: "confirmed",
   });
 
-  const program = new Program<QuotaVault>(idl as QuotaVault, provider);
+  const program = new Program<QuotaVault>(idl as unknown as QuotaVault, provider);
 
   return program.methods
     .topupVault(new BN(amount))
@@ -105,6 +115,8 @@ export async function buildTopupInstruction(
       ownerTokenAccount: ownerTokenAccountPublicKey,
       vaultTokenAccount: vaultTokenAccountPublicKey,
       tokenProgram: TOKEN_PROGRAM,
-    })
+      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM,
+      systemProgram: SYSTEM_PROGRAM,
+    } as any)
     .instruction();
 }

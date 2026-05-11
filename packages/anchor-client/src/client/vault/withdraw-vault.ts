@@ -1,59 +1,59 @@
-import { BN, AnchorProvider, Program } from "@coral-xyz/anchor";
-import { Connection, PublicKey, Transaction } from "@solana/web3.js";
-import type { QuotaVault } from "../../types/quota_vault.ts";
-import idl from "../../idl/quota_vault.json" with { type: "json" };
+// import { BN, AnchorProvider, Program } from "@coral-xyz/anchor";
+// import { Connection, PublicKey, Transaction } from "@solana/web3.js";
+// import type { QuotaVault } from "../../types/quota_vault.ts";
+// import idl from "../../idl/quota_vault.json" with { type: "json" };
 
-const TOKEN_PROGRAM = new PublicKey(
-  "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-);
+// const TOKEN_PROGRAM = new PublicKey(
+//   "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+// );
 
-type BrowserWallet = {
-  publicKey: PublicKey;
-  signTransaction: (transaction: Transaction) => Promise<Transaction>;
-  signAllTransactions: (transactions: Transaction[]) => Promise<Transaction[]>;
-};
+// type BrowserWallet = {
+//   publicKey: PublicKey;
+//   signTransaction: (transaction: Transaction) => Promise<Transaction>;
+//   signAllTransactions: (transactions: Transaction[]) => Promise<Transaction[]>;
+// };
 
-export interface BuildWithdrawTxParams {
-  connection: Connection;
-  ownerPublicKey: PublicKey;
-  vaultPublicKey: PublicKey;
-  vaultTokenAccountPublicKey: PublicKey;
-  ownerTokenAccountPublicKey: PublicKey;
-  amount: bigint | number;
-}
+// export interface BuildWithdrawTxParams {
+//   connection: Connection;
+//   ownerPublicKey: PublicKey;
+//   vaultPublicKey: PublicKey;
+//   vaultTokenAccountPublicKey: PublicKey;
+//   ownerTokenAccountPublicKey: PublicKey;
+//   amount: bigint | number;
+// }
 
-export async function buildWithdrawTransaction(
-  params: BuildWithdrawTxParams
-): Promise<Transaction> {
-  const {
-    connection,
-    ownerPublicKey,
-    vaultPublicKey,
-    vaultTokenAccountPublicKey,
-    ownerTokenAccountPublicKey,
-    amount,
-  } = params;
+// export async function buildWithdrawTransaction(
+//   params: BuildWithdrawTxParams
+// ): Promise<Transaction> {
+//   const {
+//     connection,
+//     ownerPublicKey,
+//     vaultPublicKey,
+//     vaultTokenAccountPublicKey,
+//     ownerTokenAccountPublicKey,
+//     amount,
+//   } = params;
 
-  const wallet: BrowserWallet = {
-    publicKey: ownerPublicKey,
-    signTransaction: async (transaction) => transaction,
-    signAllTransactions: async (transactions) => transactions,
-  };
+//   const wallet: BrowserWallet = {
+//     publicKey: ownerPublicKey,
+//     signTransaction: async (transaction) => transaction,
+//     signAllTransactions: async (transactions) => transactions,
+//   };
 
-  const provider = new AnchorProvider(connection, wallet as any, {
-    commitment: "confirmed",
-  });
+//   const provider = new AnchorProvider(connection, wallet as any, {
+//     commitment: "confirmed",
+//   });
 
-  const program = new Program<QuotaVault>(idl as QuotaVault, provider);
+//   const program = new Program<QuotaVault>(idl as QuotaVault, provider);
 
-  return program.methods
-    .withdrawFromVault(new BN(amount.toString()))
-    .accountsPartial({
-      owner: ownerPublicKey,
-      vault: vaultPublicKey,
-      vaultTokenAccount: vaultTokenAccountPublicKey,
-      ownerTokenAccount: ownerTokenAccountPublicKey,
-      tokenProgram: TOKEN_PROGRAM,
-    })
-    .transaction();
-}
+//   return program.methods
+//     .withdrawFromVault(new BN(amount.toString()))
+//     .accountsPartial({
+//       owner: ownerPublicKey,
+//       vault: vaultPublicKey,
+//       vaultTokenAccount: vaultTokenAccountPublicKey,
+//       ownerTokenAccount: ownerTokenAccountPublicKey,
+//       tokenProgram: TOKEN_PROGRAM,
+//     })
+//     .transaction();
+// }

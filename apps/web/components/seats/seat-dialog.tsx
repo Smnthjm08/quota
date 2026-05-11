@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AxiosError } from "axios";
 import { toast } from "sonner";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
@@ -8,6 +8,8 @@ import { PublicKey } from "@solana/web3.js";
 import { deriveVaultPda } from "@workspace/anchor-client";
 import { axiosInstance } from "@/lib/axios";
 import { buildCreateSeatTransaction } from "@/lib/seat-builder";
+import { useSeats } from "@/hooks/use-seats";
+import { useVault } from "@/hooks/use-vault";
 import { Button } from "@workspace/ui/components/button";
 import {
   Dialog,
@@ -41,7 +43,8 @@ const seatTypeOptions: { value: SeatType; label: string }[] = [
 ];
 
 function seatTypeToProgramValue(seatType: SeatType) {
-  return seatType === "HUMAN" ? 0 : 1;
+  // On-chain enum: 1 = HUMAN, 2 = AGENT
+  return seatType === "HUMAN" ? 1 : 2;
 }
 
 function generateSeatId(): bigint {
@@ -59,12 +62,26 @@ function generateSeatId(): bigint {
 export function SeatDialog({ open, onOpenChange, onCreated }: SeatDialogProps) {
   const { connection } = useConnection();
   const { publicKey, signTransaction } = useWallet();
+  const { vaultData } = useVault();
+  const { seats } = useSeats();
   const [name, setName] = useState("");
   const [holderPubkey, setHolderPubkey] = useState("");
   const [seatType, setSeatType] = useState<SeatType>("HUMAN");
   const [monthlyLimit, setMonthlyLimit] = useState("1000");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [vaultAllocation, setVaultAllocation] = useState<{
+    totalDeposited: number;
+    totalAssigned: number;
+    availableBalance: number;
+  } | null>(null);
+
+  const liveVaultBalance = vaultData?.totalDeposited ?? 0;
+  const liveUsedBalance = useMemo(
+    () => seats.reduce((total, seat) => total + seat.monthlyLimit, 0),
+    [seats]
+  );
+  const liveAvailableBalance = Math.max(liveVaultBalance - liveUsedBalance, 0);
 
   const resetForm = () => {
     setName("");
@@ -72,6 +89,7 @@ export function SeatDialog({ open, onOpenChange, onCreated }: SeatDialogProps) {
     setSeatType("HUMAN");
     setMonthlyLimit("1000");
     setErrorMessage(null);
+    setVaultAllocation(null);
   };
 
   const handleOpenChange = (nextOpen: boolean) => {
@@ -116,6 +134,13 @@ export function SeatDialog({ open, onOpenChange, onCreated }: SeatDialogProps) {
       return;
     }
 
+    if (parsedMonthlyLimit > liveAvailableBalance) {
+      setErrorMessage(
+        `Insufficient vault funds. Available balance is ${liveAvailableBalance.toFixed(2)} USDC, but this seat needs ${parsedMonthlyLimit.toFixed(2)} USDC.`
+      );
+      return;
+    }
+
     if (!publicKey) {
       setErrorMessage("Connect your wallet to create a seat on-chain.");
       return;
@@ -130,7 +155,7 @@ export function SeatDialog({ open, onOpenChange, onCreated }: SeatDialogProps) {
 
     try {
       holderPublicKey = new PublicKey(holderPubkey.trim());
-    } catch (error) {
+    } catch {
       setErrorMessage("Holder public key is invalid.");
       return;
     }
@@ -140,7 +165,7 @@ export function SeatDialog({ open, onOpenChange, onCreated }: SeatDialogProps) {
       const seatId = generateSeatId();
       const [vaultPda] = deriveVaultPda(publicKey);
 
-      const tx = await buildCreateSeatTransaction({
+      const result = await buildCreateSeatTransaction({
         connection,
         ownerPublicKey: publicKey,
         vaultPublicKey: vaultPda,
@@ -149,6 +174,15 @@ export function SeatDialog({ open, onOpenChange, onCreated }: SeatDialogProps) {
         seatType: seatTypeToProgramValue(seatType),
         monthlyLimit: parsedMonthlyLimit,
       });
+
+      // Store and display vault allocation info
+      setVaultAllocation({
+        totalDeposited: result.vaultAllocation.totalDepositedHuman,
+        totalAssigned: result.vaultAllocation.totalAssignedHuman,
+        availableBalance: result.vaultAllocation.availableBalanceHuman,
+      });
+
+      const tx = result.transaction;
 
       tx.feePayer = publicKey;
       const { blockhash, lastValidBlockHeight } =
@@ -208,6 +242,23 @@ export function SeatDialog({ open, onOpenChange, onCreated }: SeatDialogProps) {
             company vault automatically.
           </DialogDescription>
         </DialogHeader>
+
+        <div className="grid gap-2 rounded-lg border bg-muted/30 p-3 text-sm sm:grid-cols-3">
+          <div>
+            <p className="text-xs text-muted-foreground">Deposited</p>
+            <p className="font-semibold">{liveVaultBalance.toFixed(2)} USDC</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Used</p>
+            <p className="font-semibold">{liveUsedBalance.toFixed(2)} USDC</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Available</p>
+            <p className="font-semibold text-emerald-600">
+              {liveAvailableBalance.toFixed(2)} USDC
+            </p>
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit} className="grid gap-4">
           <div className="grid gap-4 sm:grid-cols-2">
@@ -270,8 +321,8 @@ export function SeatDialog({ open, onOpenChange, onCreated }: SeatDialogProps) {
           <Separator />
 
           <div className="rounded-lg border bg-muted/30 p-3 text-sm text-muted-foreground">
-            The backend validates the holder wallet, persists the seat, and
-            derives a unique seat PDA using the company vault.
+            The form checks vault availability before building the transaction,
+            and the backend still enforces the same limit on submission.
           </div>
 
           {errorMessage ? (

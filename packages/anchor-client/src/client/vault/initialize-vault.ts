@@ -50,6 +50,8 @@ export async function buildInitializeVaultTransaction(
 ): Promise<Transaction> {
   const { connection, ownerPublicKey, apiSignerPublicKey, planId } = params;
 
+  const [vaultPda] = deriveVaultPda(ownerPublicKey);
+
   const wallet: BrowserWallet = {
     publicKey: ownerPublicKey,
     signTransaction: async (transaction) => transaction,
@@ -65,6 +67,7 @@ export async function buildInitializeVaultTransaction(
   return program.methods
     .initializeVault(apiSignerPublicKey, planId)
     .accountsPartial({
+      vault: vaultPda,
       owner: ownerPublicKey,
       systemProgram: SystemProgram.programId,
     })

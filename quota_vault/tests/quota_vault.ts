@@ -2,6 +2,12 @@ import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { expect } from "chai";
 import { PublicKey } from "@solana/web3.js";
+import {
+  createMint,
+  getOrCreateAssociatedTokenAccount,
+  mintTo,
+  TOKEN_PROGRAM_ID,
+} from "@solana/spl-token";
 import { QuotaVault } from "../target/types/quota_vault";
 
 describe("quota_vault", () => {
@@ -10,17 +16,13 @@ describe("quota_vault", () => {
 
   const program = anchor.workspace.QuotaVault as Program<QuotaVault>;
 
-  // fresh owner each test run
   const ownerKeypair = anchor.web3.Keypair.generate();
   const owner = ownerKeypair.publicKey;
 
   const plan = 2;
 
   const [vaultPda] = PublicKey.findProgramAddressSync(
-    [
-      Buffer.from("vault"),
-      owner.toBuffer(),
-    ],
+    [Buffer.from("vault"), owner.toBuffer()],
     program.programId
   );
 
@@ -45,85 +47,138 @@ describe("quota_vault", () => {
   });
 
   it("Fetches initialized vault", async () => {
-    const vaultAccount =
-      await program.account.vaultAccount.fetch(vaultPda);
+    const vaultAccount = await program.account.vaultAccount.fetch(vaultPda);
 
-    expect(
-      vaultAccount.owner.toBase58()
-    ).to.equal(owner.toBase58());
-
-    expect(
-      vaultAccount.apiSigner.toBase58()
-    ).to.equal(owner.toBase58());
-
-    expect(
-      vaultAccount.active
-    ).to.equal(true);
-
-    expect(
-      vaultAccount.plan
-    ).to.equal(plan);
+    expect(vaultAccount.owner.toBase58()).to.equal(owner.toBase58());
+    expect(vaultAccount.apiSigner.toBase58()).to.equal(owner.toBase58());
+    expect(vaultAccount.active).to.equal(true);
+    expect(vaultAccount.plan).to.equal(plan);
 
     console.log("Vault account:", vaultAccount);
   });
 
-  it("Creates a seat", async () => {
-    // unique seat every run
+  it("Deposits to vault, creates seat, updates limit, and toggles", async () => {
     const seatId = new anchor.BN(Date.now());
+    const holder = anchor.web3.Keypair.generate().publicKey;
 
-    const holder =
-      anchor.web3.Keypair.generate().publicKey;
+    // On-chain enum: 1 = HUMAN, 2 = AGENT
+    const seatType = 1;
+    // Use base units for token amounts (6 decimals like USDC)
+    const monthlyLimit = new anchor.BN(1000).mul(new anchor.BN(1_000_000));
 
-    const seatType = 0;
-    const monthlyLimit = new anchor.BN(1000);
-
-    const [seatPda] = PublicKey.findProgramAddressSync(
-      [
-        Buffer.from("seat"),
-        vaultPda.toBuffer(),
-        seatId.toArrayLike(Buffer, "le", 8),
-      ],
-      program.programId
+    // Step 1: Create SPL mint (USDC-like with 6 decimals)
+    const mint = await createMint(
+      provider.connection,
+      ownerKeypair,
+      owner,
+      null,
+      6
     );
 
+    // Step 2: Create token accounts for owner and vault
+    const ownerTokenAccount = await getOrCreateAssociatedTokenAccount(
+      provider.connection,
+      ownerKeypair,
+      mint,
+      owner
+    );
+
+    const vaultTokenAccount = await getOrCreateAssociatedTokenAccount(
+      provider.connection,
+      ownerKeypair,
+      mint,
+      vaultPda
+    );
+
+    // Step 3: Mint 2000 USDC (in base units) to owner
+    const depositAmount = new anchor.BN(2000).mul(new anchor.BN(1_000_000));
+    await mintTo(
+      provider.connection,
+      ownerKeypair,
+      mint,
+      ownerTokenAccount.address,
+      ownerKeypair,
+      Number(depositAmount)
+    );
+
+    // Step 4: Call deposit_to_vault to move tokens and update vault.total_deposited
     await program.methods
-      .createSeat(
-        holder,
-        seatId,
-        seatType,
-        monthlyLimit
-      )
+      .depositToVault(new anchor.BN(Number(depositAmount)))
       .accountsPartial({
-        owner,
         vault: vaultPda,
+        authority: owner,
+        mint,
+        fromTokenAccount: ownerTokenAccount.address,
+        vaultTokenAccount: vaultTokenAccount.address,
+        tokenProgram: TOKEN_PROGRAM_ID,
       })
       .signers([ownerKeypair])
       .rpc();
 
-    const seatAccount =
-      await program.account.seatAccount.fetch(seatPda);
+    const vaultAfterDeposit = await program.account.vaultAccount.fetch(vaultPda);
+    console.log("After deposit — vault.total_deposited:", vaultAfterDeposit.totalDeposited.toString());
+    console.log("After deposit — vault.total_assigned:", vaultAfterDeposit.totalAssigned.toString());
 
-    console.log("Seat PDA:", seatPda.toBase58());
-    console.log("Seat account:", seatAccount);
+    // Step 5: Create seat (1000 USDC limit = 1000 * 1_000_000 base units)
+    const [seatPda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("seat"), vaultPda.toBuffer(), seatId.toArrayLike(Buffer, "le", 8)],
+      program.programId
+    );
 
-    expect(
-      seatAccount.vault.toBase58()
-    ).to.equal(vaultPda.toBase58());
+    await program.methods
+      .createSeat(holder, seatId, seatType, monthlyLimit)
+      .accountsPartial({ owner, vault: vaultPda })
+      .signers([ownerKeypair])
+      .rpc();
 
-    expect(
-      seatAccount.holder.toBase58()
-    ).to.equal(holder.toBase58());
+    const seatAccount = await program.account.seatAccount.fetch(seatPda);
+    console.log("After create — seat.limit:", seatAccount.limit.toString());
+    console.log("After create — seat.active:", seatAccount.active);
 
-    expect(
-      seatAccount.monthlyLimit.toString()
-    ).to.equal("1000");
+    expect(seatAccount.vault.toBase58()).to.equal(vaultPda.toBase58());
+    expect(seatAccount.holder.toBase58()).to.equal(holder.toBase58());
+    expect(seatAccount.limit.toString()).to.equal(monthlyLimit.toString());
+    expect(seatAccount.consumed.toString()).to.equal("0");
+    expect(seatAccount.active).to.equal(true);
+    expect(seatAccount.seatType).to.equal(seatType);
 
-    expect(
-      seatAccount.consumed.toString()
-    ).to.equal("0");
+    const vaultAfterCreate = await program.account.vaultAccount.fetch(vaultPda);
+    console.log("After create — vault.total_assigned:", vaultAfterCreate.totalAssigned.toString());
 
-    expect(
-      seatAccount.active
-    ).to.equal(true);
+    // Step 6: Update seat limit (500 USDC = 500 * 1_000_000 base units)
+    const newLimit = new anchor.BN(500).mul(new anchor.BN(1_000_000));
+
+    await program.methods
+      .updateSeatHandler(newLimit)
+      .accountsPartial({ authority: owner, vault: vaultPda, seat: seatPda })
+      .signers([ownerKeypair])
+      .rpc();
+
+    const updatedSeat = await program.account.seatAccount.fetch(seatPda);
+    console.log("After update — seat.limit:", updatedSeat.limit.toString());
+
+    expect(updatedSeat.limit.toString()).to.equal(newLimit.toString());
+
+    const vaultAfterUpdate = await program.account.vaultAccount.fetch(vaultPda);
+    console.log("After update — vault.total_assigned:", vaultAfterUpdate.totalAssigned.toString());
+
+    // Step 7: Toggle seat (deactivate)
+    await program.methods
+      .toggleSeatHandler()
+      .accountsPartial({ authority: owner, vault: vaultPda, seat: seatPda })
+      .signers([ownerKeypair])
+      .rpc();
+
+    const toggledSeat = await program.account.seatAccount.fetch(seatPda);
+    console.log("After toggle — seat.active:", toggledSeat.active);
+
+    expect(toggledSeat.active).to.equal(false);
+
+    // Step 8: Verify final vault state
+    const vaultFinal = await program.account.vaultAccount.fetch(vaultPda);
+    console.log("Final vault state:");
+    console.log("  total_deposited:", vaultFinal.totalDeposited.toString());
+    console.log("  total_assigned:", vaultFinal.totalAssigned.toString());
+    console.log("  active:", vaultFinal.active);
   });
 });
