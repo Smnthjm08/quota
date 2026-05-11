@@ -78,7 +78,11 @@ export function SeatDialog({ open, onOpenChange, onCreated }: SeatDialogProps) {
 
   const liveVaultBalance = vaultData?.totalDeposited ?? 0;
   const liveUsedBalance = useMemo(
-    () => seats.reduce((total, seat) => total + seat.monthlyLimit, 0),
+    () =>
+      seats.reduce(
+        (total, seat) => total + (seat.active ? seat.monthlyLimit : 0),
+        0
+      ),
     [seats]
   );
   const liveAvailableBalance = Math.max(liveVaultBalance - liveUsedBalance, 0);

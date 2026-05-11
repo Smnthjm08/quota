@@ -134,6 +134,31 @@ model VaultTopUp {
   @@map("vault_top_up")
 }
 
+enum UsageEventType {
+  VAULT_CREATED
+  VAULT_FUNDED
+  SEAT_CREATED
+  SEAT_UPDATED
+  SEAT_TOGGLED
+}
+
+model UsageEvent {
+  id          String         @id @default(cuid())
+  companyId   String
+  company     Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  seatId      String?
+  seat        Seat?          @relation(fields: [seatId], references: [id], onDelete: SetNull)
+  type        UsageEventType
+  title       String
+  amountUsdc  Int?
+  txSignature String?
+  metadata    Json?
+  createdAt   DateTime       @default(now())
+
+  @@index([companyId, createdAt(sort: Desc)])
+  @@map("usage_event")
+}
+
 model Subscription {
   id        String  @id @default(uuid())
   companyId String  @unique
@@ -195,6 +220,7 @@ model Company {
   subscription Subscription?
   seats        Seat[]
   vaultTopup   VaultTopUp[]
+  usageEvents  UsageEvent[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -222,6 +248,8 @@ model Seat {
 
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  usageEvents UsageEvent[]
 
   lastSpendAt DateTime?
 

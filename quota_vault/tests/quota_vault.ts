@@ -163,6 +163,9 @@ describe("quota_vault", () => {
     console.log("After update — vault.total_assigned:", vaultAfterUpdate.totalAssigned.toString());
 
     // Step 7: Toggle seat (deactivate)
+    const vaultBeforeToggle = await program.account.vaultAccount.fetch(vaultPda);
+    console.log("Before toggle — vault.total_assigned:", vaultBeforeToggle.totalAssigned.toString());
+
     await program.methods
       .toggleSeatHandler()
       .accountsPartial({ authority: owner, vault: vaultPda, seat: seatPda })
@@ -174,7 +177,29 @@ describe("quota_vault", () => {
 
     expect(toggledSeat.active).to.equal(false);
 
-    // Step 8: Verify final vault state
+    // Verify that deactivation released the seat limit from vault.total_assigned
+    const vaultAfterToggle = await program.account.vaultAccount.fetch(vaultPda);
+    console.log("After toggle — vault.total_assigned:", vaultAfterToggle.totalAssigned.toString());
+    console.log("  (Released:", newLimit.toString(), "back to available pool)");
+    expect(vaultAfterToggle.totalAssigned.toString()).to.equal("0");
+
+    // Step 8: Reactivate seat (toggle back on)
+    await program.methods
+      .toggleSeatHandler()
+      .accountsPartial({ authority: owner, vault: vaultPda, seat: seatPda })
+      .signers([ownerKeypair])
+      .rpc();
+
+    const reactivatedSeat = await program.account.seatAccount.fetch(seatPda);
+    console.log("After reactivate — seat.active:", reactivatedSeat.active);
+    expect(reactivatedSeat.active).to.equal(true);
+
+    // Verify that reactivation reserves the limit again
+    const vaultAfterReactivate = await program.account.vaultAccount.fetch(vaultPda);
+    console.log("After reactivate — vault.total_assigned:", vaultAfterReactivate.totalAssigned.toString());
+    expect(vaultAfterReactivate.totalAssigned.toString()).to.equal(newLimit.toString());
+
+    // Step 9: Verify final vault state
     const vaultFinal = await program.account.vaultAccount.fetch(vaultPda);
     console.log("Final vault state:");
     console.log("  total_deposited:", vaultFinal.totalDeposited.toString());

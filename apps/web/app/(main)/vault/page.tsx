@@ -1,27 +1,29 @@
 "use client";
 
-import { useMemo } from "react";
 import { VaultInfo } from "@/components/vault/vault-info";
 import { VaultStats } from "@/components/vault/vault-stats";
 import { VaultActions } from "@/components/vault/vault-actions";
-import { useVault } from "@/hooks/use-vault";
-import { useSeats } from "@/hooks/use-seats";
-import { Badge } from "@workspace/ui/components/badge";
+import { useUsage } from "@/hooks/use-usage";
+
+const usdcFormatter = new Intl.NumberFormat("en-US", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+function formatUsdc(value: number) {
+  return `${usdcFormatter.format(value)} USDC`;
+}
 
 
 export default function VaultPage() {
-  const { vaultData, isLoading, reloadVaultData } = useVault();
-  const { seats, reloadSeats } = useSeats();
+  const { data: usageData, isLoading, reloadUsage } = useUsage();
 
-  const vaultBalance = vaultData?.totalDeposited ?? 0;
-  const usedBalance = useMemo(
-    () => seats.reduce((total, seat) => total + seat.monthlyLimit, 0),
-    [seats]
-  );
-  const availableBalance = Math.max(vaultBalance - usedBalance, 0);
+  const vaultBalance = usageData?.summary.totalDeposited ?? 0;
+  const usedBalance = usageData?.summary.usedBalance ?? 0;
+  const availableBalance = usageData?.summary.availableBalance ?? 0;
 
   const refreshVaultState = async () => {
-    await Promise.all([reloadVaultData(), reloadSeats()]);
+    await reloadUsage();
   };
 
   return (
@@ -37,19 +39,19 @@ export default function VaultPage() {
               <div className="rounded-lg border bg-background px-3 py-2">
                 <p className="text-xs text-muted-foreground">Deposited</p>
                 <p className="text-sm font-semibold">
-                  {isLoading ? "Loading..." : `${vaultBalance.toFixed(2)} USDC`}
+                  {isLoading ? "Loading..." : formatUsdc(vaultBalance)}
                 </p>
               </div>
               <div className="rounded-lg border bg-background px-3 py-2">
-                <p className="text-xs text-muted-foreground">Used</p>
+                <p className="text-xs text-muted-foreground">Allocated to seats</p>
                 <p className="text-sm font-semibold">
-                  {isLoading ? "Loading..." : `${usedBalance.toFixed(2)} USDC`}
+                  {isLoading ? "Loading..." : formatUsdc(usedBalance)}
                 </p>
               </div>
               <div className="rounded-lg border bg-background px-3 py-2">
                 <p className="text-xs text-muted-foreground">Available</p>
                 <p className="text-sm font-semibold text-emerald-600">
-                  {isLoading ? "Loading..." : `${availableBalance.toFixed(2)} USDC`}
+                  {isLoading ? "Loading..." : formatUsdc(availableBalance)}
                 </p>
               </div>
             </div>

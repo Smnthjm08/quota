@@ -117,6 +117,42 @@ function toSafeNumber(value: unknown): number | null {
   return null;
 }
 
+const USDC_SCALE = 1_000_000;
+
+function formatUsdcAmount(value: number): string {
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 6,
+  }).format(value);
+}
+
+async function recordUsageEvent(params: {
+  companyId: string;
+  type:
+    | "VAULT_CREATED"
+    | "VAULT_FUNDED"
+    | "SEAT_CREATED"
+    | "SEAT_UPDATED"
+    | "SEAT_TOGGLED";
+  title: string;
+  amountUsdc?: number | null;
+  seatId?: string | null;
+  txSignature?: string | null;
+  metadata?: Record<string, unknown> | null;
+}) {
+  return prisma.usageEvent.create({
+    data: {
+      companyId: params.companyId,
+      type: params.type,
+      title: params.title,
+      amountUsdc: params.amountUsdc ?? null,
+      seatId: params.seatId ?? null,
+      txSignature: params.txSignature ?? null,
+      metadata: params.metadata ? (params.metadata as any) : undefined,
+    },
+  });
+}
+
 function normalizeSeatTypeInput(
   seatType: number | string | undefined
 ): "HUMAN" | "AGENT" | null {
@@ -448,7 +484,7 @@ app.post(
         ...(trialPeriodDays > 0
           ? { subscription_data: { trial_period_days: trialPeriodDays } }
           : {}),
-        allowed_payment_method_types: ["credit", "debit"],
+        allowed_payment_method_types: ["credit", "debit", "upi_collect", "upi_intent", "crypto_currency"],
         customer: {
           email: user.email,
           name: user.name,
@@ -1067,6 +1103,18 @@ app.post(
           },
         });
 
+        await recordUsageEvent({
+          companyId: company.id,
+          type: "VAULT_FUNDED",
+          title: "Vault funded",
+          amountUsdc: parsedAmount,
+          txSignature,
+          metadata: {
+            vaultPda: vaultPda.toBase58(),
+            source: "api_deposit",
+          },
+        });
+
         return res.status(200).json({
           message: "Vault funded successfully",
           data: {
@@ -1165,6 +1213,21 @@ app.post(
         },
       });
 
+      await recordUsageEvent({
+        companyId: req.company.id,
+        type: "VAULT_CREATED",
+        title:
+          fundingResult.txSignature && fundingResult.amount > 0
+            ? "Vault created and funded"
+            : "Vault created",
+        amountUsdc: fundingResult.amount > 0 ? fundingResult.amount : null,
+        txSignature: fundingResult.txSignature ?? txSignature ?? null,
+        metadata: {
+          vaultPda: updatedCompany.vaultPda,
+          fundedAmount: fundingResult.amount,
+        },
+      });
+
       return res.status(200).json({
         message:
           fundingResult.txSignature && fundingResult.amount > 0
@@ -1222,9 +1285,34 @@ app.get(
         },
         orderBy: [{ createdAt: "desc" }, { id: "asc" }],
       });
+
+      const normalizedSeats = await Promise.all(
+        seats.map(async (seat) => {
+          try {
+            const onChainSeatData = await program.account.seatAccount.fetch(
+              new PublicKey(seat.seatPda)
+            );
+            const onChainLimitRaw = toSafeNumber(onChainSeatData.limit);
+            const onChainConsumedRaw = toSafeNumber(onChainSeatData.consumed);
+
+            return {
+              ...seat,
+              active: Boolean(onChainSeatData.active),
+              consumed: onChainConsumedRaw ?? seat.consumed,
+              monthlyLimit:
+                onChainLimitRaw === null
+                  ? seat.monthlyLimit
+                  : Math.floor(onChainLimitRaw / 1_000_000),
+            };
+          } catch {
+            return seat;
+          }
+        })
+      );
+
       return res.status(200).json({
         message: "Seats fetched successfully",
-        data: seats,
+        data: normalizedSeats,
         error: null,
       });
     } catch (error) {
@@ -1233,6 +1321,93 @@ app.get(
     }
   }
 );
+app.get(
+  "/api/v1/usage",
+  authMiddleware,
+  companyMiddleware,
+  async (req, res) => {
+    try {
+      if (!req.company) {
+        return res.status(400).json({ message: "Company not found for user" });
+      }
+
+      const seats = await prisma.seat.findMany({
+        where: {
+          companyId: req.company.id,
+        },
+        orderBy: [{ active: "desc" }, { updatedAt: "desc" }, { id: "asc" }],
+      });
+
+      const usageEvents = await prisma.usageEvent.findMany({
+        where: {
+          companyId: req.company.id,
+        },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        include: {
+          seat: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      });
+
+      const vaultDeposited = req.company.vaultPda
+        ? (() => {
+            return 0;
+          })()
+        : 0;
+
+      let totalDeposited = vaultDeposited;
+
+      if (req.company.vaultPda) {
+        try {
+          const vaultAccount = await program.account.vaultAccount.fetch(
+            new PublicKey(req.company.vaultPda)
+          );
+          const vaultDepositedRaw = toSafeNumber(vaultAccount.totalDeposited);
+          totalDeposited =
+            vaultDepositedRaw === null
+              ? 0
+              : Math.floor(vaultDepositedRaw / 1_000_000);
+        } catch {
+          totalDeposited = 0;
+        }
+      }
+      const usedBalance = seats.reduce(
+        (total, seat) => total + (seat.active ? seat.monthlyLimit : 0),
+        0
+      );
+      const consumedBalance = seats.reduce(
+        (total, seat) => total + seat.consumed,
+        0
+      );
+      const availableBalance = Math.max(totalDeposited - usedBalance, 0);
+
+      return res.status(200).json({
+        message: "Usage fetched successfully",
+        data: {
+          summary: {
+            totalDeposited,
+            usedBalance,
+            availableBalance,
+            activeSeats: seats.filter((seat) => seat.active).length,
+            totalSeats: seats.length,
+            consumedBalance,
+          },
+          seats,
+          events: usageEvents,
+        },
+        error: null,
+      });
+    } catch (error) {
+      console.error("Error fetching usage:", error);
+      res.status(500).json({ message: "Failed to fetch usage" });
+    }
+  }
+);
+
 
 app.post(
   "/api/v1/seats",
@@ -1494,6 +1669,19 @@ app.post(
         },
       });
 
+      await recordUsageEvent({
+        companyId: req.company.id,
+        type: "SEAT_CREATED",
+        title: `Seat ${seat.name} created`,
+        amountUsdc: seat.monthlyLimit,
+        seatId: seat.id,
+        txSignature,
+        metadata: {
+          seatPda: seat.seatPda,
+          seatType: seat.seatType,
+        },
+      });
+
       return res.status(201).json({
         message: "Seat created successfully",
         data: {
@@ -1598,6 +1786,10 @@ app.patch(
         new PublicKey(seat.seatPda)
       );
 
+      const vaultOnChain = await program.account.vaultAccount.fetch(
+        new PublicKey(req.company.vaultPda)
+      );
+
       if (!onChainSeatData.vault.equals(new PublicKey(req.company.vaultPda))) {
         return res.status(400).json({
           message: "Seat vault mismatch",
@@ -1612,12 +1804,28 @@ app.patch(
           active: Boolean(onChainSeatData.active),
           consumed: toSafeNumber(onChainSeatData.consumed) ?? seat.consumed,
           monthlyLimit:
-            toSafeNumber(onChainSeatData.limit) ?? seat.monthlyLimit,
+            (() => {
+              const onChainLimitRaw = toSafeNumber(onChainSeatData.limit);
+              return onChainLimitRaw === null ? seat.monthlyLimit : Math.floor(onChainLimitRaw / 1_000_000);
+            })(),
           updatedByUser: {
             connect: {
               id: req.user.id,
             },
           },
+        },
+      });
+
+      await recordUsageEvent({
+        companyId: req.company.id,
+        type: "SEAT_TOGGLED",
+        title: `Seat ${updatedSeat.active ? "activated" : "deactivated"}`,
+        amountUsdc: updatedSeat.monthlyLimit,
+        seatId: updatedSeat.id,
+        txSignature,
+        metadata: {
+          active: updatedSeat.active,
+          consumed: updatedSeat.consumed,
         },
       });
 
@@ -1734,6 +1942,10 @@ app.patch(
         new PublicKey(seat.seatPda)
       );
 
+      const vaultOnChain = await program.account.vaultAccount.fetch(
+        new PublicKey(req.company.vaultPda)
+      );
+
       if (!onChainSeatData.vault.equals(new PublicKey(req.company.vaultPda))) {
         return res.status(400).json({
           message: "Seat vault mismatch",
@@ -1742,7 +1954,29 @@ app.patch(
 
       const onChainLimitRaw = toSafeNumber(onChainSeatData.limit);
       const onChainLimit =
-        onChainLimitRaw === null ? null : Math.floor(onChainLimitRaw / 1_000_000);
+        onChainLimitRaw === null ? null : Math.floor(onChainLimitRaw / USDC_SCALE);
+
+      const vaultTotalDepositedRaw =
+        toSafeNumber(vaultOnChain.totalDeposited) ?? 0;
+      const vaultTotalAssignedRaw = toSafeNumber(vaultOnChain.totalAssigned) ?? 0;
+      const availableBalanceBase = Math.max(
+        vaultTotalDepositedRaw - vaultTotalAssignedRaw,
+        0
+      );
+      const currentSeatLimitBase = onChainLimitRaw ?? seat.monthlyLimit * USDC_SCALE;
+      const requiredAdditionalBalanceBase = Math.max(
+        newLimit * USDC_SCALE - currentSeatLimitBase,
+        0
+      );
+      const requiredAdditionalBalanceHuman = requiredAdditionalBalanceBase / USDC_SCALE;
+      const availableBalanceHuman = availableBalanceBase / USDC_SCALE;
+
+      if (requiredAdditionalBalanceBase > availableBalanceBase) {
+        return res.status(400).json({
+          message:
+            `Insufficient vault funds. This update needs ${formatUsdcAmount(requiredAdditionalBalanceHuman)} more USDC, but only ${formatUsdcAmount(availableBalanceHuman)} USDC is available.`,
+        });
+      }
 
       if (onChainLimit === null || onChainLimit !== newLimit) {
         return res.status(400).json({
@@ -1763,6 +1997,19 @@ app.patch(
               id: req.user.id,
             },
           },
+        },
+      });
+
+      await recordUsageEvent({
+        companyId: req.company.id,
+        type: "SEAT_UPDATED",
+        title: "Seat limit updated",
+        amountUsdc: updatedSeat.monthlyLimit,
+        seatId: updatedSeat.id,
+        txSignature,
+        metadata: {
+          previousLimit: seat.monthlyLimit,
+          newLimit: updatedSeat.monthlyLimit,
         },
       });
 

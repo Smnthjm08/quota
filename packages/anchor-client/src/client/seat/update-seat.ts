@@ -3,6 +3,15 @@ import { Connection, PublicKey, Transaction } from "@solana/web3.js";
 import type { QuotaVault } from "../../types/quota_vault.ts";
 import idl from "../../idl/quota_vault.json" with { type: "json" };
 
+const USDC_SCALE = 1_000_000;
+
+function formatUsdcAmount(value: number): string {
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 6,
+  }).format(value);
+}
+
 export interface UpdateSeatResult {
   transaction: Transaction;
   vaultAllocation: {
@@ -61,15 +70,30 @@ export async function buildUpdateSeatTransaction(
     throw new Error(`Failed to fetch vault account: ${error}`);
   }
 
-  // Convert base units to human units
-  const totalDepositedHuman = vault.totalDeposited.toNumber() / 1_000_000;
-  const totalAssignedHuman = vault.totalAssigned.toNumber() / 1_000_000;
-  const availableBalanceHuman = totalDepositedHuman - totalAssignedHuman;
+  let currentSeat;
+  try {
+    currentSeat = await program.account.seatAccount.fetch(seatPublicKey);
+  } catch (error) {
+    throw new Error(`Failed to fetch seat account: ${error}`);
+  }
 
-  // Check if new limit exceeds available balance (conservative check)
-  if (newLimit > totalDepositedHuman) {
+  // Convert base units to human units
+  const totalDepositedBase = vault.totalDeposited.toNumber();
+  const totalAssignedBase = vault.totalAssigned.toNumber();
+  const totalDepositedHuman = totalDepositedBase / USDC_SCALE;
+  const totalAssignedHuman = totalAssignedBase / USDC_SCALE;
+  const availableBalanceHuman = totalDepositedHuman - totalAssignedHuman;
+  const currentSeatLimitBase = currentSeat.limit.toNumber();
+  const requiredAdditionalBalanceBase = Math.max(
+    newLimit * USDC_SCALE - currentSeatLimitBase,
+    0
+  );
+  const requiredAdditionalBalanceHuman = requiredAdditionalBalanceBase / USDC_SCALE;
+
+  // Check only the delta that needs to be reserved for this seat.
+  if (requiredAdditionalBalanceBase > totalDepositedBase - totalAssignedBase) {
     throw new Error(
-      `New limit (${newLimit} USDC) exceeds total vault balance (${totalDepositedHuman} USDC).`
+      `Insufficient vault funds. This update needs ${formatUsdcAmount(requiredAdditionalBalanceHuman)} more USDC, but only ${formatUsdcAmount(availableBalanceHuman)} USDC is available.`
     );
   }
 

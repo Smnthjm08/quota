@@ -100,7 +100,7 @@ export function EditSeatDialog({
       const seatPublicKey = new PublicKey(seat.seatPda);
       const [vaultPublicKey] = deriveVaultPda(publicKey);
 
-      const tx = await buildUpdateSeatTransaction({
+      const result = await buildUpdateSeatTransaction({
         connection,
         ownerPublicKey: publicKey,
         vaultPublicKey,
@@ -108,6 +108,7 @@ export function EditSeatDialog({
         newLimit: parsedNewLimit,
       } satisfies BuildUpdateSeatTxParams);
 
+      const tx = result.transaction;
       tx.feePayer = publicKey;
 
       const { blockhash, lastValidBlockHeight } =

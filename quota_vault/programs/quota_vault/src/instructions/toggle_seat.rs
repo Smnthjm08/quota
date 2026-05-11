@@ -36,7 +36,7 @@ pub struct ToggleSeat<'info> {
 }
 
 pub fn toggle_seat(ctx: Context<ToggleSeat>) -> Result<()> {
-    let vault = &ctx.accounts.vault;
+    let vault = &mut ctx.accounts.vault;
 
     require!(vault.active, QuotaError::VaultInactive);
 
@@ -44,7 +44,30 @@ pub fn toggle_seat(ctx: Context<ToggleSeat>) -> Result<()> {
 
     require!(seat.limit >= seat.consumed, QuotaError::InvalidLimit);
 
-    seat.active = !seat.active;
+    if seat.active {
+        // Deactivating a seat releases its reserved budget back to the vault.
+        vault.total_assigned = vault
+            .total_assigned
+            .checked_sub(seat.limit)
+            .ok_or(QuotaError::MathOverflow)?;
+        seat.active = false;
+    } else {
+        // Reactivating a seat reserves its budget again.
+        require!(
+            vault
+                .total_assigned
+                .checked_add(seat.limit)
+                .ok_or(QuotaError::MathOverflow)?
+                <= vault.total_deposited,
+            QuotaError::InsufficientFunds
+        );
+
+        vault.total_assigned = vault
+            .total_assigned
+            .checked_add(seat.limit)
+            .ok_or(QuotaError::MathOverflow)?;
+        seat.active = true;
+    }
 
     Ok(())
 }

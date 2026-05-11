@@ -62,6 +62,15 @@ function seatStatusLabel(active: boolean) {
   return active ? "Active" : "Inactive";
 }
 
+const usdcFormatter = new Intl.NumberFormat("en-US", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+function formatUsdc(value: number) {
+  return `${usdcFormatter.format(value)} USDC`;
+}
+
 function SeatRowActions({
   seat,
   onToggled,
@@ -210,8 +219,9 @@ export default function SeatsPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const seatLimit = company?.maxAllowedSeats ?? null;
+  const activeSeatCount = seats.filter((seat) => seat.active).length;
   const seatLimitReached =
-    typeof seatLimit === "number" && seats.length >= seatLimit;
+    typeof seatLimit === "number" && activeSeatCount >= seatLimit;
 
   return (
     <div className="@container/main flex flex-1 flex-col gap-2">
@@ -224,7 +234,7 @@ export default function SeatsPage() {
             </p>
             {typeof seatLimit === "number" ? (
               <p className="mt-1 text-sm text-muted-foreground">
-                {seats.length} / {seatLimit} seats used
+                {activeSeatCount} / {seatLimit} active seats used
               </p>
             ) : null}
           </div>
@@ -313,7 +323,7 @@ export default function SeatsPage() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {seat.monthlyLimit.toLocaleString()}
+                          {formatUsdc(seat.monthlyLimit)}
                         </TableCell>
                         <TableCell className="max-w-65 truncate font-mono text-xs text-muted-foreground">
                           {seat.seatPda}
