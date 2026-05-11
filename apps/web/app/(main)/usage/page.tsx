@@ -28,7 +28,8 @@ type UsageEvent = {
     | "VAULT_FUNDED"
     | "SEAT_CREATED"
     | "SEAT_UPDATED"
-    | "SEAT_TOGGLED";
+    | "SEAT_TOGGLED"
+    | "API_CONSUMED";
   title: string;
   amountUsdc: number | null;
   txSignature: string | null;
@@ -77,6 +78,10 @@ function eventBadgeVariant(type: UsageEvent["type"]) {
 
   if (type === "SEAT_CREATED") {
     return "secondary" as const;
+  }
+
+  if (type === "API_CONSUMED") {
+    return "destructive" as const;
   }
 
   return "outline" as const;
@@ -198,9 +203,14 @@ export default function UsagePage() {
                           {event.seat ? ` • Seat ${event.seat.name}` : ""}
                         </p>
                         {event.txSignature ? (
-                          <p className="truncate font-mono text-xs text-muted-foreground">
+                          <a
+                            href={`https://explorer.solana.com/tx/${event.txSignature}?cluster=devnet`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="truncate font-mono text-xs text-muted-foreground hover:text-primary hover:underline transition-colors"
+                          >
                             {event.txSignature}
-                          </p>
+                          </a>
                         ) : null}
                       </div>
 

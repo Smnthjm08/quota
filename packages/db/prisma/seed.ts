@@ -142,7 +142,16 @@ async function main() {
     },
   });
 
-  console.log("✅ Seeded plan configs");
+  await prisma.routeConfig.createMany({
+    data: [
+      { path: "/api/echo",     price: 1,  description: "Echo endpoint",           active: true },
+      { path: "/api/data",     price: 5,  description: "Data endpoint",           active: true },
+      { path: "/api/generate", price: 20, description: "AI generation endpoint",  active: true },
+    ],
+    skipDuplicates: true,
+  });
+
+  console.log("✅ Seeded plan and route configs");
 }
 
 main()

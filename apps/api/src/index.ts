@@ -2311,10 +2311,12 @@ app.use(
   }
 );
 
-const PORT = Number(process.env.API_PORT || process.env.PORT || 4000);
+import protectedRouter from "./routes/protected.ts";
+app.use("/api", protectedRouter);
 
+const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.info(`Server is running on port ${PORT}`);
 });
 
 export default app;

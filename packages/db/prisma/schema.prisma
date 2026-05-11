@@ -140,6 +140,7 @@ enum UsageEventType {
   SEAT_CREATED
   SEAT_UPDATED
   SEAT_TOGGLED
+  API_CONSUMED
 }
 
 model UsageEvent {
@@ -197,16 +198,16 @@ model DodoWebhookEvent {
 }
 
 model DodoPayment {
-  id            String   @id @default(cuid())
-  paymentId     String   @unique
-  companyId     String
-  company       Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  customerId    String?
+  id             String   @id @default(cuid())
+  paymentId      String   @unique
+  companyId      String
+  company        Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customerId     String?
   subscriptionId String?
-  amount        Int?
-  currency      String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  amount         Int?
+  currency       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@map("dodo_payment")
 }
@@ -284,3 +285,16 @@ model Seat {
   @@unique([companyId, holderPubkey])
   @@map("seat")
 }
+
+model RouteConfig {
+  id          String   @id @default(cuid())
+  path        String   @unique
+  price       Int
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("route_config")
+}
+

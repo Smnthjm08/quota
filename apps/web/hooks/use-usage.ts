@@ -19,7 +19,8 @@ export type UsageEvent = {
     | "VAULT_FUNDED"
     | "SEAT_CREATED"
     | "SEAT_UPDATED"
-    | "SEAT_TOGGLED";
+    | "SEAT_TOGGLED"
+    | "API_CONSUMED";
   title: string;
   amountUsdc: number | null;
   txSignature: string | null;
