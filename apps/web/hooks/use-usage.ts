@@ -81,6 +81,10 @@ export function useUsage() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+
   const loadUsage = useCallback(async () => {
     setErrorMessage(null);
 
@@ -109,10 +113,25 @@ export function useUsage() {
     return () => window.clearTimeout(timeoutId);
   }, [loadUsage]);
 
+  const paginatedEvents =
+    data?.events.slice(
+      (currentPage - 1) * itemsPerPage,
+      currentPage * itemsPerPage
+    ) ?? [];
+
+  const totalPages = data ? Math.ceil(data.events.length / itemsPerPage) : 0;
+
   return {
     data,
+    paginatedEvents,
     isLoading,
     errorMessage,
     reloadUsage,
+    pagination: {
+      currentPage,
+      totalPages,
+      setCurrentPage,
+      itemsPerPage,
+    },
   };
 }

@@ -112,7 +112,8 @@ export function SectionCards() {
             All-time usage
           </div>
           <div className="text-muted-foreground">
-            Billed through Dodo Payments
+            {/* Billed through Dodo Payments */}
+            Total Consumed = All time usage
           </div>
         </CardFooter>
       </Card>

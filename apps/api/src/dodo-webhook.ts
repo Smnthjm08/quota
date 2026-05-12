@@ -388,7 +388,32 @@ async function processTopupPayment(data: Record<string, unknown>) {
   const companyId = getCompanyId(data);
   const plan = await resolvePlan(data);
 
-  if (!companyId || !plan || plan.interval !== "ONETIME") {
+  if (!companyId || !plan) {
+    return;
+  }
+
+  // Determine topup amount
+  let topupAmountUsdc = 0;
+  let source = "manual_topup";
+
+  if (plan.interval === "ONETIME") {
+    topupAmountUsdc = plan.priceCents / 100;
+  } else if (plan.initDeposit && plan.initDeposit > 0) {
+    // Check if initial deposit was already processed for this company
+    const existingTopup = await prisma.vaultTopUp.findFirst({
+      where: {
+        companyId,
+        source: "subscription_activation",
+      },
+    });
+
+    if (!existingTopup) {
+      topupAmountUsdc = plan.initDeposit;
+      source = "subscription_activation";
+    }
+  }
+
+  if (topupAmountUsdc <= 0) {
     return;
   }
 
@@ -407,12 +432,7 @@ async function processTopupPayment(data: Record<string, unknown>) {
     ? new PublicKey(company.vaultPda)
     : new PublicKey(ownerWalletPubkey);
 
-  const amountInUsdc = plan.priceCents / 100;
-  if (!Number.isFinite(amountInUsdc) || amountInUsdc <= 0) {
-    return;
-  }
-
-  const depositAmount = new BN(Math.round(amountInUsdc * 1_000_000));
+  const depositAmount = new BN(Math.round(topupAmountUsdc * 1_000_000));
   const vaultTokenAccount = deriveAssociatedTokenAddress(vaultPda, USDC_MINT);
   const apiSignerTokenAccount = deriveAssociatedTokenAddress(
     apiSignerPublicKey,
@@ -464,8 +484,46 @@ async function processTopupPayment(data: Record<string, unknown>) {
   const { blockhash } = await connection.getLatestBlockhash("confirmed");
   transaction.recentBlockhash = blockhash;
 
-  await sendAndConfirmTransaction(connection, transaction, [apiKeypair], {
-    commitment: "confirmed",
+  const txSignature = await sendAndConfirmTransaction(
+    connection,
+    transaction,
+    [apiKeypair],
+    {
+      commitment: "confirmed",
+    }
+  );
+
+  const payment = getObjectValue(data.payment);
+  const paymentId =
+    toStringValue(data.payment_id) ??
+    toStringValue(payment?.id) ??
+    toStringValue(data.id);
+
+  // Record the top-up in the database
+  await prisma.vaultTopUp.create({
+    data: {
+      companyId,
+      amountUsdc: topupAmountUsdc,
+      source,
+      dodoPaymentId: paymentId,
+      txSignature,
+    },
+  });
+
+  // Record a usage event
+  await prisma.usageEvent.create({
+    data: {
+      companyId,
+      type: "VAULT_FUNDED",
+      title: `Vault Funded: $${topupAmountUsdc}`,
+      amountUsdc: Math.round(topupAmountUsdc),
+      txSignature,
+      metadata: {
+        planKey: plan.key,
+        dodoPaymentId: paymentId,
+        source,
+      },
+    },
   });
 }
 

@@ -1,61 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { axiosInstance } from "@/lib/axios";
+import { useUsage, type UsageEvent } from "@/hooks/use-usage";
 import { Badge } from "@workspace/ui/components/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@workspace/ui/components/table";
-
-type UsageSeat = {
-  id: string;
-  name: string;
-  active: boolean;
-  monthlyLimit: number;
-  consumed: number;
-  seatType: "HUMAN" | "AGENT";
-};
-
-type UsageEvent = {
-  id: string;
-  type:
-    | "VAULT_CREATED"
-    | "VAULT_FUNDED"
-    | "SEAT_CREATED"
-    | "SEAT_UPDATED"
-    | "SEAT_TOGGLED"
-    | "API_CONSUMED";
-  title: string;
-  amountUsdc: number | null;
-  txSignature: string | null;
-  createdAt: string;
-  seat?: {
-    id: string;
-    name: string;
-  } | null;
-};
-
-type UsageResponse = {
-  message: string;
-  data: {
-    summary: {
-      totalDeposited: number;
-      usedBalance: number;
-      availableBalance: number;
-      activeSeats: number;
-      totalSeats: number;
-      consumedBalance: number;
-      apiCallsToday: number;
-    };
-    seats: UsageSeat[];
-    events: UsageEvent[];
-  };
-};
+import { Button } from "@workspace/ui/components/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en", {
@@ -72,61 +20,30 @@ function formatAmount(value: number | null) {
   return `${value.toFixed(2)} USDC`;
 }
 
-function eventBadgeVariant(type: UsageEvent["type"]) {
-  if (type === "VAULT_CREATED" || type === "VAULT_FUNDED") {
-    return "default" as const;
+function eventBadgeVariant(
+  type: UsageEvent["type"]
+): "default" | "secondary" | "destructive" | "outline" {
+  switch (type) {
+    case "VAULT_FUNDED":
+      return "default";
+    case "VAULT_CREATED":
+      return "secondary";
+    case "SEAT_CREATED":
+      return "outline";
+    case "API_CONSUMED":
+      return "destructive";
+    case "SEAT_TOGGLED":
+    case "SEAT_UPDATED":
+      return "secondary";
+    default:
+      return "outline";
   }
-
-  if (type === "SEAT_CREATED") {
-    return "secondary" as const;
-  }
-
-  if (type === "API_CONSUMED") {
-    return "destructive" as const;
-  }
-
-  return "outline" as const;
 }
 
 export default function UsagePage() {
-  const [data, setData] = useState<UsageResponse["data"] | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadUsage() {
-      try {
-        setIsLoading(true);
-        setErrorMessage(null);
-
-        const response =
-          await axiosInstance.get<UsageResponse>("/api/v1/usage");
-        if (!cancelled) {
-          setData(response.data.data);
-        }
-      } catch (error) {
-        if (!cancelled) {
-          setErrorMessage(
-            error instanceof Error
-              ? error.message
-              : "We could not load usage right now."
-          );
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    void loadUsage();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { data, paginatedEvents, isLoading, errorMessage, pagination } =
+    useUsage();
+  const { currentPage, totalPages, setCurrentPage } = pagination;
 
   const summary = data?.summary;
 
@@ -185,9 +102,9 @@ export default function UsagePage() {
                 <div className="px-4 py-10 text-center text-sm text-muted-foreground">
                   Loading usage logs...
                 </div>
-              ) : data?.events.length ? (
+              ) : paginatedEvents.length ? (
                 <div className="divide-y">
-                  {data.events.map((event) => (
+                  {paginatedEvents.map((event) => (
                     <div
                       key={event.id}
                       className="flex flex-col gap-3 px-4 py-4 md:flex-row md:items-start md:justify-between"
@@ -232,10 +149,38 @@ export default function UsagePage() {
                 </div>
               )}
             </div>
+
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between border-t px-4 py-3">
+                <p className="text-xs text-muted-foreground">
+                  Page {currentPage} of {totalPages}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="px-4 lg:px-6">
+        {/* <div className="px-4 lg:px-6">
           <div className="overflow-hidden rounded-xl border bg-background shadow-sm">
             <div className="border-b px-4 py-3">
               <p className="text-sm font-medium">Current seats</p>
@@ -303,7 +248,7 @@ export default function UsagePage() {
               </Table>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

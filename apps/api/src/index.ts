@@ -30,7 +30,7 @@ import {
   maskedDodoApiKey,
   mode,
 } from "./lib/dodo-client.ts";
-import { dodoWebhooksHandler } from "./dodo-weebhook.ts";
+import { dodoWebhooksHandler } from "./dodo-webhook.ts";
 import authMiddleware from "./middlewares/auth.middleware.ts";
 
 const DEFAULT_USDC_MINT = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
@@ -888,12 +888,31 @@ app.post(
         });
       }
 
-      await prisma.company.update({
-        where: { id: company.id },
-        data: {
-          vaultPda: vaultPda.toBase58(),
-        },
-      });
+      await prisma.$transaction([
+        prisma.company.update({
+          where: { id: company.id },
+          data: {
+            vaultPda: vaultPda.toBase58(),
+          },
+        }),
+        prisma.vaultTopUp.create({
+          data: {
+            companyId: company.id,
+            amountUsdc: parsedAmount,
+            source: "crypto_deposit",
+            txSignature,
+          },
+        }),
+        prisma.usageEvent.create({
+          data: {
+            companyId: company.id,
+            type: "VAULT_FUNDED",
+            title: `Vault Funded (Manual): $${parsedAmount}`,
+            amountUsdc: Math.round(parsedAmount),
+            txSignature,
+          },
+        }),
+      ]);
 
       return res.status(200).json({
         message: "Deposit recorded successfully",
@@ -1573,10 +1592,11 @@ app.get(
               ...seat,
               active: Boolean(onChainSeatData.active),
               consumed: onChainConsumedRaw ?? seat.consumed,
-              monthlyLimit:
-                onChainLimitRaw === null
+              monthlyLimit: Boolean(onChainSeatData.active)
+                ? onChainLimitRaw === null
                   ? seat.monthlyLimit
-                  : Math.floor(onChainLimitRaw / 1_000_000),
+                  : Math.floor(onChainLimitRaw / 1_000_000)
+                : 0,
             };
           } catch {
             return seat;
@@ -1678,9 +1698,13 @@ app.get(
             consumedBalance,
             apiCallsToday,
           },
-          seats,
+          seats: seats.map((seat) => ({
+            ...seat,
+            monthlyLimit: seat.active ? seat.monthlyLimit : 0,
+          })),
           events: usageEvents,
         },
+
         error: null,
       });
     } catch (error) {
@@ -2099,6 +2123,11 @@ app.patch(
           active: Boolean(onChainSeatData.active),
           consumed: toSafeNumber(onChainSeatData.consumed) ?? seat.consumed,
           monthlyLimit: (() => {
+            // If the seat is inactive, its allocated balance is returned to the vault,
+            // so we set the database limit to 0 to reflect the current on-chain state.
+            if (!onChainSeatData.active) {
+              return 0;
+            }
             const onChainLimitRaw = toSafeNumber(onChainSeatData.limit);
             return onChainLimitRaw === null
               ? seat.monthlyLimit
