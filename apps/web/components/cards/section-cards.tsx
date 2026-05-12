@@ -9,93 +9,111 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card";
-import { TrendingUpIcon, TrendingDownIcon } from "lucide-react";
+import { useUsage } from "@/hooks/use-usage";
+import { ActivityIcon, CoinsIcon, UsersIcon, ZapIcon } from "lucide-react";
 
 export function SectionCards() {
+  const { data, isLoading } = useUsage();
+
+  const summary = data?.summary;
+
   return (
     <div className="grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4 dark:*:data-[slot=card]:bg-card">
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Total Revenue</CardDescription>
+          <CardDescription>Vault USDC Balance</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            $1,250.00
+            {isLoading
+              ? "..."
+              : (summary?.availableBalance ?? 0).toLocaleString()}
           </CardTitle>
           <CardAction>
             <Badge variant="outline">
-              <TrendingUpIcon />
-              +12.5%
+              <CoinsIcon className="mr-1 size-3" />
+              USDC
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Trending up this month <TrendingUpIcon className="size-4" />
+            Available to consume
           </div>
           <div className="text-muted-foreground">
-            Visitors for the last 6 months
+            Total deposited:{" "}
+            {isLoading
+              ? "..."
+              : (summary?.totalDeposited ?? 0).toLocaleString()}{" "}
+            USDC
           </div>
         </CardFooter>
       </Card>
+
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>New Customers</CardDescription>
+          <CardDescription>Total Seats</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            1,234
+            {isLoading ? "..." : (summary?.totalSeats ?? 0)}
           </CardTitle>
           <CardAction>
             <Badge variant="outline">
-              <TrendingDownIcon />
-              -20%
+              <UsersIcon className="mr-1 size-3" />
+              Seats
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Down 20% this period <TrendingDownIcon className="size-4" />
+            Agent and human access
           </div>
           <div className="text-muted-foreground">
-            Acquisition needs attention
+            {isLoading ? "..." : (summary?.activeSeats ?? 0)} active currently
           </div>
         </CardFooter>
       </Card>
+
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Active Accounts</CardDescription>
+          <CardDescription>API Calls Today</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            45,678
+            {isLoading ? "..." : (summary?.apiCallsToday ?? 0).toLocaleString()}
           </CardTitle>
           <CardAction>
             <Badge variant="outline">
-              <TrendingUpIcon />
-              +12.5%
+              <ActivityIcon className="mr-1 size-3" />
+              Calls
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Strong user retention <TrendingUpIcon className="size-4" />
+            Real-time on-chain logs
           </div>
-          <div className="text-muted-foreground">Engagement exceed targets</div>
+          <div className="text-muted-foreground">Enforced by Quota program</div>
         </CardFooter>
       </Card>
+
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Growth Rate</CardDescription>
+          <CardDescription>Total Consumed</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            4.5%
+            {isLoading
+              ? "..."
+              : (summary?.consumedBalance ?? 0).toLocaleString()}
           </CardTitle>
           <CardAction>
             <Badge variant="outline">
-              <TrendingUpIcon />
-              +4.5%
+              <ZapIcon className="mr-1 size-3" />
+              Used
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Steady performance increase <TrendingUpIcon className="size-4" />
+            All-time usage
           </div>
-          <div className="text-muted-foreground">Meets growth projections</div>
+          <div className="text-muted-foreground">
+            Billed through Dodo Payments
+          </div>
         </CardFooter>
       </Card>
     </div>

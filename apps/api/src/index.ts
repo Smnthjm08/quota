@@ -339,6 +339,25 @@ app.get("/api/config", (req, res) => {
   });
 });
 
+app.get("/api/v1/public/plans", async (req, res) => {
+  try {
+    const plans = await prisma.plan.findMany({
+      orderBy: [{ priceCents: "asc" }, { id: "asc" }],
+      where: {
+        interval: "MONTH",
+      },
+    });
+    return res.status(200).json({
+      message: "Plans fetched successfully",
+      data: plans,
+      error: null,
+    });
+  } catch (error) {
+    console.error("Public plans fetch error:", error);
+    res.status(500).json({ error: "Failed to fetch plans" });
+  }
+});
+
 app.post("/api/v1/onboarding/company", authMiddleware, async (req, res) => {
   try {
     const { name, size, website, address, state, city, pin_code } = req.body;
@@ -1641,6 +1660,12 @@ app.get(
       );
       const availableBalance = Math.max(totalDeposited - usedBalance, 0);
 
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const apiCallsToday = usageEvents.filter(
+        (e) => e.type === "API_CONSUMED" && new Date(e.createdAt) >= today
+      ).length;
+
       return res.status(200).json({
         message: "Usage fetched successfully",
         data: {
@@ -1651,6 +1676,7 @@ app.get(
             activeSeats: seats.filter((seat) => seat.active).length,
             totalSeats: seats.length,
             consumedBalance,
+            apiCallsToday,
           },
           seats,
           events: usageEvents,

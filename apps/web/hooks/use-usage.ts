@@ -38,6 +38,7 @@ export type UsageSummary = {
   activeSeats: number;
   totalSeats: number;
   consumedBalance: number;
+  apiCallsToday: number;
 };
 
 export type UsageData = {

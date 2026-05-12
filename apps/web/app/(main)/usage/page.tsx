@@ -50,6 +50,7 @@ type UsageResponse = {
       activeSeats: number;
       totalSeats: number;
       consumedBalance: number;
+      apiCallsToday: number;
     };
     seats: UsageSeat[];
     events: UsageEvent[];
@@ -207,7 +208,7 @@ export default function UsagePage() {
                             href={`https://explorer.solana.com/tx/${event.txSignature}?cluster=devnet`}
                             target="_blank"
                             rel="noreferrer"
-                            className="truncate font-mono text-xs text-muted-foreground hover:text-primary hover:underline transition-colors"
+                            className="truncate font-mono text-xs text-muted-foreground transition-colors hover:text-primary hover:underline"
                           >
                             {event.txSignature}
                           </a>

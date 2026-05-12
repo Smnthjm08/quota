@@ -1,6 +1,7 @@
+"use client";
+
 import Link from "next/link";
 import { Check } from "lucide-react";
-
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import {
@@ -10,149 +11,121 @@ import {
   CardTitle,
 } from "@workspace/ui/components/card";
 
-import { SectionHeading } from "./section-heading";
-
 const plans = [
   {
-    name: "Starter",
-    price: "$20",
-    subtitle: "For small teams and indie developers",
-    seatLimit: "Up to 5 seats",
-    allocation: "20 USDC monthly budget",
-    credits: "10,000 per month",
-    features: [
-      "On-chain quota enforcement",
-      "Usage dashboard",
-      "Dodo billing portal",
-      "Email support",
-    ],
-    cta: "Get started",
-    highlighted: false,
+    id: 1,
+    key: "free",
+    name: "Free Plan",
+    priceCents: 0,
+    maxAllowedSeats: 2,
+    initDeposit: 1,
+    subtitle: "Perfect for exploring on-chain spend control.",
   },
   {
-    name: "Team",
-    price: "$50",
-    subtitle: "For growing teams with multiple agents",
-    seatLimit: "Up to 25 seats",
-    allocation: "50 USDC monthly budget",
-    credits: "50,000 per month",
-    features: [
-      "Everything in Starter",
-      "Priority support",
-      "Advanced usage analytics",
-      "Custom credit costs per route",
-      "Managed wallet option",
-    ],
-    cta: "Get started",
-    highlighted: true,
+    id: 2,
+    key: "starter",
+    name: "Starter Plan",
+    priceCents: 2000,
+    maxAllowedSeats: 5,
+    initDeposit: 5,
+    subtitle: "Ideal for individual agents and small projects.",
+  },
+  {
+    id: 3,
+    key: "team",
+    name: "Team Plan",
+    priceCents: 5000,
+    maxAllowedSeats: 25,
+    initDeposit: 25,
+    subtitle: "Perfect for scaling agent fleets across teams.",
   },
 ];
 
 export function PricingSection() {
   return (
-    <section id="pricing" className="px-6 py-20 lg:px-8">
+    <section
+      id="pricing"
+      className="bg-background/50 px-6 py-24 sm:py-32 lg:px-8"
+    >
       <div className="mx-auto max-w-7xl">
-        <SectionHeading
-          label="Pricing"
-          title="Simple pricing. Predictable costs."
-          description="Your subscription funds your vault. Your vault controls your agents. No hidden fees. No per-call charges from Quota."
-          className="mb-10"
-        />
+        <div className="mb-16 text-center">
+          <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-5xl">
+            Simple, transparent pricing
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
+            Your subscription directly funds your vault. Every dollar you pay is
+            available for your agents to spend.
+          </p>
+        </div>
 
-        <div className="grid gap-5 lg:grid-cols-2">
+        <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-3">
           {plans.map((plan) => (
             <Card
-              key={plan.name}
-              className={
-                plan.highlighted
-                  ? "relative border-cyan-400/25 bg-linear-to-b from-cyan-400/10 to-white/5 shadow-[0_30px_80px_rgba(8,145,178,0.18)]"
-                  : "border-white/10 bg-white/4"
-              }
+              key={plan.id}
+              className={`border-border/40 bg-card/50 backdrop-blur-sm transition-all hover:border-primary/30 ${
+                plan.key === "team"
+                  ? "border-primary/30 shadow-xl ring-1 shadow-primary/5 ring-primary/20"
+                  : ""
+              }`}
             >
-              {plan.highlighted ? (
-                <div className="absolute top-5 right-5">
-                  <Badge className="bg-cyan-400 text-slate-950 hover:bg-cyan-300">
-                    Most popular
-                  </Badge>
-                </div>
-              ) : null}
-
-              <CardHeader className="space-y-4 pb-0">
-                <div>
-                  <p className="text-sm tracking-[0.24em] text-slate-400 uppercase">
+              <CardHeader className="p-8 pb-0">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold tracking-widest text-primary uppercase">
                     {plan.name}
                   </p>
-                  <CardTitle className="mt-3 text-4xl font-semibold text-white">
-                    {plan.price}
-                    <span className="ml-2 text-base font-normal text-slate-400">
-                      per month
-                    </span>
-                  </CardTitle>
+                  {plan.key === "team" && (
+                    <Badge
+                      variant="outline"
+                      className="rounded-full border-primary/30 bg-primary/10 text-primary"
+                    >
+                      Popular
+                    </Badge>
+                  )}
                 </div>
-                <p className="text-sm text-slate-300">{plan.subtitle}</p>
+                <CardTitle className="mt-4 flex items-baseline gap-1 text-4xl font-bold">
+                  ${(plan.priceCents / 100).toFixed(0)}
+                  <span className="text-sm font-normal text-muted-foreground">
+                    /mo
+                  </span>
+                </CardTitle>
               </CardHeader>
 
-              <CardContent className="space-y-6 pt-6">
-                <div className="grid gap-3 text-sm text-slate-300 sm:grid-cols-3">
-                  <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                    <p className="text-xs tracking-[0.24em] text-slate-500 uppercase">
-                      Seat limit
-                    </p>
-                    <p className="mt-2 text-base text-white">
-                      {plan.seatLimit}
-                    </p>
+              <CardContent className="space-y-8 p-8 pt-6">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 text-sm text-foreground/80">
+                    <Check className="size-4 text-primary" />
+                    <span>
+                      {plan.maxAllowedSeats || "Unlimited"} seats included
+                    </span>
                   </div>
-                  <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                    <p className="text-xs tracking-[0.24em] text-slate-500 uppercase">
-                      Vault allocation
-                    </p>
-                    <p className="mt-2 text-base text-white">
-                      {plan.allocation}
-                    </p>
+                  <div className="flex items-center gap-3 text-sm text-foreground/80">
+                    <Check className="size-4 text-primary" />
+                    <span>${plan.initDeposit} initial vault deposit</span>
                   </div>
-                  <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                    <p className="text-xs tracking-[0.24em] text-slate-500 uppercase">
-                      Credits per seat
-                    </p>
-                    <p className="mt-2 text-base text-white">{plan.credits}</p>
+                  <div className="flex items-center gap-3 text-sm text-foreground/80">
+                    <Check className="size-4 text-primary" />
+                    <span>On-chain spend control</span>
                   </div>
-                </div>
-
-                <div className="space-y-3">
-                  {plan.features.map((feature) => (
-                    <div
-                      key={feature}
-                      className="flex items-center gap-3 text-sm text-slate-300"
-                    >
-                      <span className="flex size-5 items-center justify-center rounded-full bg-cyan-400/10 text-cyan-200">
-                        <Check className="size-3.5" />
-                      </span>
-                      {feature}
-                    </div>
-                  ))}
+                  <div className="flex items-center gap-3 text-sm text-foreground/80">
+                    <Check className="size-4 text-primary" />
+                    <span>Dodo Payments integration</span>
+                  </div>
                 </div>
 
                 <Button
                   asChild
-                  size="lg"
-                  className={
-                    plan.highlighted
-                      ? "w-full rounded-full bg-cyan-400 text-slate-950 hover:bg-cyan-300"
-                      : "w-full rounded-full bg-white/10 text-white hover:bg-white/15"
-                  }
+                  className={`h-12 w-full rounded-full font-semibold transition-all ${
+                    plan.key === "team"
+                      ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                      : "bg-muted text-foreground hover:bg-muted/80"
+                  }`}
                 >
-                  <Link href="/signup">{plan.cta}</Link>
+                  <Link href="/signup">Start with {plan.name}</Link>
                 </Button>
               </CardContent>
             </Card>
           ))}
         </div>
-
-        <p className="mt-5 text-sm text-slate-400">
-          All plans include a managed wallet option. No Solana experience
-          required. Your vault is funded automatically when your subscription
-          activates.
-        </p>
       </div>
     </section>
   );

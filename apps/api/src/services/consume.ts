@@ -27,11 +27,16 @@ export async function consumeOnChain(
   } catch (err: any) {
     const msg = err.message ?? "";
 
-    if (msg.includes("QuotaExceeded")) return { success: false, error: "quota_exceeded" };
-    if (msg.includes("SeatInactive")) return { success: false, error: "seat_inactive" };
-    if (msg.includes("VaultInactive")) return { success: false, error: "vault_inactive" };
-    if (msg.includes("MathOverflow")) return { success: false, error: "math_overflow" };
-    if (msg.includes("Unauthorized")) return { success: false, error: "unauthorized" };
+    if (msg.includes("QuotaExceeded"))
+      return { success: false, error: "quota_exceeded" };
+    if (msg.includes("SeatInactive"))
+      return { success: false, error: "seat_inactive" };
+    if (msg.includes("VaultInactive"))
+      return { success: false, error: "vault_inactive" };
+    if (msg.includes("MathOverflow"))
+      return { success: false, error: "math_overflow" };
+    if (msg.includes("Unauthorized"))
+      return { success: false, error: "unauthorized" };
 
     console.error("consume error:", msg);
     return { success: false, error: "consume_failed" };

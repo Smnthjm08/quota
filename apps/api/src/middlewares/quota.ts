@@ -1,4 +1,4 @@
-import { Request, Response, type NextFunction } from "express";
+import type { Request, Response, NextFunction } from "express";
 import { consumeOnChain } from "../services/consume.ts";
 import { prisma } from "@workspace/db";
 
@@ -15,7 +15,8 @@ export function quotaMiddleware() {
     if (!walletPubkey) {
       return res.status(401).json({
         error: "missing_identity",
-        message: "Include x-wallet-pubkey header with your agent wallet address",
+        message:
+          "Include x-wallet-pubkey header with your agent wallet address",
       });
     }
 
@@ -58,7 +59,8 @@ export function quotaMiddleware() {
       const errorMessages: Record<string, string> = {
         quota_exceeded: `Monthly quota exhausted for seat ${seat.name}. Resets on ${getResetDate(seat)}.`,
         seat_inactive: `Seat ${seat.name} has been suspended. Contact your administrator.`,
-        vault_inactive: "Organization vault is inactive. Check your billing status.",
+        vault_inactive:
+          "Organization vault is inactive. Check your billing status.",
         consume_failed: "Unable to verify quota. Please retry.",
       };
 
@@ -94,6 +96,7 @@ export function quotaMiddleware() {
           seatId: seat.id,
           type: "API_CONSUMED",
           title: `API Request: ${req.path}`,
+          amountUsdc: routeConfig.price,
           txSignature: result.txSig ?? null,
           metadata: { route: req.path, price: routeConfig.price },
         },
