@@ -15,7 +15,8 @@
     "db:studio": "turbo run db:studio",
     "db:test": "turbo run db:test",
     "db:seed": "turbo run db:seed",
-    "anchor:sync": "cp quota_vault/target/idl/quota_vault.json packages/anchor-client/src/idl/ && cp quota_vault/target/types/quota_vault.ts packages/anchor-client/src/types/"
+    "anchor:sync": "cp quota_vault/target/idl/quota_vault.json packages/anchor-client/src/idl/ && cp quota_vault/target/types/quota_vault.ts packages/anchor-client/src/types/",
+    "demo:agent": "cd scripts/agent && npm install --silent && npx tsx run-agent.ts"
   },
   "devDependencies": {
     "@workspace/eslint-config": "workspace:*",

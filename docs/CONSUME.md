@@ -25,17 +25,17 @@ When a request hits a protected route, the following happens:
 
 There is a pre-built agent simulation script in your codebase that you can use to test the flow immediately.
 
-**Location**: `demo/run-agent.ts`
+**Location**: `scripts/agent/run-agent.ts`
 
 **To run it**:
 
 1. Open a new terminal.
 2. Ensure your API is running (`pnpm run dev` at port 4000).
-3. Update the `AGENT_PUBKEY` in `apps/agent/src/index.ts` to match the seat you created.
+3. Update the `AGENT_PUBKEY` in `scripts/agent/run-agent.ts` to match the seat you created.
 4. Run the script:
    ```bash
    # From the root directory
-   pnpm --filter agent run start
+   pnpm run demo:agent
    ```
 
 #### Step C: Manual Test with CURL
@@ -77,11 +77,14 @@ To verify that the "Firewall" actually blocks requests:
    }
    ```
 
+
 ### Documentation Reference
 
 - **Middleware Logic**: [quota.ts](file:///Users/smnthjm08/Desktop/qouta-app/apps/api/src/middlewares/quota.ts)
-- **On-Chain Service**: [consume.ts](file:///Users/smnthjm08/Desktop/qouta-app/apps/api/src/services/consume.ts)
-- **Demo Script**: [run-agent.ts](file:///Users/smnthjm08/Desktop/qouta-app/demo/run-agent.ts)
+- **On-Chain Service**: [services/consume.ts](file:///Users/smnthjm08/Desktop/qouta-app/apps/api/src/services/consume.ts)
+- **Anchor Client (browser tx-builder)**: [client/seat/consume.ts](file:///Users/smnthjm08/Desktop/qouta-app/packages/anchor-client/src/client/seat/consume.ts)
+- **Demo Agent Script**: [scripts/agent/run-agent.ts](file:///Users/smnthjm08/Desktop/qouta-app/scripts/agent/run-agent.ts)
+- **Solana Program**: [consume.rs](file:///Users/smnthjm08/Desktop/qouta-app/quota_vault/programs/quota_vault/src/instructions/consume.rs)
 
 > [!TIP]
-> Since you are running **ngrok** on port 4000, you can also test this by pointing the `API_BASE` in the demo script to your ngrok URL to test "external" access!
+> Since you are running **ngrok** on port 4000, you can also test this by pointing the `API_BASE` in `apps/agent/src/index.ts` to your ngrok URL to test "external" access!

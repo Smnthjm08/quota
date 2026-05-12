@@ -4,7 +4,9 @@ import { prisma } from "@workspace/db";
 
 export function quotaMiddleware() {
   return async (req: Request, res: Response, next: NextFunction) => {
-    console.log(`[QuotaMiddleware] Request: ${req.method} ${req.baseUrl}${req.path}`);
+    console.log(
+      `[QuotaMiddleware] Request: ${req.method} ${req.baseUrl}${req.path}`
+    );
     // 1. get route cost from database
     const fullPath = req.baseUrl + req.path;
     const routeConfig = await prisma.routeConfig.findFirst({
