@@ -1,0 +1,19 @@
+{
+  "name": "agent",
+  "version": "1.0.0",
+  "description": "Demo agent for Quota",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "@types/node-fetch": "^2.6.12",
+    "tsx": "^4.19.3",
+    "typescript": "^5.9.3"
+  }
+}

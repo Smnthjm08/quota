@@ -9,7 +9,7 @@ router.get("/echo", (req, res) => {
   const seat = (req as any).seat;
   res.json({
     message: "hello from Quota",
-    seat: seat.name,
+    seat: seat?.name || "anonymous",
     timestamp: Date.now(),
     txSignature: (req as any).txSignature,
   });
@@ -24,7 +24,7 @@ router.get("/data", (req, res) => {
       { id: 2, metric: "price_remaining", value: 453 },
       { id: 3, metric: "vault_balance", value: "48.50 USDC" },
     ],
-    seat: seat.name,
+    seat: seat?.name || "anonymous",
     priceUsed: 5,
     txSignature: (req as any).txSignature,
   });
@@ -38,7 +38,7 @@ router.post("/generate", async (req, res) => {
   res.json({
     result: `AI response to: "${prompt}" — generated with on-chain quota enforcement by Quota.`,
     model: "quota-demo-v1",
-    seat: seat.name,
+    seat: seat?.name || "anonymous",
     priceUsed: 20,
     txSignature: (req as any).txSignature,
   });

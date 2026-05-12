@@ -4,9 +4,11 @@ import { prisma } from "@workspace/db";
 
 export function quotaMiddleware() {
   return async (req: Request, res: Response, next: NextFunction) => {
+    console.log(`[QuotaMiddleware] Request: ${req.method} ${req.baseUrl}${req.path}`);
     // 1. get route cost from database
+    const fullPath = req.baseUrl + req.path;
     const routeConfig = await prisma.routeConfig.findFirst({
-      where: { path: req.path, active: true },
+      where: { path: fullPath, active: true },
     });
     if (!routeConfig) return next();
 
@@ -48,10 +50,13 @@ export function quotaMiddleware() {
     }
 
     // 4. call consume on Anchor program
+    const USDC_SCALE = 1_000_000;
+    const amountInBaseUnits = routeConfig.price * USDC_SCALE;
+
     const result = await consumeOnChain(
       seat.company.ownerWalletPubkey,
       seat.seatPda,
-      routeConfig.price
+      amountInBaseUnits
     );
 
     // 5. if quota exceeded return x402 formatted 402
@@ -78,7 +83,7 @@ export function quotaMiddleware() {
             scheme: "exact",
             network: "solana-devnet",
             payTo: process.env.MERCHANT_WALLET_PUBKEY,
-            maxAmountRequired: String(routeConfig.price * 1000),
+            maxAmountRequired: String(routeConfig.price * 1_000_000),
             asset: process.env.USDC_MINT,
           },
         ],
