@@ -2,7 +2,7 @@ import fetch from "node-fetch";
 
 const API_BASE = "http://localhost:4000";
 // This should be the holderPubkey of an active Seat created on the dashboard
-const AGENT_PUBKEY = "Eh7pdpK24d6oCzq7trMWkWAmpPrmHHLUMHBJSHC4f6i7";
+const AGENT_PUBKEY = "DRZbVN8R65gN2pD1AHycYx7z8bKbibvhzjum5oLiSLkT";
 
 async function callAPI(route: string, price: number) {
   const start = Date.now();

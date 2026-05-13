@@ -298,3 +298,15 @@ model RouteConfig {
   @@map("route_config")
 }
 
+model WalletChallenge {
+  id        String   @id @default(cuid())
+  userId    String
+  wallet    String
+  nonce     String
+  message   String
+  expiresAt DateTime
+
+  @@unique([userId, wallet])
+  @@map("wallet_challenge")
+}
+

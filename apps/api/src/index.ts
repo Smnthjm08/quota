@@ -73,26 +73,7 @@ const frontendUrl =
 
 const WALLET_CHALLENGE_TTL_MS = 5 * 60 * 1000;
 
-type WalletChallenge = {
-  nonce: string;
-  message: string;
-  expiresAt: number;
-};
-
-const walletChallenges = new Map<string, WalletChallenge>();
-
-function getChallengeKey(userId: string, wallet: string): string {
-  return `${userId}:${wallet}`;
-}
-
-function pruneExpiredChallenges() {
-  const now = Date.now();
-  for (const [key, value] of walletChallenges.entries()) {
-    if (value.expiresAt <= now) {
-      walletChallenges.delete(key);
-    }
-  }
-}
+// Wallet authentication challenges are stored in the database to support stateless serverless environments.
 
 type VaultFundingResult = {
   amount: number;
@@ -582,17 +563,29 @@ app.post(
         return res.status(400).json({ message: "Invalid wallet public key" });
       }
 
-      pruneExpiredChallenges();
-
       const nonce = randomBytes(16).toString("hex");
       const message = `Verify wallet ownership for Quota\nNonce:${nonce}`;
-      const expiresAt = Date.now() + WALLET_CHALLENGE_TTL_MS;
-      const challengeKey = getChallengeKey(userId, wallet);
+      const expiresAt = new Date(Date.now() + WALLET_CHALLENGE_TTL_MS);
 
-      walletChallenges.set(challengeKey, {
-        nonce,
-        message,
-        expiresAt,
+      await prisma.walletChallenge.upsert({
+        where: {
+          userId_wallet: {
+            userId,
+            wallet,
+          },
+        },
+        create: {
+          userId,
+          wallet,
+          nonce,
+          message,
+          expiresAt,
+        },
+        update: {
+          nonce,
+          message,
+          expiresAt,
+        },
       });
 
       return res.status(200).json({
@@ -600,7 +593,7 @@ app.post(
         data: {
           nonce,
           message,
-          expiresAt,
+          expiresAt: expiresAt.getTime(),
         },
       });
     } catch (error) {
@@ -643,10 +636,14 @@ app.post(
         return res.status(400).json({ message: "Company not found for user" });
       }
 
-      pruneExpiredChallenges();
-
-      const challengeKey = getChallengeKey(userId, wallet);
-      const challenge = walletChallenges.get(challengeKey);
+      const challenge = await prisma.walletChallenge.findUnique({
+        where: {
+          userId_wallet: {
+            userId,
+            wallet,
+          },
+        },
+      });
 
       if (!challenge || challenge.nonce !== nonce) {
         return res
@@ -654,8 +651,10 @@ app.post(
           .json({ message: "Wallet challenge is missing or invalid" });
       }
 
-      if (challenge.expiresAt <= Date.now()) {
-        walletChallenges.delete(challengeKey);
+      if (challenge.expiresAt.getTime() <= Date.now()) {
+        await prisma.walletChallenge.delete({
+          where: { id: challenge.id },
+        });
         return res.status(401).json({ message: "Wallet challenge expired" });
       }
 
@@ -685,7 +684,9 @@ app.post(
       }
 
       // One-time challenge use to prevent replay.
-      walletChallenges.delete(challengeKey);
+      await prisma.walletChallenge.delete({
+        where: { id: challenge.id },
+      });
 
       // Persist the wallet public key on the company record for better UX
       const updated = await prisma.company.update({

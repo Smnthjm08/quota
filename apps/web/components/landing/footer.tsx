@@ -2,36 +2,6 @@ import Link from "next/link";
 
 import LogoTitle from "../utils/logo-title";
 
-const columns = [
-  {
-    title: "Product",
-    links: [
-      { label: "Features", href: "#product" },
-      { label: "Pricing", href: "#pricing" },
-      { label: "Changelog", href: "#docs" },
-      { label: "Roadmap", href: "#product" },
-    ],
-  },
-  {
-    title: "Developers",
-    links: [
-      { label: "Documentation", href: "#docs" },
-      { label: "API Reference", href: "#docs" },
-      { label: "GitHub", href: "https://github.com" },
-      // { label: "SDK", href: "#docs" },
-    ],
-  },
-  {
-    title: "Company",
-    links: [
-      { label: "About", href: "#product" },
-      { label: "Blog", href: "#blog" },
-      { label: "Careers", href: "#blog" },
-      { label: "Contact", href: "#cta" },
-    ],
-  },
-];
-
 export function Footer() {
   return (
     <footer className="border-t border-border/40 px-6 py-12 lg:px-8">
@@ -44,13 +14,15 @@ export function Footer() {
 
         <div className="flex gap-6 text-sm font-medium text-muted-foreground">
           <Link
-            href="https://x.com"
+            target="_blank"
+            href="https://x.com/Quota142507"
             className="transition-colors hover:text-foreground"
           >
             Twitter
           </Link>
           <Link
-            href="https://github.com/Smnthjm08/qouta-app"
+            target="_blank"
+            href="https://github.com/Smnthjm08/qouta"
             className="transition-colors hover:text-foreground"
           >
             GitHub

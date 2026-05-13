@@ -20,9 +20,8 @@ export function HeroSection() {
         </h1>
 
         <p className="mx-auto mt-8 max-w-2xl text-lg leading-8 text-muted-foreground sm:text-xl">
-          Quota lets you issue agent keys with hard-coded USDC limits.
-          Enforced by a Solana program, funded by Dodo Payments, impossible to
-          hack.
+          Quota lets you issue agent keys with hard-coded USDC limits. Enforced
+          by a Solana program, funded by Dodo Payments, impossible to hack.
         </p>
 
         <div className="mt-12 flex items-center justify-center gap-x-6">

@@ -33,6 +33,7 @@ There is a pre-built agent simulation script in your codebase that you can use t
 2. Ensure your API is running (`pnpm run dev` at port 4000).
 3. Update the `AGENT_PUBKEY` in `scripts/agent/run-agent.ts` to match the seat you created.
 4. Run the script:
+
    ```bash
    # From the root directory
    pnpm run demo:agent
@@ -69,6 +70,7 @@ To verify that the "Firewall" actually blocks requests:
 1. Edit your seat in the dashboard and set the **Monthly Limit** to something very low (e.g., `5 USDC`).
 2. Call `/api/generate` (which costs 20 USDC).
 3. The API will return a `402` status code with the following JSON:
+
    ```json
    {
      "error": "quota_exceeded",
@@ -76,7 +78,6 @@ To verify that the "Firewall" actually blocks requests:
      "onChainProof": "TX_SIGNATURE_HERE"
    }
    ```
-
 
 ### Documentation Reference
 
