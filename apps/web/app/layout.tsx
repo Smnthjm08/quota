@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/provider/theme-provider";
 import { cn } from "@workspace/ui/lib/utils";
 import { SolanaProvider } from "@/components/provider/solana-provider";
 import { TooltipProvider } from "@workspace/ui/components/tooltip";
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -37,6 +38,7 @@ export default function RootLayout({
       <body>
         <TooltipProvider>
           <SolanaProvider>
+            <SpeedInsights />
             <ThemeProvider>{children}</ThemeProvider>
           </SolanaProvider>
         </TooltipProvider>

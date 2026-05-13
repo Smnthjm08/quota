@@ -23,9 +23,7 @@
     "PROGRAM_ID",
     "USDC_MINT",
     "API_SIGNER_PRIVATE_KEY",
-    "API_SIGNER_PUBLIC_KEY",
-    "PLAN_USDC_STARTER",
-    "PLAN_USDC_TEAM"
+    "API_SIGNER_PUBLIC_KEY"
   ],
   "ui": "tui",
   "tasks": {
