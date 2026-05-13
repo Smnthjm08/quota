@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { axiosInstance } from "../../../lib/axios";
 import { PaginatedTable } from "../../../components/paginated-table";
-import { Loader2Icon } from "lucide-react";
+import { Loader2Icon, RefreshCcwIcon } from "lucide-react";
 import {
   Table,
   TableHeader,
@@ -117,6 +117,8 @@ export default function BillingPage() {
                 onClick={fetchInvoices}
                 disabled={loading}
               >
+                {" "}
+                <RefreshCcwIcon />
                 {loading ? "Refreshing..." : "Refresh"}
               </Button>
             </div>
@@ -141,50 +143,58 @@ export default function BillingPage() {
             }
           >
             {({ pageItems }) => (
-              <Table>
-                <TableHeader>
-                  <tr className="text-left">
-                    <TableHead className="px-4 py-2">Date</TableHead>
-                    <TableHead className="px-4 py-2">Payment ID</TableHead>
-                    <TableHead className="px-4 py-2">Amount</TableHead>
-                    <TableHead className="px-4 py-2">Receipt</TableHead>
-                  </tr>
-                </TableHeader>
-                <TableBody>
-                  {pageItems.map((inv) => (
-                    <TableRow key={inv.paymentId}>
-                      <TableCell className="px-4 py-3">
-                        {inv.createdAt
-                          ? new Date(inv.createdAt).toLocaleString()
-                          : "-"}
-                      </TableCell>
-                      <TableCell className="px-4 py-3 break-all">
-                        {inv.paymentId}
-                      </TableCell>
-                      <TableCell className="px-4 py-3">
-                        {formatInvoiceAmount(inv.amount, inv.currency)}
-                      </TableCell>
-                      <TableCell className="px-4 py-3">
-                        <Button
-                          type="button"
-                          className="inline-flex items-center gap-2 rounded bg-blue-600 px-3 py-1 text-white disabled:cursor-not-allowed disabled:opacity-70"
-                          onClick={() => downloadInvoice(inv)}
-                          disabled={downloadingPaymentId === inv.paymentId}
-                        >
-                          {downloadingPaymentId === inv.paymentId ? (
-                            <>
-                              <Loader2Icon className="h-4 w-4 animate-spin" />
-                              Downloading...
-                            </>
-                          ) : (
-                            "Download"
-                          )}
-                        </Button>
-                      </TableCell>
+              <div className="overflow-hidden rounded-lg border">
+                <Table>
+                  <TableHeader className="bg-muted">
+                    <TableRow className="text-left">
+                      <TableHead className="px-4 py-2">Date</TableHead>
+                      <TableHead className="px-4 py-2">Payment ID</TableHead>
+                      <TableHead className="px-4 py-2">Amount</TableHead>
+                      <TableHead className="px-4 py-2">Created At</TableHead>
+                      <TableHead className="px-4 py-2">Receipt</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {pageItems.map((inv) => (
+                      <TableRow key={inv.paymentId}>
+                        <TableCell className="px-4 py-3">
+                          {inv.createdAt
+                            ? new Date(inv.createdAt).toLocaleString()
+                            : "-"}
+                        </TableCell>
+                        <TableCell className="px-4 py-3 break-all">
+                          {inv.paymentId}
+                        </TableCell>
+                        <TableCell className="px-4 py-3">
+                          {formatInvoiceAmount(inv.amount, inv.currency)}
+                        </TableCell>
+                        <TableCell className="px-4 py-3">
+                          {inv.createdAt
+                            ? new Date(inv.createdAt).toLocaleString()
+                            : "-"}
+                        </TableCell>
+                        <TableCell className="px-4 py-3">
+                          <Button
+                            type="button"
+                            className="inline-flex items-center gap-2 rounded bg-blue-600 px-3 py-1 text-white disabled:cursor-not-allowed disabled:opacity-70"
+                            onClick={() => downloadInvoice(inv)}
+                            disabled={downloadingPaymentId === inv.paymentId}
+                          >
+                            {downloadingPaymentId === inv.paymentId ? (
+                              <>
+                                <Loader2Icon className="h-4 w-4 animate-spin" />
+                                Downloading...
+                              </>
+                            ) : (
+                              "Download"
+                            )}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </PaginatedTable>
         </div>

@@ -283,7 +283,7 @@ export default function SeatsPage() {
                 <Table>
                   <TableHeader className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm">
                     <TableRow>
-                      <TableHead className="w-16">#</TableHead>
+                      <TableHead className="w-16">Sl.</TableHead>
                       <TableHead>Name</TableHead>
                       <TableHead>Holder wallet</TableHead>
                       <TableHead>Type</TableHead>

@@ -18,13 +18,13 @@ import {
   LayoutDashboardIcon,
   ChartBarIcon,
   Settings2Icon,
-  CircleHelpIcon,
   DatabaseIcon,
   FileChartColumnIcon,
   FileIcon,
   ReceiptTextIcon,
   ArmchairIcon,
   VaultIcon,
+  CircleUserRoundIcon,
 } from "lucide-react";
 import LogoTitle from "../utils/logo-title";
 import { useAuthSession } from "@/hooks/use-auth-session";
@@ -64,14 +64,14 @@ const data = {
   ],
   navSecondary: [
     {
+      title: "Profile",
+      url: "/profile",
+      icon: <CircleUserRoundIcon />,
+    },
+    {
       title: "Settings",
       url: "/settings",
       icon: <Settings2Icon />,
-    },
-    {
-      title: "Get Help",
-      url: "/help",
-      icon: <CircleHelpIcon />,
     },
   ],
   documents: [
