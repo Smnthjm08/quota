@@ -62,14 +62,13 @@ console.info(
   `DodoPayments init — environment=${mode}, token=${maskedDodoApiKey}, tokenLength=${dodoApiKey.length}`
 );
 
-const app: express.Express = express();
+const app = express();
 const allowedOrigins = (process.env.CORS_ORIGIN ?? "")
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
 
-const frontendUrl =
-  process.env.NEXT_PUBLIC_WEB_URL ?? process.env.BETTER_AUTH_URL;
+const frontendUrl = process.env.BETTER_AUTH_URL;
 const WALLET_CHALLENGE_TTL_MS = 5 * 60 * 1000;
 
 // Wallet authentication challenges are stored in the database to support stateless serverless environments.
