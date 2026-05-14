@@ -70,6 +70,7 @@ export function SeatDialog({ open, onOpenChange, onCreated }: SeatDialogProps) {
   const [monthlyLimit, setMonthlyLimit] = useState("1000");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [vaultAllocation, setVaultAllocation] = useState<{
     totalDeposited: number;
     totalAssigned: number;

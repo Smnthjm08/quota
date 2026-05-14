@@ -1,13 +1,6 @@
-import { BN, AnchorProvider, Program } from "@coral-xyz/anchor";
+import { BN } from "@coral-xyz/anchor";
 import { Connection, PublicKey, Transaction } from "@solana/web3.js";
-import type { QuotaVault } from "../../types/quota_vault.ts";
-import idl from "../../idl/quota_vault.json" with { type: "json" };
-
-type BrowserWallet = {
-  publicKey: PublicKey;
-  signTransaction: (transaction: Transaction) => Promise<Transaction>;
-  signAllTransactions: (transactions: Transaction[]) => Promise<Transaction[]>;
-};
+import { createClientProgram } from "../../provider.ts";
 
 export interface BuildConsumeTxParams {
   connection: Connection;
@@ -29,19 +22,7 @@ export async function buildConsumeTransaction(
     amount,
   } = params;
 
-  // The wallet object is a mock since we just need to build the transaction.
-  // The actual signing will likely be done by the backend api_signer.
-  const wallet: BrowserWallet = {
-    publicKey: apiSignerPublicKey,
-    signTransaction: async (transaction) => transaction,
-    signAllTransactions: async (transactions) => transactions,
-  };
-
-  const provider = new AnchorProvider(connection, wallet as any, {
-    commitment: "confirmed",
-  });
-
-  const program = new Program<QuotaVault>(idl as QuotaVault, provider);
+  const program = createClientProgram(connection, apiSignerPublicKey);
 
   return program.methods
     .consume(new BN(amount))

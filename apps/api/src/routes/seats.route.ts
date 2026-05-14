@@ -1,9 +1,15 @@
 import { Request, Response } from "express";
-import {prisma} from "@workspace/db"
+import { prisma } from "@workspace/db";
 import authMiddleware from "../middlewares/auth.middleware";
 import companyMiddleware from "../middlewares/company.middleware";
-import app, { formatUsdcAmount, normalizeSeatTypeInput, programValueToSeatType, recordUsageEvent, toSafeNumber } from "../index";
-import { PublicKey } from '@solana/web3.js';
+import app, {
+  formatUsdcAmount,
+  normalizeSeatTypeInput,
+  programValueToSeatType,
+  recordUsageEvent,
+  toSafeNumber,
+} from "../index";
+import { PublicKey } from "@solana/web3.js";
 import { deriveSeatPda, PROGRAM_ID } from "@workspace/anchor-client";
 import { connection, program } from "../lib/anchor-client";
 import { USDC_SCALE } from "../constants";
@@ -315,7 +321,7 @@ app.patch(
   "/api/v1/seats/:id/toggle",
   authMiddleware,
   companyMiddleware,
-  async (req : Request, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       const { id } = req.params as { id?: string };
       const { txSignature } = req.body as { txSignature?: string };

@@ -1,11 +1,11 @@
 import { betterAuth, type Auth } from "better-auth";
-import { prismaAdapter } from "better-auth/adapters/prisma";
+import { prismaAdapter } from "@better-auth/prisma-adapter";
 import { customSession } from "better-auth/plugins/custom-session";
 import { prisma } from "@workspace/db";
 import { sendEmail } from "./email.ts";
 
 const trustedOrigins = process.env.BETTER_AUTH_TRUSTED_ORIGINS?.split(",")
-  .map((origin) => origin.trim())
+  .map((origin: string) => origin.trim())
   .filter(Boolean);
 const cookieDomain = process.env.BETTER_AUTH_COOKIE_DOMAIN?.trim();
 
@@ -35,14 +35,20 @@ const authConfig: Parameters<typeof betterAuth>[0] = {
   trustedOrigins: trustedOrigins && trustedOrigins.length > 0 ? trustedOrigins : undefined,
   emailAndPassword: {
     enabled: true,
-    sendResetPassword: async ({ user, url }) => {
+    sendResetPassword: async ({
+      user,
+      url,
+    }: {
+      user: { email: string; name?: string | null };
+      url: string;
+    }) => {
       await sendEmail({
         template: "reset-password",
         to: user.email,
         variables: {
           resetLink: url,
           userEmail: user.email,
-          userName: user.name,
+          userName: user.name ?? undefined,
           appName: "Quota",
           expirationMinutes: "60",
         },

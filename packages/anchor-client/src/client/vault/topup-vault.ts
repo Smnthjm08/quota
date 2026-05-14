@@ -1,7 +1,6 @@
-import { BN, AnchorProvider, Program } from "@coral-xyz/anchor";
+import { BN } from "@coral-xyz/anchor";
 import { Connection, PublicKey, Transaction } from "@solana/web3.js";
-import type { QuotaVault } from "../../types/quota_vault.ts";
-import idl from "../../idl/quota_vault.json" with { type: "json" };
+import { createClientProgram } from "../../provider.ts";
 
 // SPL Token Program ID (Mainnet)
 const TOKEN_PROGRAM = new PublicKey(
@@ -15,12 +14,6 @@ const ASSOCIATED_TOKEN_PROGRAM = new PublicKey(
 const SYSTEM_PROGRAM = new PublicKey(
   "11111111111111111111111111111111"
 );
-
-type BrowserWallet = {
-  publicKey: PublicKey;
-  signTransaction: (transaction: Transaction) => Promise<Transaction>;
-  signAllTransactions: (transactions: Transaction[]) => Promise<Transaction[]>;
-};
 
 export interface BuildTopupTxParams {
   connection: Connection;
@@ -50,17 +43,7 @@ export async function buildTopupTransaction(
     amount,
   } = params;
 
-  const wallet: BrowserWallet = {
-    publicKey: vaultOwnerPublicKey,
-    signTransaction: async (transaction) => transaction,
-    signAllTransactions: async (transactions) => transactions,
-  };
-
-  const provider = new AnchorProvider(connection, wallet as any, {
-    commitment: "confirmed",
-  });
-
-  const program = new Program<QuotaVault>(idl as unknown as QuotaVault, provider);
+  const program = createClientProgram(connection, vaultOwnerPublicKey);
 
   return program.methods
     .topupVault(new BN(amount))
@@ -94,17 +77,7 @@ export async function buildTopupInstruction(
     amount,
   } = params;
 
-  const wallet: BrowserWallet = {
-    publicKey: vaultOwnerPublicKey,
-    signTransaction: async (transaction) => transaction,
-    signAllTransactions: async (transactions) => transactions,
-  };
-
-  const provider = new AnchorProvider(connection, wallet as any, {
-    commitment: "confirmed",
-  });
-
-  const program = new Program<QuotaVault>(idl as unknown as QuotaVault, provider);
+  const program = createClientProgram(connection, vaultOwnerPublicKey);
 
   return program.methods
     .topupVault(new BN(amount))

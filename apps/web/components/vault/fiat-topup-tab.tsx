@@ -1,7 +1,6 @@
 "use client";
 
 import { useFiatTopupCheckout } from "@/hooks/use-fiat-topup-checkout";
-import { Button } from "@workspace/ui/components/button";
 import { Separator } from "@workspace/ui/components/separator";
 import { CreditCard, Loader2 } from "lucide-react";
 

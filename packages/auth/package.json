@@ -4,18 +4,21 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint . --config eslint.config.mjs --ext .ts,.tsx --report-unused-disable-directives"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "devDependencies": {
+    "@types/node": "^25.1.0",
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
     "@workspace/db": "workspace:*"
   },
   "dependencies": {
+    "@better-auth/prisma-adapter": "^1.6.6",
     "@dodopayments/better-auth": "^1.6.2",
     "better-auth": "^1.6.6",
     "zod": "^3.25.76"

@@ -1,14 +1,7 @@
-import { BN, AnchorProvider, Program } from "@coral-xyz/anchor";
+import { BN } from "@coral-xyz/anchor";
 import { Connection, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
-import type { QuotaVault } from "../../types/quota_vault.ts";
-import idl from "../../idl/quota_vault.json" with { type: "json" };
+import { createClientProgram } from "../../provider.ts";
 import { deriveSeatPda } from "../../pda.ts";
-
-type BrowserWallet = {
-  publicKey: PublicKey;
-  signTransaction: (transaction: Transaction) => Promise<Transaction>;
-  signAllTransactions: (transactions: Transaction[]) => Promise<Transaction[]>;
-};
 
 export interface BuildCreateSeatTxParams {
   connection: Connection;
@@ -54,17 +47,7 @@ export async function buildCreateSeatTransaction(
 
   const [seatPublicKey] = deriveSeatPda(vaultPublicKey, seatId);
 
-  const wallet: BrowserWallet = {
-    publicKey: ownerPublicKey,
-    signTransaction: async (transaction) => transaction,
-    signAllTransactions: async (transactions) => transactions,
-  };
-
-  const provider = new AnchorProvider(connection, wallet as any, {
-    commitment: "confirmed",
-  });
-
-  const program = new Program<QuotaVault>(idl as QuotaVault, provider);
+  const program = createClientProgram(connection, ownerPublicKey);
 
   // Fetch vault to check balance and show allocation info
   let vault;

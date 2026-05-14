@@ -1,14 +1,12 @@
-import type { Request, Response, NextFunction } from "express";
+import type { Request, Response } from "express";
 import { consumeOnChain } from "../services/consume.ts";
 import { prisma } from "@workspace/db";
 
 export function quotaMiddleware() {
-  return async (req: Request, res: Response, next: NextFunction) => {
-    console.log(
-      `[QuotaMiddleware] Request: ${req.method} ${req.baseUrl}${req.path}`
-    );
+  return async (req: Request, res: Response, next: () => void) => {
+    const fullPath = req.originalUrl.split("?")[0];
+    console.log(`[QuotaMiddleware] Request: ${req.method} ${fullPath}`);
     // 1. get route cost from database
-    const fullPath = req.baseUrl + req.path;
     const routeConfig = await prisma.routeConfig.findFirst({
       where: { path: fullPath, active: true },
     });

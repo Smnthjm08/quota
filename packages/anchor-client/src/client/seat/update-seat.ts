@@ -1,7 +1,6 @@
-import { AnchorProvider, Program, BN } from "@coral-xyz/anchor";
+import { BN } from "@coral-xyz/anchor";
 import { Connection, PublicKey, Transaction } from "@solana/web3.js";
-import type { QuotaVault } from "../../types/quota_vault.ts";
-import idl from "../../idl/quota_vault.json" with { type: "json" };
+import { createClientProgram } from "../../provider.ts";
 
 const USDC_SCALE = 1_000_000;
 
@@ -20,12 +19,6 @@ export interface UpdateSeatResult {
     availableBalanceHuman: number;
   };
 }
-
-type BrowserWallet = {
-  publicKey: PublicKey;
-  signTransaction: (transaction: Transaction) => Promise<Transaction>;
-  signAllTransactions: (transactions: Transaction[]) => Promise<Transaction[]>;
-};
 
 export interface BuildUpdateSeatTxParams {
   connection: Connection;
@@ -50,17 +43,7 @@ export async function buildUpdateSeatTransaction(
     throw new Error("Invalid newLimit. Must be a positive integer.");
   }
 
-  const wallet: BrowserWallet = {
-    publicKey: ownerPublicKey,
-    signTransaction: async (transaction) => transaction,
-    signAllTransactions: async (transactions) => transactions,
-  };
-
-  const provider = new AnchorProvider(connection, wallet as any, {
-    commitment: "confirmed",
-  });
-
-  const program = new Program<QuotaVault>(idl as QuotaVault, provider);
+  const program = createClientProgram(connection, ownerPublicKey);
 
   // Fetch vault to validate against available balance
   let vault;

@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { PublicKey } from "@solana/web3.js";
 import { useTopupVault } from "@/hooks/use-topup-vault";
 
 interface TopupFormProps {

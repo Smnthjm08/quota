@@ -69,10 +69,7 @@ const allowedOrigins = (process.env.CORS_ORIGIN ?? "")
   .filter(Boolean);
 
 const frontendUrl =
-  process.env.NEXT_PUBLIC_WEB_URL ??
-  process.env.APP_URL ??
-  "http://localhost:3000";
-
+  process.env.NEXT_PUBLIC_WEB_URL ?? process.env.BETTER_AUTH_URL;
 const WALLET_CHALLENGE_TTL_MS = 5 * 60 * 1000;
 
 // Wallet authentication challenges are stored in the database to support stateless serverless environments.
@@ -154,7 +151,9 @@ export function normalizeSeatTypeInput(
   return null;
 }
 
-export function programValueToSeatType(seatType: number): "HUMAN" | "AGENT" | null {
+export function programValueToSeatType(
+  seatType: number
+): "HUMAN" | "AGENT" | null {
   if (seatType === 1) {
     return "HUMAN";
   }
